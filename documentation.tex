@@ -1,0 +1,1472 @@
+\documentclass[11pt]{article}
+\usepackage{makeidx}
+\makeindex
+\def\lapp{\ifmmode\stackrel{<}{_{\sim}}\else$\stackrel{<}{_{\sim}}$\fi}
+\def\gapp{\ifmmode\stackrel{>}{_{\sim}}\else$\stackrel{>}{_{\sim}}$\fi}
+\textheight 670pt 
+\textwidth 500pt  
+\evensidemargin 5mm            
+\oddsidemargin -5mm  
+\topmargin -15mm     
+\headheight 12pt 
+\headsep 15pt
+\parindent 0pt
+\parskip 8pt plus 2pt minus 1pt
+
+\begin{document}
+\begin{center}
+{\LARGE {\sc SIGPROC--vX.X} : {\bf (Pulsar) Signal Processing Programs}}\\
+\bigskip
+\bigskip
+{\large Dunc Lorimer --- WVU --- {\tt Duncan.Lorimer@mail.wvu.edu} --- RELEASE}
+\end{center}
+\noindent {\bf Summary:} The SIGPROC package is a collection of
+programs written to convert and process fast-sampled pulsar data into
+a compact and easy-to-use format suitable for off-line analyses for
+searching, timing and polarimetry applications. This document
+describes how to install and run the various programs. Several example
+applications are presented using real and simulated data sets.
+\tableofcontents
+
+\clearpage
+\section{About SIGPROC}
+
+\index{Backends!AOFTM}
+\index{Backends!WAPP}
+\index{Backends!PSPM}
+\index{Backends!BPP}
+\index{Backends!Parkes/Jodrell filterbanks}
+\index{Backends!OOTY}
+SIGPROC is a package designed to standardize the initial analysis of
+the many types of fast-sampled pulsar data. Currently recognized
+machines are the Wide Band Arecibo Pulsar Processor (WAPP), the Penn
+State Pulsar Machine (PSPM), the Arecibo Observatory Fourier Transform
+Machine (AOFTM), the Berkeley Pulsar Processors (BPP), the Parkes/Jodrell
+1-bit filterbanks (SCAMP) and the
+filterbank at the Ooty radio telescope (OOTY). The package
+should help users look at their data quickly, without the need to
+write (yet) another routine to read data or worry about big/little
+\index{byte swapping} \index{big endian} \index{little endian}
+endian compatibility (byte swapping is handled automatically).  The
+current suite of programs is:
+
+\index{Programs!{\tt filterbank}}
+\bigskip
+\noindent {\tt filterbank} - convert raw pulsar-machine data to 
+filterbank format: a stream of n-bit numbers corresponding to multiple
+polarization and/or frequency channels. 
+
+\index{Programs!{\tt splice}}
+\smallskip
+\noindent {\tt splice} - join together multiple filterbank
+files which have the same time stamp.
+
+\index{Programs!{\tt fake}}
+\smallskip
+\noindent {\tt fake} - produce fake filterbank format data
+containing periodic signals immersed in Gaussian noise for
+testing and calibration of downstream programs.
+
+\index{Programs!{\tt decimate}}
+\smallskip
+\noindent {\tt decimate} - add together frequency channels
+and/or time samples of incoming filterbank data to reduce
+the time and/or frequency resolution (useful for quick-look
+purposes).
+
+\index{Programs!{\tt dedisperse}}
+\smallskip
+\noindent {\tt dedisperse} - correct incoming filterbank data
+for interstellar dispersion, writing the output time series as
+one or more dedispersed sub-bands.
+
+\index{Programs!{\tt fold}}
+\smallskip
+\noindent {\tt fold} - fold incoming filterbank or time series
+data modulo a pulse period. Pulses are output in ASCII
+EPN (\S \ref{epn}) or PSRFITS format. An Expect script to 
+generate polynomial coefficients is also available.
+
+\index{Programs!{\tt profile}}
+\smallskip
+\noindent {\tt profile} - displays profiles from {\tt fold} in
+ASCII or pseudo grey-scale plots to the standard output.
+
+\index{Programs!{\tt pgplotter}}
+\smallskip
+\noindent {\tt pgplotter} - displays profiles from {\tt fold} 
+and other SIGPROC output to a PGPLOT window.
+
+\index{Programs!{\tt bandpass}}
+\smallskip
+\noindent {\tt bandpass} - write out the mean bandpass to an ASCII file.
+
+\index{Programs!{\tt header}}
+\smallskip
+\noindent {\tt header} - read raw data files,
+filterbank or time series data and display header info as plain ASCII.
+
+\index{Programs!{\tt header}}
+\smallskip
+\noindent {\tt reader} - read the filterbank or time series
+data and display in human-readable form.
+
+\index{Programs!{\tt quicklook}}
+\smallskip
+\noindent {\tt quicklook} - csh script to perform a quick
+analysis of total-power filterbank data on a known pulsar.
+
+\index{Programs!{\tt monitor}}
+\smallskip
+\noindent {\tt monitor} - wish script to
+monitor programs running in a given
+directory using a Tk pop-up widget.
+
+\index{Programs!{\tt seek}}
+\smallskip
+\noindent {\tt seek} - searches for periodic signals and individual
+pulses in dedispersed time series.
+
+\bigskip
+\noindent
+All of the programs are run
+from the UNIX command-line. Use is made of standard input and output
+streams so that piping between programs often possible. For example:
+\begin{verbatim}
+% filterbank B0823+26.pspm | dedisperse -d 19 -s 4 | fold -p polyco.dat > B0823+26.prf
+\end{verbatim}
+will read in and dedisperse raw PSPM data into four subbands which are
+then folded modulo the pulse period based on a set of polynomial
+coefficients generated by TEMPO stored in the file {\tt polyco.dat}.
+The folded profiles for each band are written in ASCII format
+to the file {\tt B0823+26.prf}.  
+\index{polyco.dat}
+
+A detailed description of these programs and scripts is given in the
+remainder of this document which is structured as follows: in \S
+\ref{install} we describe how to install SIGPROC; \S \ref{dataformat}
+describes the filterbank data and header format used by all the
+programs; producing real and fake filterbank data is described in \S
+\ref{filterbank} and \S \ref{fake} respectively; programs to look at
+the headers and raw data are discussed in \S \ref{headers} and \S
+\ref{looking}; data reduction tasks (decimation and dedispersion) are
+described in \S \ref{reduction}; folding filterbank data to produce
+pulse profiles is described in \ref{folding}; a script do quick data
+analyses is presented in \S \ref{quicklook} respectively; version
+history and plans for future work (\S \ref{past/future}). 
+Supplementary appendices deal with
+monitoring the programs (\S \ref{monitoring}), 
+generating {\tt polyco.dat} files using {\sc TEMPO}
+(\S \ref{polyco}) and the EPN data format (\S \ref{epn}).
+
+\section{Installation procedure}
+\label{install}
+\index{installation}
+SIGPROC has so far been successfully installed for use on Solaris,
+Linux, HP-UX and Macs.
+ANSII C was (hopefully!)  adhered to fairly closely
+during writing of the programs so that installation on other operating
+systems should also be possible.  Installation proceeds as follows:
+
+\noindent {\bf 0:}
+Download the package from 
+\verb+http://sigproc.sourceforge.net+
+
+\noindent {\bf 1:}
+Unpack the gzip-compressed tar file and extract its contents:
+
+\noindent 
+{\tt gunzip -c sigproc-X.X.tar.gz | tar xvf -}
+
+\noindent {\bf 2:}
+The contents of the tar file will be distributed in the directory
+{\tt sigproc-X.X/}. Go into this directory and run the configuration
+script by typing: 
+
+\noindent
+{\tt cd sigproc-X.X}\\
+{\tt ./configure}
+
+\noindent
+When prompted, supply the name
+of a directory in which you would like the SIGPROC executables to
+be placed.
+If compiling on more than one system, log into the the other system
+and run the same script on this computer.
+Note that only one copy of the source code is required
+if you are compiling under multiple platforms.
+
+\noindent {\bf 3:}
+For each operating system you are using, type:
+
+\noindent
+{\tt make}
+
+\noindent in the
+{\tt sigproc-X.X} directory
+and let the compiler go to work. 
+
+Four other software packages are desirable, but not absolutely
+necessary.  To output profiles in PSRFITS format, you will need
+CFITSIO ({\tt 
+heasarc.gsfc.nasa.gov/docs/software/fitsio/fitsio.html})
+and uncomment and edit the appropriate path to the LFITS variable in your
+{\tt makfile.osname} file. To take advantage of the FFTW subroutines,
+you will need to install version 3 of this package (available from
+{\tt fftw.org}) and then uncomment and edit the LFFTW variable in
+{\tt makfile.osname}.
+To create files containing polynomial coefficients for
+high-precision folding, install the {\sc TEMPO} software package which
+\index{Software Packages!{\sc TEMPO}}
+is freely available from the Princeton pulsar website ({\tt
+pulsar.princeton.edu}).  To monitor the programs using a Tk
+pop-up widget make sure that the {\tt wish} shell is in your path (we
+recommend use of Tcl/Tk version 8.0 or higher). This is freely
+available from {\tt scriptics.com}. For making diagnostic
+\index{Software Packages!Tcl/Tk}
+plots you will need to compile the {\tt quickplot} Fortran program which
+requires the {\sc PGPLOT} graphics package available from 
+\verb+astro.caltech.edu/~tjp/pgplot+. Edit the {\tt
+makefile} to give the appropriate path to {\sc PGPLOT} on your system
+\index{Software Packages!{\sc PGPLOT}}
+before typing {\tt make quickplot}.
+
+\section{Header information and data format}
+\label{dataformat}
+\index{Data formats!SIGPROC}
+Before describing the programs in detail, some description of the
+header and data formats used within SIGPROC is appropriate for those
+wishing to read the data into other programs.  The {\tt filterbank}
+program (see \S \ref{filterbank}) reads in the raw data files produced
+by the machine, dealing with the header information contained in the
+files and the (usually non-trivial) channel ordering of the
+samples. {\tt filterbank} outputs the data in the following way:
+\begin{verbatim}
+HEADER_START stream_of_header_parameters HEADER_END stream_of_data_values
+\end{verbatim}
+The \verb+HEADER_START+ and \verb+HEADER_END+ character strings
+signal the start and
+finish of a stream of header parameters that describe the data.  The
+default is to include these at the beginning of the data file.  We
+recognize that some users will prefer not to have to deal with the
+header in this way. For these users, {\tt filterbank} has a {\tt
+-headerfile} command-line option to pipe the header into a seperate
+ASCII file (this is described along with the other command-line
+options later on).
+
+The header variables have been restricted to key parameters for ease of use.
+Currently these are:
+\begin{itemize}
+\item {\bf telescope\_id} (\verb+int+): 
+\index{Header parameters!{\bf telescope\_id}}
+0=fake data; 1=Arecibo; 2=Ooty... others to be added
+\item {\bf machine\_id} (\verb+int+): 
+\index{Header parameters!{\bf machine\_id}}
+0=FAKE; 1=PSPM; 2=WAPP; 3=OOTY... others to be added
+\item {\bf data\_type} (\verb+int+): 
+\index{Header parameters!{\bf data\_type}}
+1=filterbank; 2=time series... others to be added
+\item {\bf rawdatafile} (\verb+char []+): 
+\index{Header parameters!{\bf rawdatafile}}
+the name of the original data file
+\item {\bf source\_name} (\verb+char []+): 
+\index{Header parameters!{\bf source\_name}}
+the name of the source being observed by the telescope
+\item {\bf barycentric} (\verb+int+):
+equals 1 if data are barycentric or 0 otherwise
+\item {\bf pulsarcentric} (\verb+int+):
+equals 1 if data are pulsarcentric or 0 otherwise
+\item {\bf az\_start} (\verb+double+): 
+\index{Header parameters!{\bf az\_start}}
+telescope azimuth at start of scan (degrees)
+\item {\bf za\_start} (\verb+double+): 
+\index{Header parameters!{\bf za\_start}}
+telescope zenith angle at start of scan (degrees)
+\item {\bf src\_raj} (\verb+double+): 
+\index{Header parameters!{\bf src\_raj}}
+right ascension (J2000) of source (hhmmss.s)
+\item {\bf src\_dej} (\verb+double+): 
+\index{Header parameters!{\bf src\_dej}}
+declination (J2000) of source (ddmmss.s)
+\item {\bf tstart} (\verb+double+): 
+\index{Header parameters!{\bf tstart}}
+time stamp (MJD) of first sample
+\item {\bf tsamp}  (\verb+double+): 
+\index{Header parameters!{\bf tsamp}}
+time interval between samples (s)
+\item {\bf nbits} (\verb+int+): 
+\index{Header parameters!{\bf nbits}}
+number of bits per time sample
+\item {\bf nsamples} (\verb+int+): 
+\index{Header parameters!{\bf nsamples}}
+number of time samples in the data file (rarely used any more)
+\item {\bf fch1}  (\verb+double+): 
+\index{Header parameters!{\bf fch1}}
+centre frequency (MHz) of first filterbank channel
+\item {\bf foff}  (\verb+double+): 
+\index{Header parameters!{\bf foff}}
+filterbank channel bandwidth (MHz)
+\item {\bf FREQUENCY\_START}  (\verb+character+): 
+\index{Header parameters!{\bf FREQUENCY\_START}}
+start of frequency table (see below for explanation)
+\item {\bf fchannel}  (\verb+double+): 
+\index{Header parameters!{\bf fchannel}}
+frequency channel value (MHz)
+\item {\bf FREQUENCY\_END}  (\verb+character+): 
+\index{Header parameters!{\bf FREQUENCY\_END}}
+end of frequency table (see below for explanation)
+\item {\bf nchans} (\verb+int+): 
+\index{Header parameters!{\bf nchans}}
+number of filterbank channels
+\item {\bf nifs} (\verb+int+): 
+\index{Header parameters!{\bf nifs}}
+number of seperate IF channels
+\item {\bf refdm}  (\verb+double+): 
+\index{Header parameters!{\bf refdm}}
+reference dispersion measure (cm$^{-3}$ pc)
+\item {\bf period}  (\verb+double+): 
+\index{Header parameters!{\bf period}}
+folding period (s)
+\end{itemize}
+A given header stream will contain most, but not necessarily all, of the 
+above variables. 
+
+In the general case, the data consists of {\bf nifs} polarization
+channels of {\bf nchans} frequency channels of {\bf nbit} numbers. The
+data stream following the header can then be thought of as 1-D array
+of $N$ elements with indices running between 0 and $N-1$, where
+\begin{displaymath}
+	N = {\rm \bf nifs} \times {\rm \bf nchans} \times {\rm \bf nsamples},
+\end{displaymath}
+and {\bf nsamples} is the observation time divided by {\bf tsamp}.
+Thus, for a given IF channel $i = (0,1,2,3)$ and frequency channel $c
+= (0 \dots {\rm \bf nchans}-1)$, the array index for sample $s =
+(0,1,2 \dots)$ is
+\begin{displaymath}
+s \times {\rm \bf nifs} \times {\rm \bf nchans}+ i \times {\rm \bf nchans} + c.
+\end{displaymath}
+The sky frequency of channel $c$ is then simply
+\begin{displaymath}
+		{\rm \bf fch1} + c \times {\rm \bf foff}.
+\end{displaymath}
+We follow the Parkes/Jodrell Bank
+convention of assigning a negative frequency to {\bf
+foff} in the headers to signify that the highest frequency channel is
+{\bf fch1}.  Currently, all filterbank data is written out in this order
+and the {\tt dedisperse} program relies on this fact in its dedispersing
+algorithm (see \S \ref{reduction}).
+
+Although this system works well for most applications, from version 2.3
+there is a more flexible way of describing the frequency channels.
+Instead of writing {\bf fch1} and {\bf foff}, it is now possible to 
+write the individual frequency channel frequencies directly into the header
+in the following way:
+\begin{verbatim}
+FREQUENCY_START f1 f2 f3 f4 FREQUENCY_END
+\end{verbatim}
+where \verb+f1+, \verb+f2+.... are the frequency channel
+values in MHz. These may be in any order, {\em provided that}
+the \verb+f1+ is the highest frequency (again this is 
+stipulated because of {\tt dedisperse}'s algorithm).
+This frequency table approach is used by the {\tt splice} program
+to deal with non-contiguous data described next.
+
+\clearpage
+\section{Data conversion using {\tt filterbank} and {\tt splice}}
+\label{filterbank}
+\index{Programs!{\tt filterbank}}
+
+The interface between the raw data and the rest of the SIGPROC package
+is the {\tt filterbank} program. As with all the programs on-line help
+is obtained by typing the name of the program followed by {\tt help}:
+\input{filterbank.help}
+Given just the name of the raw data file as the argument, {\tt
+filterbank} will determine the origin of the data and, if it can read
+the file, unpack the samples before writing the header parameters
+and data as described in \S \ref{dataformat}. The header and data go
+to the standard output by default but can be redirected to a file
+using the {\tt -o filename} option, or in the standard way:
+\begin{verbatim}
+% filterbank rawdatafile > filterbankfile
+\end{verbatim}
+With no further options, {\tt filterbank} will read and unscramble all
+the data in the original file. A specific portion of the data can be
+specified using the {\tt -r} and {\tt -s} command-line options. For example:
+\begin{verbatim}
+% filterbank rawdatafile -r 10.0 > filterbankfile
+\end{verbatim}
+reads just the first 10 seconds of data. These options are useful for
+a quick look at the data.
+
+\subsection*{Selecting and/or summing IF streams}
+\index{summing IFs}
+\index{selecting IF streams}
+By default, all the IF streams (if there are more than one) in the
+file are read and processed. To select one or more of these, ignoring
+the others, use the {\tt -i} option:
+\begin{verbatim}
+% filterbank rawdatafile -i 1 -i 2 > filterbankfile
+\end{verbatim}
+will process just the first two IF channels of the raw data file.
+{\tt filterbank} provides the option to sum {\sl just the first two} IF
+channels (to form total-power data) via the {\tt -sumifs} option:
+\begin{verbatim}
+% filterbank rawdatafile -sumifs > filterbankfile
+\end{verbatim}
+This is a useful, for example, to get just total power from
+polarimetry data for off-line searching.
+
+\subsection*{ASCII headers}
+\index{ASCII headers}
+As mentioned in \S \ref{dataformat}, {\tt filterbank} will broadcast a
+header stream before writing the data. This header is used by other
+downstream SIGPROC programs to process the data. To make use of it in
+analysis with other programs, call the function \verb+read_header+ and
+link with the other routines contained in the file
+\verb+read_header.c+.  For those who prefer not to be bothered with
+these routines, use the {\tt -headerfile} option when calling
+filterbank. For example:
+\begin{verbatim}
+% filterbank B0823+26.pspm -headerfile > B0823+26.fil
+\end{verbatim}
+will create the file {\tt B0823+26.fil} containing just the filterbank
+channels along with the relevant header parameters in an ASCII file
+{\tt head}. In this case:
+\begin{verbatim}
+Original PSPM file: B0823+26.pspm
+Sample time (us): 80.000002
+Time stamp (MJD): 51740.882986111108
+Number of samples/record: 512
+Center freq (MHz): 430.000000
+Channel band (kHz): 62.000000
+Number of channels/record: 128
+\end{verbatim}
+the user is then left to parse this file as he/she feels fit.
+An alternative means of getting header information would be
+to use the {\tt header} program in the following example:
+\begin{verbatim}
+% filterbank B0823+26.pspm | header -tstart
+\end{verbatim}
+which will return {\tt 51740.882986111108} to the standard output.
+Any of the header variable names listed in \S \ref{dataformat}
+can be given as a command-line option to the {\tt header} program.
+Further details are given in \S \ref{looking}.
+
+\subsection*{Changing the number of bits per sample}
+By default, {\tt filterbank} will write the outgoing data with the same
+number of bits per sample as the native format (e.g.~4 bits per sample
+for PSPM). For machines which write out larger numbers of bits
+(e.g.~the WAPP) it is useful to be able to pack the data more
+efficiently using the {\tt -n} option.  For example, the sequence:
+\begin{verbatim}
+% filterbank wappdatafile -n 8 > filterbankfile
+\end{verbatim}
+will process a WAPP data file (usually 16 bits per sample) and
+pack the outgoing samples as single-byte integers. For search
+purposes, where only marginal loss in sensitivity is seen and data products
+are reduced significantly, use of this option is highly recommended.
+For WAPP data, the loss in sensitivity from 16 to 8 bits is negligible,
+packing down to 4 bits results in losses $\sim$5\%.
+
+\subsection*{Floating-point output}
+\index{floating-point output}
+Currently, no descaling parameters are given in the header when
+packing down data. This means that for applications where the
+absolute value of the data is necessary (e.g.~polarization work)
+it is necessary to store the data as floating-point numbers.
+The option {\tt -floats} is provided for this purpose (although this
+is really just an alias for {\tt -n 32}).
+
+\subsection*{Byte swapping issues}
+\index{byte swapping}
+Multi-byte precision data are written in different orders depending on
+your machine's operating system. The original WAPP data, for example,
+was written on a PC (little endian format).  The {\tt filterbank}
+program knows about this and {\sl automatically} does any byte
+swapping required while reading. When it comes to writing the data
+out, however, the program will always write data in the native order
+of the processing machine.  To swap the bytes around before writing
+for use on other machines, use the {\tt -swapout} option.
+
+\subsection*{Correlator-specific options}
+Presently, the WAPP is the only correlator machine recognized by SIGPROC
+which records auto- and, in polarization mode, cross-correlation functions for 
+given numbers of lags. The autocorrelation function $R(\tau)$, as a 
+function of lag $\tau$ is defined by:
+\begin{displaymath}
+R(\tau) = \lim_{T\rightarrow\infty} \frac{1}{T} \int_0^T V(t) V^*(t+\tau) dt,
+\end{displaymath}
+where $V(t)$ is the complex signal voltage as a function of time $t$.
+From the Weiner-Khinchin theorem, the power 
+spectral density function $P(f)$ is the Fourier transform of $R(\tau)$:
+\begin{displaymath}
+P(f)=\frac{1}{2\pi} \int_{-\infty}^{+\infty} R(\tau) e^{-2\pi i f \tau} d\tau.
+\end{displaymath}
+In practice to obtain the equivalent of frequency channels of a
+filterbank, the lags from each IF channel need to be corrected for
+finite-level quantization --- the so-called van Vleck correction (see 
+\index{van Vleck correction}
+for example Hagen \& Farley 1973, Radio Science, {\bf 8}, 775--784)
+before the Fast Fourier Transform (FFT) to obtain the spectra. For
+reference, the three-level van Vleck formula used within {\tt filterbank} to 
+correct measured auto-correlation values ($r$) to unbiased ones ($\rho$)
+can be written as
+\begin{displaymath}
+r = \frac{1}{\pi} \int_0^{\rho} \left(
+\exp \left( \frac{-(\alpha/\sigma)^2}{1+x} \right) +
+\exp \left( \frac{-(\alpha/\sigma)^2}{1-x} \right) \right)
+\frac{dx}{\sqrt(1-x^2)},
+\end{displaymath}
+where $\alpha$ is the digitizer threshold and $\sigma$ the rms
+voltage. This correction is what {\tt filterbank} does by default
+before FFTing the correlation functions to produce spectra. 
+
+A number of options exist to modify the default processing.
+To reduce FFT leakage, either a Hanning or Hamming window
+\index{Hanning smoothing}
+\index{Hamming smoothing}
+can be applied to the correlation functions via the
+{\tt -hamming} and {\tt -hanning} switches. Select {\tt -rawcfs} to
+output the raw correlation functions quantized to the precision
+specified by {\bf nbits}.  To get at the raw correlation functions,
+include the floating-point option:
+\begin{verbatim}
+% filterbank wappdatafile -rawcfs -floats > rawcffile
+\end{verbatim}
+The {\tt -corcfs} option will write out the correlation 
+functions {\sl applying} the van Vleck correction.
+
+\subsection*{Obscure correlator options} For completeness, we mention two
+other correlator specific options: {\tt -novanvleck} and {\tt
+-zerolag}. The {\tt -novanvleck} option will not apply the
+quantization correction before the FFT. This feature is really for
+instructional purposes since, to FFT the data to get frequency
+channels, signal-to-noise will be lost if the van Vleck correction
+is not applied. Another option that
+is primarily used for testing is {\tt -zerolag}. If selected, this
+outputs just the first correlation function for each IF (the so-called
+zero lag) as a floating-point number. Inserting $\tau=0$ into the
+above expression for $P(f)$, we note that the zero lag is just the sum
+over all the frequency channels --- equivalent to a time series with
+no dispersion measure correction. 
+
+For WAPP data, one final option is {\tt -invert}
+\index{bandpass inversion}
+which inverts the band after the FFT to change the frequency ordering.
+This should normally be dealt with in the WAPP header but is included
+here to process data where the header information about frequency
+ordering is incorrect.
+
+\subsection*{Splicing files}
+\index{Programs!{\tt splice}}
+
+Most data acquisition systems store the collected data as single
+files per observation. For the new multiple WAPP system at Arecibo,
+where each machine runs independently to sample a different part of
+the band, a number of data files result for each frequency band.
+In order to analyse these datasets together, the {\tt splice} program
+will join multiple filterbank files, provided that they all have
+on the same time stamp. The syntax is very simple:
+\begin{verbatim}
+	splice file1.fil file2.fil file3.fil > splice.fil
+\end{verbatim}
+where it is assumed that the input files \verb+file1.fil+, \verb+file2.fil+ and
+\verb+file3.fil+ have already been converted into filterbank format
+as described above. The resulting file, \verb+splice.fil+ in this
+example, is also in filterbank format and can be read by subsequent
+programs. Although the files need not span a contiguous
+radio frequency band,
+{\tt splice} will complain if the input files do not
+all have the same time stamp, or if they are not ordered in
+descending frequency order. The latter check is done so
+that the data conform to the order expected by the 
+dedispersion algorithm (\S \ref{reduction}).
+
+\clearpage
+\section{Creating mock data sets using {\tt fake}}
+\index{Programs!{\tt fake}}
+
+The {\tt fake} program was written to create test data sets containing
+pulses hidden in Gaussian noise:
+\label{fake}
+\input{fake.help}
+Default parameters are a filterbank similar to the PSPM. As an example, 
+consider some fake PSPM data for a 42-s observation of a
+pulsar with a period of $\sim\pi$ ms, a duty cycle of 10\% and a DM of 30:
+\begin{verbatim}
+% fake -period 3.1415927 -width 10 -dm 30 -tobs 42 -nbits 4 > pspm.fil
+\end{verbatim}
+Each channel of fake data has a zero mean and unit rms.  The
+signal-to-noise ratio refers to the height of a single pulse in each
+channel. In the above example, the default signal-to-noise was
+used. Weaker pulsars can be easily made to challenge limits of
+off-line search algorithms etc. By default, the fake pulse width $w$
+is smeared by an amount dependent on the filterbank setup using the
+quadrature sum:
+\begin{displaymath}
+	\sqrt{w^2 + {\rm \bf tsamp}^2 + t_{\rm DM}^2},
+\end{displaymath}
+where $t_{\rm DM}$ is the dispersion smearing of the pulse over a
+single filterbank channel given by:
+\begin{displaymath}
+ t_{\rm DM} = 8.3 \times 10^6 {\rm ms} \, \, {\rm DM} \, \Delta \nu / \nu^3,
+\end{displaymath}
+assuming the centre frequency $\nu$ is much larger than the channel bandwidth
+$\Delta \nu$ (both measured in MHz). Smearing can be disabled using the {\tt
+-nosmear} option. Bit-format and byte-swapping options are identical
+to those described for the {\tt filterbank} program in the previous
+section. The starting seed of the random number generator defaults to
+a number obtained by starting with the number of seconds since midnight
+and calling the random number generator that many times. This can be 
+overridden by specifying a seed using the {\tt -seed} option. 
+
+\section{Looking at headers using {\tt header}}
+\label{headers}
+\index{Programs!{\tt header}}
+The {\tt header} program allows humans easy access to the raw data
+file, or the binary header string in the filterbank data format.  
+As an example of the full
+output, here is the header of our PSPM test data:
+\begin{verbatim}
+% header B0823+26.fil
+
+Data file                        : B0823+26.fil
+Header size (bytes)              : 191
+Data size (bytes)                : 2359296
+Data type                        : filterbank
+Telescope                        : Arecibo
+Datataking Machine               : PSPM
+Frequency of channel 1 (MHz)     : 433.968000
+Channel bandwidth      (MHz)     : -0.062000
+Number of channels               : 128
+Time stamp of first sample (MJD) : 51740.882986111108
+Gregorian date (YYYY/MM/DD)      : 2000/07/15
+Sample time (us)                 : 80.00000
+Number of samples                : 36864
+Observation length (seconds)     : 2.949120
+Number of bits per sample        : 4
+Number of IFs                    : 1
+\end{verbatim}
+alternatively, {\tt header} can be used with one or more of the
+above command-line options to return just the value of the
+parameter of interest (this is particularly useful when 
+getting values from within scripts without having to parse
+the standard output). Currently available options are:
+\begin{verbatim}
+-telescope  - return telescope name
+-machine    - return datataking machine name
+-fch1       - return frequency of channel 1 in MHz
+-foff       - return channel bandwidth in MHz
+-nchans     - return number of channels
+-tstart     - return time stamp of first sample (MJD)
+-tsamp      - return sample time (us)
+-nbits      - return number of bits per sample
+-nifs       - return number of IF channels
+-headersize - return header size in bytes
+-datasize   - return data size in bytes if known
+-nsamples   - return number of samples if known
+-tobs       - return length of observation if known (s)
+\end{verbatim}
+It should be noted that {\bf headersize}, {\bf datasize}, {\bf
+nsamples} and {\bf tobs} are not header variables {\it per se};
+they are derived by the program, based upon the file size and the real
+header variables.
+
+\clearpage
+\section{Looking at data using {\tt bandpass}, {\tt reader} and {\tt pgplotter}}
+\index{Programs!{\tt bandpass}}
+\label{looking}
+The {\tt bandpass} program is a simple utility to read incoming
+data and output a time-averaged bandpass:
+\input{bandpass.help}
+In its simplest form, {\tt bandpass} averages over the entire
+data file. The data for Fig.~\ref{0823band} were obtained using:
+\begin{verbatim}
+% filterbank B0823+26.pspm | bandpass > bandpass.ascii
+\end{verbatim}
+\begin{figure}[hbt]
+\setlength{\unitlength}{1in}
+\begin{picture}(0,2.5)
+\put(1.2,3.2){\special{psfile=0823band.ps hscale=40 vscale=40 angle=270}}
+\end{picture}
+\caption{\sl Output data from {\tt bandpass} for the test
+observation of PSR B0823+26 using the PSPM.}
+\label{0823band}
+\end{figure}
+The ASCII data is written in a simple format with one line
+for each frequency channel: \verb+frequency if1 if2...+ for
+up to {\bf nifs} seperate IFs. The {\tt -d} and {\tt -t} 
+options allow averaging and output of the bandpass for a
+given number of dumps, or seconds. Each dump is encapsulated
+within \verb+#START+ and \verb+#STOP+ separators:
+\begin{verbatim}
+#START
+freq(1)      if(1) .... if(nifs)
+ ...           .    ..    ...
+freq(nchans) if(1) .... if(nifs)
+#STOP
+\end{verbatim}
+where the \verb+freq(1)+ is the sky frequency of channel 1 in MHz and
+so on for all {\bf nchans} channels. Although plotting is left up to
+the users discretion in general, SIGPROC provides a little PGPLOT
+utility {\tt pgplotter} which plots data streams passed in this
+format. For example, try
+\begin{verbatim}
+% filterbank B0823+26.pspm | bandpass | pgplotter
+\end{verbatim}
+\index{Programs!{\tt pgplotter}}
+
+Another useful program is {\tt reader} which will
+print out filterbank-format data as an ASCII stream to the 
+standard output. 
+\input{reader.help}
+In the general case, a filterbank file with 
+{\bf nchans} channels and {\bf nifs} IFs, output is of the form:
+\begin{verbatim}
+% reader filterbankfile
+
+time(1) if(1)c(1) if(1)c(2) .... if(1)c(nchans) ...... if(nifs)c(nchans)
+time(2) if(1)c(1) if(1)c(2) .... if(1)c(nchans) ...... if(nifs)c(nchans)
+time(3) if(1)c(1) if(1)c(2) .... if(1)c(nchans) ...... if(nifs)c(nchans)
+\end{verbatim}
+the default case is to print out all IF and frequency channels.
+The output can be tailored by the {\tt -i} and {\tt -c} options
+to get just specific channels of interest. For example:
+\begin{verbatim}
+% filterbank B0823+26.pspm | reader -c 1 -c 2 -c 3 -c 4 | head
+
+0.000000 5.000000 5.000000 6.000000 5.000000 
+0.000080 7.000000 5.000000 7.000000 6.000000 
+0.000160 7.000000 5.000000 6.000000 6.000000 
+0.000240 5.000000 5.000000 5.000000 7.000000 
+0.000320 5.000000 4.000000 5.000000 6.000000 
+0.000400 5.000000 4.000000 5.000000 6.000000 
+0.000480 5.000000 5.000000 5.000000 6.000000 
+0.000560 5.000000 5.000000 6.000000 5.000000 
+0.000640 6.000000 4.000000 5.000000 7.000000 
+0.000720 6.000000 6.000000 6.000000 5.000000 
+\end{verbatim}
+shows just the first four frequency channels of the PSPM data
+as a function of time. The {\tt -numerate} switch will
+change this time stamp to an integer counter. Time or
+integer counters can be turned off completely via the
+{\tt -noindex} option. The {\tt -stream} option will,
+\index{Data formats!{\tt -stream}}
+as in the case of the continuous {\tt bandpass} output
+above, output a stream of numbers encapsulated by
+\verb+#START+ and \verb+#STOP+ separators. As before, this
+format may be passed to {\tt pgplotter} for plotting.
+\index{Programs!{\tt reader}}
+
+\section{Data reduction using {\tt decimate} and {\tt dedisperse}}
+\label{reduction}
+\index{Programs!{\tt decimate}}
+
+Adding of adjacent time and/or frequency channels 
+together to reduce the original resolution and size of the original
+data file is possible using the {\tt decimate} program:
+\input{decimate.help}
+Output data from {\tt decimate} is in standard filterbank format
+so that it can be easily read in by other SIGPROC programs.
+To get ASCII data, use the {\tt reader} program (see \S \ref{looking}).
+The following example adds all the frequency channels together,
+and every 32 time samples, to create the time series shown in
+Fig.~\ref{0823time}.
+\begin{verbatim}
+% filterbank B0823+26.pspm | decimate -t 32 -n 32 | reader > timeseries.ascii
+\end{verbatim}
+\begin{figure}[hbt]
+\setlength{\unitlength}{1in}
+\begin{picture}(0,2.5)
+\put(1.2,3.2){\special{psfile=0823time.ps hscale=40 vscale=40 angle=270}}
+\end{picture}
+\caption{\sl Output time series from {\tt decimate} for the test
+observation of PSR B0823+26 using the PSPM.}
+\label{0823time}
+\end{figure}
+Note that we have used the {\tt -n} option to force the output
+number of bits per sample to be 32. By default {\tt decimate}
+outputs data with the same number of bits as the incoming filterbank
+data. In this case, where there are strong single pulses,
+adding all the channels together would result in a signal-to-noise
+loss when trying to write the output time series with 4-bit precision.
+
+While {\tt decimate} is a good means for getting time series of weakly
+dispersed pulsars, it does not take into account the effects of
+dispersion by the interstellar medium where pulses emitted at higher
+radio frequencies travel faster through the interstellar medium,
+arriving earlier than those emitted at lower frequencies.  The time
+delay $\Delta t$ between a high frequency $\nu_{\rm hi}$ relative to a
+lower on $\nu_{\rm lo}$ is \index{dedispersion}
+\begin{displaymath}
+ \Delta t = 4.15 \times 10^6 \, \, {\rm ms} \, \,
+ \times (\nu_{\rm lo}^{-2} - \nu_{\rm hi}^{-2})  
+ \times {\rm DM},
+\end{displaymath}
+where the frequencies are in MHz and the dispersion measure 
+${\rm DM} = \int_{\rm 0}^{d} \,\, n_{\rm e} \,\, dl$
+(cm$^{-3}$ pc) is the integrated
+column density of free electrons along the line of sight.
+Here, $d$ is the distance to the pulsar (pc) and $n_{\rm e}$ is the
+free electron density (cm$^{-3}$). For distant high-DM pulsars,
+especially those with short periods, dispersion needs
+to be accounted for to retain full time resolution.  The {\tt
+dedisperse} program does this by adding frequency channels with the
+appropriate time delays given a DM value:
+\input{dedisperse.help}
+The dedispersion algorithm reads in a block of data and
+gets the appropriately delayed sample by looking forward in
+the array. This there requires that the frequency channels
+are passed down in descending frequency order and {\tt dedisperse}
+will complain if this condition is not met!
+\index{Programs!{\tt dedisperse}}
+
+In the example data for the 1.5578-ms pulsar B1937+21 shown in 
+Fig.~\ref{1937giant}, the left panel was produced via:
+\begin{verbatim}
+% filterbank B1937+21.539 | dedisperse -d 71.04 | reader > timeseries.ascii
+\end{verbatim}
+\begin{figure}[hbt]
+\setlength{\unitlength}{1in}
+\begin{picture}(0,2)
+\put(-0.1,2.4){\special{psfile=1937whole.ps hscale=33 vscale=33 angle=270}}
+\put(+3.7,2.2){\special{psfile=1937bands.ps hscale=28 vscale=28 angle=270}}
+\end{picture}
+\caption{\sl A WAPP observation of the millisecond pulsar B1937+21
+showing a single ``giant''pulse. Left: the dedispersed time series over the
+entire 100-MHz band. Right: the pulse seen in four dedispersed 25-MHz 
+subbands. The length of the time series segment is $\sim0.26$ s. 
+The sampling time is 63.32 $\mu$s.}
+\label{1937giant}
+\end{figure}
+This single pulse is shown in four dedispersed frequency subbands in
+the right-hand panel of Fig.~\ref{1937giant}. These were obtained
+by adding a {\tt -b 4} option into the dedisperse
+command-line in the above pipeline. In this case, dedispersion is
+carried out relative to the frequency of the first summed channel in
+each of the bands.
+
+\section{Getting pulse profiles using {\tt fold} and {\tt profile}}
+\label{folding}
+\index{Programs!{\tt fold}}
+
+Obtaining integrated pulse profiles, and single pulses, from your
+data files is possible using the {\tt fold} program which allows you
+to fold filterbank data modulo a pulse period to produce
+pulse profiles. In addition, there is now a basic ASCII viewing
+program {\tt profile} which displays profiles from {\tt fold} to the
+standard output. {\tt fold} accepts
+any number of IF and/or frequency channels, producing
+{\bf nifs} $\times$ {\bf nchans} sets of profiles. The folding
+algorithm used is a simple one: for each time sample, compute
+the phase based on a, possibly time-dependent, value of the
+pulse period and add that sample to the nearest phase bin of
+the appropriate profile. The synopsis of {\tt fold} is summarized below:
+\input{fold.help}
+
+\subsection*{Folding data at a fixed period} Consider folding a series containing
+our fake $\sim\pi$-ms pulsar:
+\begin{verbatim}
+% fake -period 3.14159 -nchans 1 -nbits 32 | fold -p 3.14159 > profile.ascii
+\end{verbatim}
+Note that the default profile output is in ASCII format. 
+\index{Data formats!{\tt -ascii}}
+This may be substituted by EPN or PSRFITS using the {\tt -epn} or
+{\tt -psrfits} options on the command line. The
+format of this output is a line for each bin:
+\begin{verbatim}
+bin_number if(1)c(1) if(1)c(2) .... if(1)c(nchans) ...... if(nifs)c(nchans)
+\end{verbatim}
+In order to avoid overflows during folding, {\tt fold} will by default
+subtract an offset from each folded sample calculated as the median
+value of a given data block. To turn off this feature, use the {\tt
+-nobaseline} option.  The default number of bins is given by the next
+largest integer value to the ratio of the folding period divided by
+the sampling time. This is, however, completely flexible. A lower
+number of bins would be desirable, for example, when folding data for
+a faint pulsar or candidate.  {\tt fold} will permit oversampling
+\index{oversampling}
+which can pay dividends for high signal-to-noise observations of
+short-period pulsars.
+
+A useful feature of {\tt fold} for weak pulsars, and those for which the 
+pulse happens to lie on the edge of the window is the {\tt -m} option
+which allows the display of multiple pulses. For example, try:
+\begin{verbatim}
+% fake -period 3.14159 -nchans 1 -nbits 32 | fold -p 3.14159 -m 2 | pgplotter
+\end{verbatim}
+
+\subsection*{Folding data using polynomial coefficients} For practical
+applications, the apparent pulse period is time-variable during
+the integration due to Doppler shifts resulting from the Earth's
+motion and (for binary pulsars) from Doppler shifts induced by
+orbiting companions. To account for these the folding period 
+needs to be updated during the integration. The {\sc TEMPO}
+\index{Software Packages!{\sc TEMPO}}
+timing package can be used to create a set of polynomial coefficients
+to predict the change in period with time and {\tt fold} can
+read these ``polyco'' files from {\sc TEMPO} for these
+purposes. A script to run {\sc TEMPO} to produce these files
+is described in \S \ref{polyco}.
+To tell {\tt fold} to read a polyco file, supply
+the name of the filename with the {\tt -p} option.
+\begin{verbatim}
+% filterbank B0823+26.pspm | fold -p polyco.dat -n 128 -epn > B0823+26.epn
+\end{verbatim}
+will fold each channel of the sample PSPM data for PSR B0823+26 to
+produce 128-bin profiles written to the file {\tt B0823+26.epn} in
+EPN format. If no {\tt -p} option is given to {\tt fold} the program
+will look for the file {\tt polyco.dat} as a matter of course so
+that, in the above case, it was not strictly necessary to specify
+the name of the polyco file. This is assumed in the following pipeline
+where the data are first dedispersed at the reference DM value of
+19.4 cm$^{-3}$ pc before being passed to {\tt fold}:
+\begin{verbatim}
+% filterbank B0823+26.pspm | dedisperse -d 19.4 -epn | fold > B0823+26.epn
+\end{verbatim}
+\index{polyco.dat}
+
+\subsection*{Getting sub-integrations} In the above examples,
+{\tt fold} produces one profile for each of {\bf nchans} $\times$ {\bf nifs}
+incoming data streams which corresponds to folding over the entire data 
+set. It is often desirable to look at sub-profiles dumped at regular
+intervals during the observation --- the {\tt -d} (dump) option allows you 
+to do this. Specifying a floating-point number, say $f$ seconds, in this 
+mode will output the accumulated profile every $f$ seconds.
+The following example on
+our fake millisecond pulsar data would dump a subintegration exactly
+every 15 seconds:
+\begin{verbatim}
+% fold fakepulsar.fil -d 15.0 -p 3.1415927 -epn > fakeprofiles.epn
+\end{verbatim}
+Supplying an integer argument with the {\tt -d} option, 
+say $n$, the profiles are dumped every $n$ pulses. So {\tt -d 15}
+in the above example
+results in a profile being dumped every 15 periods (about 47 ms).
+
+\subsection*{Single pulses and windowing profiles} Individual pulses
+\index{single pulses}
+can be obtained by specifying {\tt -d 1} to the {\tt fold}
+command line. The following example demonstrates this for the
+PSR B0823+26 PSPM data:
+\begin{verbatim}
+% filterbank B0823+26.pspm | dedisperse -d 19.4 | fold -d 1 -epn > B0823+26.epn
+\end{verbatim}
+The resulting EPN file contains a record for each single pulse.
+For this short data set, this amounts to just
+five single pulses shown in Fig.~\ref{0823sps}.
+\begin{figure}[hbt]
+\setlength{\unitlength}{1in}
+\begin{picture}(0,1.5)
+\put(-0.25,2){\special{psfile=nowindow.ps hscale=67 vscale=67 angle=270}}
+\put(-0.25,1){\special{psfile=window.ps   hscale=67 vscale=67 angle=270}}
+\end{picture}
+\caption{\sl Top: dedispersed single pulses for
+the PSPM test observation of PSR B0823+26. Bottom: the same data
+set after applying a phase window of 0.825 to 0.925 (see text)}
+\label{0823sps}
+\end{figure}
+
+For single-pulse applications, where the off-pulse region of the
+\index{pulse windowing}
+profile is usually not interesting, it is desirable to be able to set
+a window around the pulse. The {\tt fold} program allows setting of
+windows via the {\tt -l} and/or {\tt -r} command-line options which
+specify the left and right-hand phase values of the windows. 
+Phase values should be specified in turns ranging between 0.0
+and 1.0. For example, the pulses in the lower panel of Fig.~\ref{0823sps}
+were obtained using {\tt fold -l 0.825 -r 0.925} for the PSR B0823+26
+dataset. As before for the full profile, unless specified otherwise,
+{\tt fold} will choose the number of bins based on the size of
+the window divided by the sampling interval. 
+
+All of the above examples have used a seperate plotting program
+to produce the profiles for the figures. Since each user tends
+to have his/her favourite method for producing such plots, no
+facility exists within SIGPROC to to this. To get a quick look
+at profiles, there is now a program {\tt profile} which will
+display ASCII representations to the standard output. The program
+has two modes of operation: 2-D profile ``plots'' or 1-D grey-scale
+representations. To get a 2-D profile - the output from fold needs
+to come in the standard ASCII format. For example, let's create
+and fold data from a 1-s pulsar:
+\begin{verbatim}
+fake -period 1000.0 -nchans 1 | fold -p 1000.0 | profile
+\end{verbatim}
+The output from {\tt profile} would then be a mock 2-D profile
+and will look something like this:
+\begin{verbatim}
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ##                               
+                               ###                              
+                              ####                              
+                              ####                              
+                              ####                              
+   #                          ####                              
+####   #  # ##  #    #   # ## ##### #  ##  # # #     #### ### ##
+################################################################
+\end{verbatim}
+
+To get a 1-D pseudo ``grey-scale'' plot, the profiles need
+to be output from fold using the {\tt stream} option. This is
+particularly useful if you wish to display profiles as sub-integrations
+or folded frequency channels. For example, to display additions of
+every 2 pulses from our 1-s fake pulsar we would do the following:
+\begin{verbatim}
+fake -period 1000.0 -nchans 1 | fold -p 1000.0 -stream -d 2 -nobaseline| profile
+\end{verbatim}
+to produce the following output showing subintegration index and
+elapsed time to the left of each profile:
+\begin{verbatim}
+|0001|00:00:00|                              ,$#,                              |
+|0002|00:00:02|                               $#,                              |
+|0003|00:00:04|                              ,#$,                              |
+|0004|00:00:07|                              ,@#:                              |
+|0005|00:00:09|                               ##,                              |
+|0006|00:00:09|                               $#,                              |
+\end{verbatim}
+Where the {\tt -nobaseline} option during folding has been used to 
+preserve the original levels which would otherwise get changed each
+subintegration. Note also that the last ``subintegration'' in this
+plot is in fact the integrated profile which is dumped by {\tt fold}
+as a matter of course. Frequency channel plots can be produced in a 
+similar way. For example, try creating a 100-ms pulsar with 32 channels
+and a DM of 500 and piping this through {\tt fold} and {\tt profile}.
+\begin{verbatim}
+fake ..... | fold -p 100.0 -stream -nobaseline | profile -frequency
+\end{verbatim}
+where the {\tt -frequency} option will be required to label
+the frequency channels correctly.
+
+\section{Searching for pulsars using {\tt seek}}
+
+The Fortran-77 program {\tt seek} performs a periodicity and single-pulse
+analysis on dedispersed time series data. Since its inception in 1997,
+{\tt seek} has been used to find over 60 pulsars in various parts of
+our Galaxy and its globular cluster system. Documentation on running
+{\tt seek} and related programs which are contained in within SIGPROC
+can be found on-line at \verb+http://sigproc.sourceforge.net/seek+.
+
+
+%\section{Putting it all together: the {\tt quicklook} data reduction script}
+%\label{quicklook}
+%\index{Programs!{\tt quicklook}}
+%As an application of most of the programs discussed in the preceding
+%sections, we conclude with the {\tt quicklook} data analysis script
+%which is designed to dedisperse and fold raw pulsar machine data taken
+%on a known pulsar and produce a diagnostic output plot summarizing
+%various aspects of the data:
+%\input{quicklook.help}
+%Most of the above command-line options should be obvious given
+%the above explanation and the discussions of various aspects
+%of the preceding programs. 
+%{\tt quicklook} will try to construct
+%a source name based on the name of the raw datafile and generate
+%a polyco file. If it fails to do this, use the {\tt -psr} option
+%to specify the name of the pulsar required. The {\tt -mypolyco}
+%option will use a pre-existing {\tt polyco.dat} file to calculate
+%the period and get the dispersion measure. Alternatively it is
+%possible to process the data using a fixed period and dispersion
+%measure with the {\tt -period} and {\tt -dm} options. 
+%As an example, the command:
+%\begin{verbatim}
+% quicklook J1713+0747.744 -nbands 64 -nsints 32 -read 5
+%\end{verbatim}
+%reduces the first 5 seconds of a WAPP observation of the 
+%millisecond pulsar J1713+0747 producing the plot shown in Fig.~\ref{1713}.
+%N.B.~Use of this script assumes that you have the {\tt quickplot}
+%program compiled (see \S \ref{install} for further details).
+
+%\clearpage
+%\begin{figure}[hbt]
+%\setlength{\unitlength}{1in}
+%\begin{picture}(0,6.8)
+%\put(-0.1,-0.6){\special{psfile=J1713+0747.744.ps hscale=80 vscale=80}}
+%\end{picture}
+%\label{1713}
+%\caption{\sl Sample output from the {\tt quicklook} script for the
+%millisecond pulsar J1713+0747 observed by the WAPP. Top panel shows a
+%1024-point average of the dedispersed time series which has been
+%normalised (as far as possible) so that it has a zero mean and unit
+%rms. Below this are two panels showing the dedispersed frequency
+%sub-bands (which clearly show the dispersion of the pulsar) and time
+%sub-integrations as a function of pulse phase. The bottom plot
+%is the integrated pulse profile. The signal-to-noise rato of this
+%profile is reported at the top of the plot along with essential header
+%information.}
+%\end{figure}
+%\clearpage
+
+\section{Version history and plans for future work}
+\label{past/future}
+The file {\tt version.history} summarizes the work done
+on SIGPROC to date:
+\input{version.history}
+
+\noindent
+All suggestions for improvements, including (best of all!)
+offers to contribute write and/or improved routines for future 
+releases of the package are most welcome via email:
+{\tt Duncan.Lorimer@mail.wvu.edu}
+
+\section*{Acknowledgements}
+
+In putting together the SIGPROC package, I had the good fortune to
+work with a number of people who kindly donated existing routines or
+offered to write new ones.  Andy Dowd wrote the original version of
+what became the {\tt wapp2fb} routine for converting raw WAPP
+correlation values into spectra. Jeff Hagen also contributed to this
+effort and wrote the routines used for reading WAPP headers and byte
+swapping. Ingrid Stairs provided the \verb+pspm_decode+ routine --- a
+C-version of an original Fortran--77 subroutine written by Alex
+Wolsczcan. Ingrid also debugged {\tt dedisperse} so that it can handle
+WAPP timing-mode data.  Mike Keith and Ralph Eatough added the binary
+options to fake. Ralph also provided a wrapper for FFTW in seek.
+Ramach Ramachandran kindly donated his tree dedispersion code 
+implemented in the {\tt tree} program. David Barnes rewrote
+two routines now implemented in {\tt seek}: one to perform more 
+general harmonic summing and another to resample long time series
+without overflow problems. Use was also made of some Numerical Recipes
+routines for FFTs and random number generation in {\tt fake}. Finally,
+many thanks to Jim Cordes, Maura Mclaughlin, Ramesh Bhat, Ingrid
+Stairs, Michael Kramer, Simon Johnston and Joanna Rankin
+for their help in putting together and debugging some of the
+routines, and their suggestions for functionality.
+
+\clearpage
+\appendix
+\section{Monitoring programs using the Tk {\tt monitor} widget}
+\label{monitoring}
+\index{Software Packages!Tcl/Tk}
+\index{monitoring programs}
+The SIGPROC programs run without any messages to the standard
+output. To keep track of their progress, a {\tt wish} script:
+{\tt monitor} can run in the background. 
+
+To start the {\tt monitor} script running, go to the directory
+where you are processing your files and type {\tt monitor}.
+For example, starting a filterbank command:
+\begin{verbatim}
+% filterbank J1713+0747.744 -sumifs > J1713+0747.744.fil
+\end{verbatim}
+will cause the following status bar to appear in the upper left-hand
+corner of the screen:
+
+\begin{figure}[hbt]
+\setlength{\unitlength}{1in}
+\begin{picture}(0,0.5)
+\put(0.4,-3.6){\special{psfile=monitor.ps hscale=70 vscale=70}}
+\end{picture}
+\end{figure}
+
+This counter will tick away updating as the file gets updated
+until the program is finished. If you have several jobs running,
+in a pipeline for example, several status bars will appear
+until their respective job is completed. To stop the monitor
+script at any time, type:
+\begin{verbatim}
+% monitor off
+\end{verbatim}
+Once the program
+is finished what it is doing, the monitor will go to sleep
+and wait for another SIGPROC program to start.
+
+Note that you will confuse the script if you have two
+programs running from the same directory (for example
+two {\tt filterbank} processes running on different
+raw datafiles) since the {\tt programname.monitor} file
+will get updated by both programs. For such applications,
+run the programs from separate directories.
+
+The {\tt monitor} script polls programs by looking at 
+logfiles which are written whenever the file {\tt monitor.running}
+exists in the working directory. If you prefer not to
+use {\tt monitor} but would like to look at these logfiles,
+simply create the file {\tt monitor.running} in your area
+\begin{verbatim}
+% touch monitor.running
+\end{verbatim}
+then run a SIGPROC program and {\tt tail} the resulting
+{\tt programname.monitor} file to keep track of what is
+going on. For example, while {\tt dedisperse} is running
+in a pipeline you would see the following:
+\begin{verbatim}
+% tail dedisperse.monitor
+input stdin status time:0.1s:DM:35.0pc/cc output stdout
+input stdin status time:0.2s:DM:35.0pc/cc output stdout
+\end{verbatim}
+To turn off this logging mode, simply delete the 
+{\tt monitor.running} file.
+
+\section{Running {\sc TEMPO} to generate polynomial coefficients}
+\label{polyco}
+\index{Software Packages!{\sc TEMPO}}
+\index{polyco.dat}
+If you have {\tt expect} in your path, you will also be able
+to take advantage of {\tt polyco} a simple script designed
+to take the pain out of running {\sc TEMPO} to generate 
+files containing polynomial coefficients for use by {\tt fold}.
+The synopsis of {\tt polyco} is as follows:
+\input{polyco.help}
+It is assumed that you have {\sc TEMPO} installed on your
+computer so that the {\tt tempo} executable file is in
+your path, and the {\tt TEMPO} environment variable set.
+At Arecibo, a solaris version of {\sc TEMPO} can be found
+in {\tt /home/pulsar/bin/tempo} and the {\tt TEMPO} 
+environment variable should be set to {\tt /home/pulsar/tempo11}.
+
+Running {\tt polyco} is then a matter of giving a pulsar name
+from the list of ephemeredes contained in \verb+$TEMPO/tztot.dat+
+and the start and stop MJD ranges over which you wish the 
+coefficients to apply. The default is to generate coefficients
+for use at the time you run {\sc TEMPO}.
+
+\section{The EPN data format}
+\label{epn}
+\index{Data formats!EPN}
+The {\bf E}uropean {\bf P}ulsar {\bf N}etwork (``{\bf EPN}'') is an
+association of European astrophysical research institutes that
+co--operate in the subject of pulsar research. The EPN format
+was developed for the exchange of pulse profiles between different
+groups of individuals to permit a free interchange of data.
+The following text was taken from a paper which originally
+appeared in Astronomy \& Astrophysics Supplement Series  (1998)
+{\bf 128} 541--544 and is included here for quick reference.
+
+Each EPN file consists of one or more blocks.  The basic structure
+of an EPN block is shown in Fig.~\ref{epnblock}.  
+Each file has a common fixed
+length {\it header} followed by a number of individual {\it data
+streams} of equal length. The header describes the data, containing
+information on the pulsar itself, the observing system used to make
+the observation as well as some free-form information about the
+processing history of the data. The onus is on the site--specific
+conversion process to ensure correct conversion to the standardized
+entries and reference to common catalogues (e.g.~the Taylor et al.~1993
+catalogue of pulsar
+parameters).  The full list of header variables is given in Tables 
+\ref{epnheader} and \ref{epnsubheader}.
+
+\begin{figure}[hbt]
+\small
+\begin{center}
+\begin{minipage}{3.8cm}
+\fbox{
+ \parbox{3.5cm}{\begin{center} {\bf  Header } \\  480 Characters \end{center}} 
+      }
+\fbox{
+ \begin{minipage}{3.5cm}
+  \fbox{ \parbox{3.1cm}{\begin{center} {\bf Sub-Header } \\ 160 Characters \end{center} }} 
+  \fbox{ \parbox{2.96cm}{\begin{center}  {\bf Data } \\   \end{center} } }
+ \end{minipage}
+       }
+\fbox{
+ \begin{minipage}{3.5cm}
+  \fbox{ \parbox{3.1cm}{\begin{center} {\bf Sub-Header } \\ 160 Characters \end{center} }} 
+  \fbox{ \parbox{2.96cm}{\begin{center}  {\bf Data } \\   \end{center} } }
+ \end{minipage}
+       }
+\fbox{
+ \begin{minipage}{3.5cm}
+  \fbox{ \parbox{3.1cm}{\begin{center} {\bf Sub-Header } \\ 160 Characters \end{center} }} 
+  \fbox{ \parbox{2.96cm}{\begin{center}  {\bf Data } \\  \end{center} } }
+ \end{minipage}
+       } 
+\fbox{
+ \begin{minipage}{3.5cm}
+  \fbox{ \parbox{3.1cm}{\begin{center} {\bf etc. ...}  \end{center} }} 
+ \end{minipage}
+} 
+\end{minipage}
+\end{center}
+\caption{\sl Schematic representation of an EPN data block.}
+\label{epnblock}
+\end{figure}
+
+The data streams themselves may be outputs of different
+polarization channels, or individual channels (bands) of a filterbank
+or a combination thereof. In total, there may be $N_{\rm freq}$ data
+streams of i.e. different frequencies for each polarization.  Each
+data stream starts with a small, fixed length sub-header in front of
+the actual data values.  The number of data streams and their length may
+vary between different EPN files, but is constant within each file.  A
+character field and an ordinal number is provided for each stream for
+its identification. 
+ 
+\begin{table}
+\begin{center}
+\footnotesize
+\begin{tabular}{|rcccp{8cm}|}
+\hline
+Position & Name & Format & Unit & Comment \\
+\hline 
+\hline
+1   &  version &  A8 & &  EPN + version of format (presently EPN05.00)\\
+9   &  counter &  I4 & &  No. of records contained in this data block\\
+13  &  history & A68  &  &comments and history of the data \\
+\hline
+81    & jname &  A12 & &  pulsar jname \\
+93   & name & A12 &  & common name              \\
+105   & $P_{\rm bar}$ &  F16.12 & s & current barycentric period\\
+121    & DM      &  F8.3   & pc cm$^{-3}$& dispersion measure\\
+129   & RM      &  F10.3  & rad m$^{-2}$ & rotation measure \\
+139  & CATREF &  A6   & & pulsar parameter catalogue in use \\
+145   & BIBREF    &  A8     & & bibliographical reference key (or observer's name) \\
+153   &         & 8X   &  &  blank space free for future expansion \\
+\hline
+161   & $\alpha_{2000}$  & I2,I2,F6.3 & hhmmss& right ascension of source \\
+171   & $\delta_{2000}$ & I3,I2,F6.3 & ddmmss& declination of source\\
+182  & telname   & A8  & & name of the observing telescope (site) \\
+190  & EPOCH  & F10.3 & day & modified Julian date of observation \\
+200  & OPOS   & F8.3  & degrees & position angle of telescope \\
+208  & PAFLAG & A1    &  &  A = absolute polarization position angle, else undefined\\
+209  & TIMFLAG & A1   &  &  A = absolute time stamps (UTC), else undefined \\
+210 &         & 31X   &  &  blank space free for future expansion \\
+\hline
+241  & $x_{\rm tel}$& F17.5& m & topocentric X rectangular position of telescope \\
+258  & $y_{\rm tel}$& F17.5& m & topocentric Y rectangular position of telescope \\
+275  & $z_{\rm tel}$& F17.5& m & topocentric Z rectangular position of telescope \\
+292 &         & 29X   &  &  blank space free for future expansion \\
+\hline
+321  & CDATE & I2,I2,I4 & d m y & creation/modification date of the dataset \\
+329  & SCANNO & I4 &  & sequence number of the observation \\
+333  & SUBSCAN & I4 &  &sub--sequence number of the observation \\
+337  & $N_{\rm pol}$ & I2 &  & number of polarizations observed \\ 
+339  & $N_{\rm freq}$ & I4 & & number of frequency bands per polarisation \\
+343  & $N_{\rm bin}$ & I4  & & number of phase bins per frequency (1-9999) \\
+347  & $t_{\rm bin}$ & F12.6 & $\mu$s & duration (sampling interval) of a phase bin \\
+359  & $t_{\rm res}$ & F12.6 & $\mu$s & temporal resolution of the data \\
+371  & $N_{\rm int}$ & I6  & & number of integrated pulses per block of data \\
+377  & $n_{\rm cal}$ & I4 & $t_{\rm bin}$ & bin number for start of calibration signal\\
+381  & $l_{\rm cal}$ & I4 & $t_{\rm bin}$ & length of calibration signal \\
+385  & FLUXFLAG      & A1 &    & F = data are flux calibrated in mJy, else undefined \\
+386  & & 15X  & & blank space free for future expansion \\
+\hline
+401 &         & 80X   &  &  blank space free for future expansion \\
+\hline
+\end{tabular}
+\normalsize
+\caption{\sl A description of the EPN format variables.}
+\label{epnheader}
+\end{center}
+\end{table}
+
+\begin{table}
+\begin{center}
+\footnotesize
+\begin{tabular}{|rcccp{8cm}|}
+\hline
+Position & Name & Format & Unit & Comment \\
+\hline 
+\hline
+481  & IDfield &  A8 & &  type of data stream (I,Q,U,V etc.) \\
+489  & $n_{\rm band}$& I4 & &  ordinal number of current stream  \\
+493  & $n_{\rm avg}$ & I4 & & number of streams averaged into the current one \\
+497  & $ f_0$ & F12.8 &  & effective centre sky frequency of this stream\\
+509  & $ U_f$ & A8 &  & unit of $f_0$ \\
+517  & $ \Delta f $&  F12.6 &  & effective band width \\
+529  & $ U_{\Delta} $&  A8 &  & unit of $\Delta f$\\
+537  & $ t_{\rm start} $ & F17.5 & $\mu$s& time of first phase bin w.r.t. EPOCH \\
+554  &               & 7X    &        & blank space free for future expansion\\
+\hline
+561  & SCALE  & E12.6 &  & scale factor for the data\\
+573  & OFFSET & E12.6 &  & offset to be added to the data \\
+585  & RMS    & E12.6 &  & rms for this data stream\\
+597   & $P_{\rm app}$ &  F16.12 & s & apparent period at time of first phase bin\\
+613  &     &  28X    &       & blank space free for future expansion\\
+\hline
+641 & Data(1)& I4 & & scaled data for first bin \\
+$ 4 (N_{\rm bin}-1)+641$& Data($N_{\rm bin}$) & I4 &  & 
+data for last bin of stream\\
+\hline 
+$640 + N_{\rm records}*80$& & & & end of first stream \\
+\hline
+\end{tabular}
+\normalsize
+\caption{\sl The sub-header variables within an EPN file}
+\label{epnsubheader}
+\end{center}
+\end{table}
+
+\subsection*{Format Compatible Software}
+
+To incorporate the capability to read and write data in this format
+within existing analysis software, a simple routine exists which can
+read and write data in this format. In addition, we have written some
+sample programs which can plot the data and display the header
+parameters.  The software are written in 
+{\it Fortran---77}\footnote{some simple C utilities are planned for
+a future version of SIGPROC} and have
+been packaged into a single UNIX tar file which is freely available
+via the {\it Internet} from 
+\verb+http://www.jb.man.ac.uk/~drl/download/epn.tar.gz+
+
+To uncompress and extract the contents of the tar file on a UNIX
+operating system, issue the commands:
+
+\begin{verbatim}
+% gunzip epnsoft.tar.gz
+% tar xvf epnsoft.tar
+\end{verbatim}
+
+\noindent
+The present package contains some sample data and two example programs ---
+{\tt plotepn} and {\tt viewepn} which plot and view EPN files respectively.
+The ASCII file {\bf 00README} in this packages gives further details of the 
+software and how to use it.
+
+\section{Barycentre correction using {\tt barycentre}}
+
+A simple utility \verb+barycentre+ exists to convert a time
+series or filterbank file to an equivalent frame which is
+at rest with respect to the solar system barycentre.
+The synposis of the program is
+\input{barycentre.help}
+
+By default, {\tt barycentre} runs {\tt TEMPO} to create a file
+{\tt polyco.bar} which it then uses to perform the correction.
+If you would prefer to supply a file to do this, create one in
+advance, call it {\tt polyco.bar} and use the {\tt -mypolyco} option. 
+
+%\section{Searching for pulsars using SEEK}
+%
+%The SEEK package searches for radio pulsars in noisy data sets.  So
+%far SEEK has found over 30 pulsars in a
+%number of projects with different telescopes and data acquisition
+%systems.  Since SEEK now operates on SIGPROC formatted data, the
+%entire package will shortly be merged into a future SIGPROC
+%release. Full documentation on this package will then be available
+%within this manual. The key programs are:
+%
+%\bigskip
+%\noindent {\tt find} - a program to look for periodic signals in noisy
+%time series.
+%
+%\smallskip
+%\noindent {\tt best} - report the best candidates from \verb+find+'s 
+%analysis
+%
+%\smallskip
+%\noindent {\tt hunt/accn} - scripts to search data 
+%using \verb+find+ over a range of DMs and trial accelerations.
+
+%\bigskip
+%\noindent
+%SEEK is currently available on the web at
+%\verb+http://www.jb.man.ac.uk/~drl/seek+.
+
+\section*{}
+\printindex
+\addcontentsline{toc}{section}{Index}
+
+\end{document}

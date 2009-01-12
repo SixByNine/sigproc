@@ -1,0 +1,76 @@
+#!/bin/csh
+echo "Configuration script for SIGPROC makefile..."
+set osname = `printenv OSTYPE`
+if ($osname == "") then
+	echo "your OSTYPE variable is undefined..."
+	echo "edit your .cshrc file first to include the line"
+	echo ""
+	echo "setenv OSTYPE osname"
+	echo ""
+	echo "where osname should be either solaris, linux, hpux or darwin"
+	exit
+endif
+echo "Before generating makefile.$osname, please enter the full path to"
+echo "the directory where the SIGPROC executables will be placed..."
+echo "[default = $PWD] "         | awk '{printf "%s ",$0}'
+set bin_dir = $<
+if ($bin_dir == "") set bin_dir = $PWD
+set makefile = makefile.$osname
+echo "Creating $makefile ..." | awk '{printf "%s ",$0}'
+echo "# makefile.$osname - your system-specific makefile for SIGPROC" \
+		 > $makefile
+echo "BIN = $bin_dir" >> $makefile
+echo "# edit this by hand if you want to change the C compiler options" \
+		>> $makefile
+echo "CCC = gcc -O2" >> $makefile
+echo "#LINK.f = gfortran"  >> $makefile
+echo "#F77 = gfortran"  >> $makefile
+
+
+
+echo "# The following optional libraries need to be edited by hand..." \
+		>> $makefile
+set pgplotdir = `printenv PGPLOT_DIR`
+
+if($pgplotdir == "") then
+echo "#LPGPLOT = -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11" \
+                >> $makefile
+else
+echo "LPGPLOT = -L$PGPLOT_DIR -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11" \
+	        >> $makefile
+endif
+
+echo "#LFITS = -L/usr/local/src/cfitsio -lcfitsio" \
+		>> $makefile
+echo "#LFFTW = -L/usr/local/lib/ -lfftw3 -lfftw3f" \
+		>> $makefile
+if ($osname == "darwin") then
+        echo "F77_LIBS = -lSystemStubs /Developer/SDKs/MacOSX10.3.9.sdk/usr/lib/gcc/darwin/2.95.2/libcc_dynamic.a" >> $makefile
+else
+	echo "F77_LIBS = " >> $makefile
+endif
+if ($osname == "solaris") then
+	echo "DFITS = " >> $makefile
+	echo "DFFTW = " >> $makefile
+	echo "SUNLM = -lsunmath" >> $makefile
+else
+	echo "SUNLM = " >> $makefile
+        echo "ifneq (Z(origin LFITS), undefined)" | sed s/'Z'/'$'/ >> $makefile
+  	echo "	DFITS = -DPSRFITS"                   >> $makefile
+	echo "endif"                                 >> $makefile
+        echo "ifneq (Z(origin LFFTW), undefined)" | sed s/'Z'/'$'/ >> $makefile
+  	echo "	DFFTW = -DFFTW"                      >> $makefile
+  	echo "	FFTWF = fftwdata.o"                  >> $makefile
+  	echo "else"                                  >> $makefile
+  	echo "	FFTWF = fftwdummy.o"                 >> $makefile
+        echo "endif"                                 >> $makefile
+endif
+
+echo '%.o : %.f' >> $makefile
+echo '	$(F77)  -c $< -o $@' >> $makefile
+
+
+echo "DONE"
+echo "You are ready to compile the programs by typing 'make' at the prompt"
+echo "contact Duncan.Lorimer@mail.wvu.edu if you have any problems......"
+exit

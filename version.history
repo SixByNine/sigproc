@@ -1,0 +1,36 @@
+\begin{verbatim}
+1.0  - 2001/02/26 - first version developed between summer 1999 and early 2001
+1.1  - 2001/11/16 - filterbank now accepts multiple files as input
+1.2  - 2001/12/20 - filterbank can now accept Parkes/Jodrell 1-bit data
+1.3  - 2002/01/17 - merged IHS modifications to dedisperse WAPP folded data
+1.4  - 2002/01/29 - fixed bug in period calculation and check source name
+1.5  - 2002/02/07 - added -invert to filterbank and <50MHz bw to wapp2fb
+1.6  - 2002/02/19 - upgraded old BACSPIN reader to read BCPM search data
+1.7  - 2002/04/15 - added profile program, wapp2fb can now read 8-bit data
+1.8  - 2002/05/16 - fixed bug in updating polyco when folding long timeseries
+1.9  - 2002/06/25 - fold can now take constant acceleration to update period
+2.0  - 2003/04/02 - added SIGPROC binary profile format for input to dedisperse
+2.1  - 2003/06/03 - added pgplotter utility and frequency tables in headers
+2.2  - 2003/09/20 - works for new WAPP format (use 2.1 for _very_ early data)
+2.3  - 2003/10/24 - added depolyco utility for resampling time series
+2.4  - 2003/10/29 - dedisperse profiles using Ingrid/Joe's fftshift routines
+2.5  - 2004/06/21 - fix polyco bug, write PSRFITS profiles, Ingrid's WAPP mods
+2.6  - 2004/07/02 - re-introduced use of FFTW libraries
+2.7  - 2004/08/18 - updated quickplot and filterbank following first ALFA run
+2.8  - 2004/08/22 - added barycentre program and, unofficially, find and best
+2.9  - 2004/09/06 - small changes to scripts and capability to read >2 GB files
+3.0  - 2004/11/06 - fold now dumps at exact tsec intervals. *new* blanker prog
+3.1  - 2005/03/24 - fix single-pulse time stamps and correct TEMPO site in .prf
+3.2  - 2005/04/18 - find.f now changed to seek.f npts.inc changed to 2**23
+3.3  - 2005/05/02 - incorporated Ramach's implementation of the tree algorithm!
+3.4  - 2005/07/15 - filterbank can now read GMRT fast-sampled filterbank data
+3.5  - 2006/01/16 - fake does binaries (ta Mike and Ralph) and peak.f from seek
+3.6  - 2006/02/28 - added dice.c and Maura's mods to single-pulse searching
+3.7  - 2006/03/01 - added Mike's tune.c and mods from MMB search processing
+3.8  - 2007/01/26 - added FFA and improvements to sifting algorithms
+3.9  - 2007/01/31 - Ralph's fftw call from seek and Dick's bugfix to scamp2bf.c
+4.0  - 2007/02/01 - added David Barnes' resample and harmonic summing routines
+4.1  - 2007/02/?? - added Ralph's profile reconstruction S/N to seek
+4.2  - 2007/03/04 - modified EPN profile and added Matthew's giant program
+4.3  - ????/??/?? - latest and greatest test release
+\end{verbatim}

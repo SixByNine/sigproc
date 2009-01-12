@@ -1,0 +1,223 @@
+#!/bin/sh
+# the next line restarts using wish \
+exec wish "$0" "$@"
+#
+# MONITOR - a Tcl/Tk widget to check and display log output from programs
+#
+###############################################################################
+proc getfilestems {directory extension} {
+#
+#   Return a list of file stems residing in a particular directory
+#
+###############################################################################
+
+	if [catch {set rawlist [glob "$directory/*.$extension"]}] {
+	  return none
+	}
+	set endlist ""
+	foreach item $rawlist {
+		set file [file tail $item]
+		set trim [file rootname $file]
+		set endlist "$endlist $trim"
+	}
+	return $endlist
+}
+###############################################################################
+proc newframe {framename} {
+#
+#   Define and pack a new frame into the parent window using fill and expand
+#   The frame is assumed (as is standard practice) to be called .parent.frame
+#
+###############################################################################
+
+    # get the name of the parent assuming tha above convention
+    set parent [parentname $framename]
+
+    # define the new frame
+    frame $framename
+
+    # pack it into its parent using fill and expand
+    pack  $framename -fill x -expand yes -in $parent -fill both
+}
+###############################################################################
+proc packin {framename args} {
+#
+#   Define and pack into a frame any number of pre-defined widgets in $args
+#
+###############################################################################
+
+    foreach widget $args {
+	pack $widget -in $framename -fill both -expand yes -side left 
+    }
+
+}
+###############################################################################
+proc parentname {widgetname} {
+#
+#   Return the parent for a Tk widget assuming a name of the form .parent.name
+#
+###############################################################################
+
+    set parent ".[lindex [split $widgetname "."] 1]"
+
+    # check for case where the root window is the parent
+    if {$parent == $widgetname} {set parent .} 
+
+    return $parent
+}
+###############################################################################
+proc yesno {title question} {
+#
+#   Pops up a yes/no dialog box for a given question and returns 1 for a yes
+#
+###############################################################################
+
+    return [tk_dialog .really $title $question \
+	    warning 1 {No!} {Yes}]
+}
+###############################################################################
+proc center_window {w} {
+    wm withdraw $w
+    update idletasks
+    set x [expr [winfo screenwidth $w]/2 - [winfo reqwidth $w]/2 \
+	    - [winfo vrootx $w]]
+    set y [expr [winfo screenheight $w]/2 - [winfo reqheight $w]/2 \
+	    - [winfo vrooty $w]]
+    wm geom $w +$x+$y
+    wm deiconify $w
+}
+proc poll_directory {} {
+    global monitor_directory monitor_files monitor_pipe withdrawn
+
+    # abort if user has created a monitor.stop file
+    if [file exists $monitor_directory/monitor.stop] {
+	catch {exec rm -f $monitor_directory/monitor.running}
+	catch {exec rm -f $monitor_directory/monitor.stop}
+	exit
+    }
+
+    after 1000 poll_directory
+
+    # check contents of the directory
+    set monitor_files [getfilestems $monitor_directory monitor]
+
+    if {$monitor_files == "none"} {
+	foreach program [array names monitor_pipe] {
+	    close_pipe $program
+	    unset monitor_pipe($program)
+	}
+	withdraw 
+	return
+    }
+
+    # open a new frame and pipe for each program found
+    foreach program $monitor_files {
+	set frame ".$program"
+	if ![winfo exists $frame] {
+	    make_smon $program
+	    open_pipe $program
+	}
+    }
+
+    if {$withdrawn} {
+	activate
+    }
+}
+proc elapsed_time {program} {
+    global elapsed
+    if ![winfo exists ".$program"] {return}
+    after 1000 elapsed_time $program
+    incr elapsed($program)
+    ".$program.time" configure -text $elapsed($program)
+}
+proc make_smon {program} {
+    global FONT elapsed
+    set elapsed($program) 0
+    newframe ".$program"
+    label     ".$program.name" -font $FONT -text $program -fg blue 
+    label     ".$program.lab1" -font $FONT -text "input:"
+    label     ".$program.file" -font $FONT -fg red
+    label     ".$program.lab2" -font $FONT -text "status:"
+    label     ".$program.stat" -font $FONT -fg red
+    label     ".$program.lab3" -font $FONT -text "output:"
+    label     ".$program.outp" -font $FONT -fg red
+    label     ".$program.lab4" -font $FONT -text "elapsed time:"
+    label     ".$program.time" -font $FONT -fg red 
+    label     ".$program.lab5" -font $FONT -text "s"
+    packin   ".$program" ".$program.name" \
+	     ".$program.lab1" ".$program.file" \
+             ".$program.lab2" ".$program.stat" \
+	     ".$program.lab3" ".$program.outp" \
+	     ".$program.lab4" ".$program.time" ".$program.lab5"
+}
+proc kill_smon {program} {
+    foreach widget [winfo children ".$program"] {
+	catch {destroy $widget}
+    }
+    catch {destroy ".$program"}
+}
+proc open_pipe {program} {
+    global monitor_directory monitor_pipe
+    set filename "$monitor_directory/$program.monitor"
+
+    if ![file exists $filename] {
+	kill_smon $program
+	return
+    }
+    set monitor_pipe($program) [open "| tail -1f $filename" r+]
+    fileevent $monitor_pipe($program) readable [list monitor_event $program]
+}
+proc close_pipe {program} {
+    global monitor_pipe elapsed
+    catch {exec kill -9 [pid $monitor_pipe($program)]}
+    catch {close $monitor_pipe($program)}
+    #set elapsed($program) 1
+}
+proc monitor_event {program} {
+    global monitor_pipe monitor_directory elapsed
+    if [catch {gets $monitor_pipe($program) buffer}] {return}
+    if {!$elapsed($program)} {elapsed_time $program}
+    ".$program.file" configure -text [lindex $buffer 1]
+    ".$program.stat" configure -text [lindex $buffer 3]
+    ".$program.outp" configure -text [lindex $buffer 5]
+    if {[lindex $buffer 3] == "finished"} {
+	close_pipe $program
+	exec rm -f "$monitor_directory/$program.monitor"
+	after 10000 kill_smon $program
+    }
+}
+proc withdraw {} {
+    global withdrawn
+    set withdrawn 1
+    wm withdraw .
+}
+proc activate {} {
+    global withdrawn env
+    set withdrawn 0
+    wm geometry . +0+0
+    #wm title . "SIGPROC monitor for programs running in $env(PWD)"
+    wm title . "SIGPROC monitor"
+    wm deiconify .
+}
+set FONT "-adobe-helvetica-medium-r-normal-*-*-180-75-75-*-*-*-*"
+option add *background #ffe4c4
+option add *activebackground #eed5b7
+# establish the directory wher monitor will look for the .monitor files
+if ![info exists env(MONITOR)] {
+    set monitor_directory ./
+} else {
+    set monitor_directory $env(MONITOR)
+}
+withdraw
+if [file exists $monitor_directory/monitor.running] {
+	puts "a monitor program is already running from this directory..."
+	exit
+}
+if [catch {exec date > $monitor_directory/monitor.running}] {
+	puts "error occured while creating monitor.running file"
+	exit
+}
+if [file exists $monitor_directory/monitor.stop] {
+	exec rm -f $monitor_directory/monitor.stop	
+}
+poll_directory
