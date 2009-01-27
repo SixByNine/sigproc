@@ -29,8 +29,8 @@ c
       real saverms
       integer indx(npts/8),snum(npts/8)
       integer top,nsm,nf1,c(nfolds),cmin,cmax
-      parameter(top=1024,nsm=1024*8)
-c      parameter(top=4096,nsm=4096*8)
+c      parameter(top=1024,nsm=1024*8)
+      parameter(top=4096,nsm=4096*8)
       real rmea(nsm),rrms(nsm),fastmea(npts),sres,flo,fhi,fhr,smax
 c      real ralphmea(npts)   ! to  check what effect the running mean has on snr
       real*8 freq,pmax,fbest,ratio,pc(top)
@@ -357,7 +357,9 @@ c          pcand(fold,j)=1000.0/freq(tsamp,npf,fold,snum(indx(i)))
           icand(fold,j) = snum(indx(i))
           pcand(fold,j)=1000.0/freqff(tsamp,npf,foldvals(fold),
      &         snum(indx(i)))
-          snrc=samp(indx(i))/rms   + real(foldvals(fold))/rms
+c       MJK 2008 : I am not sure who added the addition below, but it
+c                  seems to be completely arbatrary.
+          snrc=samp(indx(i))/rms  !+ real(foldvals(fold))/rms
           scand(fold,j)=snrc  
           if (snrc.gt.snrbest) then
             snrbest=snrc
