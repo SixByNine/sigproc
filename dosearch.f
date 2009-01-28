@@ -283,7 +283,31 @@ c     Search for candidates over all harmonic folds
 c
       write(llog,*) 'Doing harmonic searching...'
       do fold=1,nfolds
-         rms = saverms * sqrt(real(foldvals(fold)))
+
+c Set snr threshold depending on harmonic fold to account for candidate 
+c probability density function going from Rayleigh to Gasussian, 
+c R.E. 20/07/07 
+c Moved this earlier in the file, so that we can change thresh later
+c M.Keith 2008
+        if (fold.eq.1) then
+           thresh = 5.00
+        endif
+        if (fold.eq.2) then
+           thresh = 4.75
+        endif
+        if (fold.eq.3) then
+           thresh = 4.55
+        endif
+        if (fold.eq.4) then
+           thresh = 4.37
+        endif
+        if (fold.eq.5) then
+           thresh = 4.30
+        endif
+
+
+
+ 6       rms = saverms * sqrt(real(foldvals(fold)))
 
 c
 c        for Parkes Data - call zapping algorithms if selected
@@ -305,26 +329,6 @@ c     &     call zap_mmbrd(samp,npf,nf1,tsamp*1000.0,rms,0.0,fold)
         c(fold)=0
 c        thresh = 5.0  old line 
 
-c Set snr threshold depending on harmonic fold to account for candidate 
-c probability density function going from Rayleigh to Gasussian, 
-c R.E. 20/07/07 
-
-        if (fold.eq.1) then
-           thresh = 5.00 
-        endif
-        if (fold.eq.2) then
-           thresh = 4.75 
-        endif
-        if (fold.eq.3) then
-           thresh = 4.55
-        endif
-        if (fold.eq.4) then
-           thresh = 4.37 
-        endif
-        if (fold.eq.5) then
-           thresh = 4.30
-        endif
-
  5      do i=1,npf
 c          ptmp=1.0/freq(tsamp,npf,fold,i)
           ptmp=1.0/freqff(tsamp,npf,foldvals(fold),i)
@@ -332,7 +336,16 @@ c          ptmp=1.0/freq(tsamp,npf,fold,i)
 
           snrc=power(fold,i)/rms 
 
-          if (snrc.gt.thresh.and.c(fold).lt.top) then
+          if (snrc.gt.thresh) then
+                  if (c(fold).ge.top) then
+                          write(*,*)"WARNING, number of spectral bins"//
+     &           " above SNR",thresh,"in fold",fold,
+     &           "is more than the max allowed=",top
+                          thresh = thresh + 0.2
+c                          This goto basicaly tries to restart the loop
+c                          with a bigger thresh value.
+                          goto 6
+                  endif
              c(fold)=c(fold)+1
              samp(c(fold))=power(fold,i)
              snum(c(fold))=i
