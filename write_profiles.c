@@ -106,7 +106,7 @@ void write_profiles(float *prof,int nbins, int nchan, int nifs, FILE *out)/*incl
     /* write out profiles as ASCII streams with START/STOP boundaries */
     k=0;
     for (i=0;i<nifs;i++) {
-      for (c=0;c<nchan;c++) {
+      for (c=nchan-1;c>=0;c--) {
 	fprintf(out,"#START %d %f %f\n",nbins,tsta,fch1+foff*(float)c);
 	for (m=0;m<multiple;m++) {
 	  for (b=0;b<nbins;b++) {

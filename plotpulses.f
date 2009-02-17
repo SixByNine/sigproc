@@ -4,44 +4,43 @@ c==============================================================================
       implicit none
       character*80 stem(99),line,pgdev,filename,ch*1,command*240
       integer lun,lst(99),npulses,width,idx,fft,maxp,i,narg,sym,
-     &              nsnbins,ndms,maxdmhist,mindmhist,dmplot,idm,j,
+     &	      nsnbins,ndms,maxdmhist,mindmhist,dmplot,idm,j,
      &        n_this_dm, nmax, nfiles, istat, pgband, pgcurs
       logical filexists,interactive
       parameter(maxp=10000000)
       real tsamp,dm(maxp),sn(maxp),mindm,maxdm,minsn,maxsn,mints,maxts,
      &     time(maxp),thresh,snmid(10000),maxsnhist,snhist(10000),yref,
      &     maxdmhst,dmhist(10000),dmval(10000),peakdm,width_ms,xref,
-     &           tmin,tmax,wmin,wmax,maxsnr,rndms,dmlast,dmmin,dmmax,x,y
+     &	   tmin,tmax,wmin,wmax,maxsnr,rndms,dmlast,dmmin,dmmax,x,y
 c==============================================================================
       narg=iargc()
       if (narg.lt.1) then
-         write(*,*)
-         write(*,*) 'plotpulses - PGPLOT results of single pulse search'
-         write(*,*)
+	 write(*,*)
+	 write(*,*) 'plotpulses - PGPLOT results of single pulse search'
+	 write(*,*)
          write(*,*) 'usage: plotpulses filestem1 .... filestemn',
      &              ' -s1 minsn -s2 maxsn',
-     &                     ' -w1 wmin -w2 wmax -d1 dmmin -d2 dmmax', 
-     &                    ' -t1 tmin -t2 tmax -p pgdev -d dmplot',
-     &                    ' -n nmax -i'
-         write(*,*) ''
-         write(*,*) 'minsn - minimum s/n to display (def=5)'
-         write(*,*) 'maxsn - maximum s/n to display (def=all)'
-         write(*,*) 'pgdev - pgplot device (def=/xs)'
-         write(*,*) 'wmin - minimum width (in ms) to display (def=all)'
-         write(*,*) 'wmax - maximum width (in ms) to display (def=all)'
-         write(*,*) 'dmmin - minimum DM (def=all)'
-         write(*,*) 'dmmax - maximum DM (def=all)'
+     & 		    ' -w1 wmin -w2 wmax -d1 dmmin -d2 dmmax', 
+     &		    ' -t1 tmin -t2 tmax -p pgdev -d dmplot',
+     &		    ' -n nmax -i'
+	 write(*,*) ''
+	 write(*,*) 'minsn - minimum s/n to display (def=5)'
+	 write(*,*) 'maxsn - maximum s/n to display (def=all)'
+	 write(*,*) 'pgdev - pgplot device (def=/xs)'
+	 write(*,*) 'wmin - minimum width (in ms) to display (def=all)'
+	 write(*,*) 'wmax - maximum width (in ms) to display (def=all)'
+	 write(*,*) 'dmmin - minimum DM (def=all)'
+	 write(*,*) 'dmmax - maximum DM (def=all)'
          write(*,*) 'tmin - minimum time (seconds) to display',
-     &                    ' (def=all)'
-         write(*,*) 'tmax - maximum time (seconds) to display',
+     &		    ' (def=all)'
+	 write(*,*) 'tmax - maximum time (seconds) to display',
      &              ' (def=all)'
-         write(*,*) 'dmplot - 1 to plot DM and 2 to plot DM channel'//
-     &    ' (def=1)'
+	 write(*,*) 'dmplot - 1 to plot DM and 2 to plot DM channel (def=1)'
          write(*,*) 'nmax - maximum number of events to plot per DM',
-     &                    ' channel (def=all)'
+     &		    ' channel (def=all)'
          write(*,*) 'allbeams - will do a DM-t stack for all beams',
      &              ' in the current directory'
-         write(*,*)
+	 write(*,*)
          stop
       endif
       lun=20
@@ -50,13 +49,13 @@ c==============================================================================
       dmplot=1
       idm=0
       maxsnr=10000
-      tmin=0
-      tmax=100000
+      tmin=-1e32
+      tmax=1e32
       wmin=0
       wmax=100000
       nmax=100000
-      dmmin = 0
-      dmmax = 100000
+      dmmin = -1e32
+      dmmax = 1e32
       pgdev='/xs'
       interactive=.false.
       i=1
@@ -157,6 +156,7 @@ c==============================================================================
             if (dmplot.eq.2) dm(i)=idm
             width_ms=(tsamp*2.**width)*1.e-3
             time(i)=idx*tsamp/1.0e6
+c            if (sn(i).ge.minsn) then
             if (width_ms.le.wmax.and.width_ms.ge.wmin.and.
      &           sn(i).ge.minsn.and.sn(i).le.maxsnr.
      &           and.time(i).ge.tmin.and.time(i).le.tmax.
@@ -167,12 +167,15 @@ c==============================================================================
                mindm=min(dm(i),mindm)
                maxdm=max(dm(i),maxdm)
                maxsn=max(sn(i),maxsn)
-               snhist(int(sn(i)-thresh))=snhist(int(sn(i)-thresh))+1
+               snhist(sn(i)-thresh)=snhist(sn(i)-thresh)+1
             else
                i=i-1
             endif
          enddo
  1       close(lun)
+         if (dmmin.ne.-1.0e32) mindm=dmmin
+         if (dmmax.ne.+1.0e32) maxdm=dmmax
+         write(*,*) dmmin,dmmax,mindm,maxdm
          npulses=i-1
          nsnbins = maxsn-thresh
          maxsnhist = 0
@@ -210,13 +213,14 @@ c==============================================================================
             endif
          end do
          write(line,100) npulses,maxsn,peakdm
- 100     format(i8,' events. max S/N =',f5.1,'. peak DM =',f7.1,
-     &        ' (cm\\u-3\\d pc)')
+ 100     format(i8,' events. max S/N =',f5.1,'. Peak DM =',f7.1,
+     &        ' cm\\u-3\\d pc')
 c==============================================================================
          call pgscf(2)
          call pgswin(0.0,1.0,0.0,1.0)
          filename=stem(j)
          if (nfiles.eq.1) then
+c            goto 888
             call pgtext(-0.02,1.0,'File: '//filename(1:lst(j))
      &           //' '//line)
             call pgsvp(0.06, 0.31, 0.6, 0.87)
@@ -262,6 +266,8 @@ c==============================================================================
             call pgmtxt('L', 1.8, 0.5, 0.5, 'Signal-to-noise ratio')
             call pgpt(npulses,dm,sn,20)
          endif
+ 888     if (tmin.ne.-1.0e32) mints=tmin
+         if (tmax.ne.+1.0e32) maxts=tmax
          if (dmplot.eq.1) then
             call pgswin(mints,maxts,mindm,maxdm)
          else
@@ -271,10 +277,11 @@ c==============================================================================
             call pgsvp(0.06, 0.97, 0.08, 0.52)
             call pgbox('bcnst',0.0,0,'bcnst',0.0,0)
          else
-            call pgsvp(0.0,1.0,0.0,1.0)
-            call pgbox('bc',0.0,0,'bc',0.0,0)
+            call pgsvp(0.1,1.0,0.1,0.9)
+            call pgsch(1.5)
+            call pgbox('bnstc',0.0,0,'bvcnst',0.0,0)
          endif
-         call pgsch(0.8)
+c         call pgsch(0.8)
          if (nfiles.eq.1) then
             call pgmtxt('B',2.5,0.5,0.5,'Time (s)')
             if (dmplot.eq.1) then

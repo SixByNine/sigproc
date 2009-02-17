@@ -8,7 +8,7 @@
 FILE *input;
 main(int argc, char *argv[])
 {
-  int numerate,i,j,k,l,n,m,stream,nsperdmp,nsamps,indexing,indexnow;
+  int numerate,i,j,k,l,stream,nsperdmp,nsamps,indexing,indexnow;
   int ifchan[16],frchan[4096],ifnum,chnum,ns,charout;
   char message[80],byte;
   unsigned char c;
@@ -86,15 +86,6 @@ main(int argc, char *argv[])
 	c>>=1;
       }
       ns=8;
-      break;
-    case 2:
-      fread(&c,1,1,input);
-      char2fourints(c,&j,&k,&n,&m);
-      f[0]=(float) j;
-      f[1]=(float) k;
-      f[2]=(float) n;
-      f[3]=(float) m;
-      ns=4;
       break;
     case 4:
       fread(&c,1,1,input);

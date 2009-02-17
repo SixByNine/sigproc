@@ -18,16 +18,3 @@ void char2ints (unsigned char c, int *i, int *j) /* includefile */
   *i =  c & LO4BITS;
   *j = (c & HI4BITS) >> 4;
 }
-
-#define HI2BITS 192
-#define UPMED2BITS 48
-#define LOMED2BITS 12
-#define LO2BITS 3
-
-void char2fourints (unsigned char c, int *i, int *j, int *k, int *l) /* includefile */
-{
-  *i =  c & LO2BITS;
-  *j = (c & LOMED2BITS) >> 2;
-  *k = (c & UPMED2BITS) >> 4;
-  *l = (c & HI2BITS) >> 6;
-}

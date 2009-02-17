@@ -6,7 +6,7 @@ C
 C Variables for single-pulse search
       logical append
       integer done_pulse, pulse, maxloopsize
-      parameter (maxloopsize=1048576)
+      parameter (maxloopsize=10485760)
       integer loopsize,lsd1,llog,npulses
       real realdata(maxloopsize)
       character best_pulses*132, hist_pulses*132, scrdisk*80
@@ -18,7 +18,7 @@ c  initialize parameters for single-pulse search and write headerfile
 
       dmidx=0
       if (append) dmidx=1
-      loopsize = ntim2/8
+      loopsize = ntim2/64
       scrdisk='./'
       lsd1=2
       if (dmidx.eq.0) 
@@ -95,7 +95,7 @@ c jmc 9 May 1995
 c      lun=index(scrdsk1,' ')-1        ! MBy: for accomplishing modif done in
       lun=index(scrdsk1,' ')-2         ! pulse.c of the string scrdsk1
    
-      call system('sort -n +2 '//scrdsk1(1:lun)//'/'//'best_tmp >
+      call system('sort -n -k 3 '//scrdsk1(1:lun)//'/'//'best_tmp >
      &		 '//scrdsk1(1:lun)//'/'//'best_tmp.sorted')
 
       call glun(l0)
@@ -213,28 +213,26 @@ c always save last line
         rlength = length
         power = log(rlength)/log(2.) + 0.5
 
-       isamp = tsamp/1.e-6
-       if (dmidx.eq.0) 
-     &  write (l3,100) isamp,thresh,nsmax,ncandsmax
-       do npulse = npulses,npulses-n_to_print+1,-1
-       write (l3,200) dm, best_ns(npulse),best_time(npulse),
-     & best_snr(npulse)/100.,power
-       end do
+	isamp = tsamp/1.e-6
+	if (dmidx.eq.0) 
+     .	write (l3,100) isamp,thresh,nsmax,ncandsmax
+	do npulse = npulses,npulses-n_to_print+1,-1
+	   write (l3,200) dm, best_ns(npulse),best_time(npulse),best_snr(npulse)/100.,power
+	end do
 
-        write (l4,300) dm, npulses
-        close (l3)
-        close (l4)
+	write (l4,300) dm, npulses
+	close (l3)
+	close (l4)
 
- 100    format('tsamp=',i4,' us, thresh= ',f4.1,' sigma, nsmax=',i3, 
-     &  '',' ncandsmax=',i8)
- 200    format(f9.3,3x,i2,3x,i10,3x,f7.2,3x,i2)
- 300    format(f9.3,3x,i8)
-        else 
-           n_to_print = 0
-        end if
-       call system('rm best_tmp best_tmp1 best_tmp2 best_tmp.sorted')
+ 100	format('tsamp=',i4,' us, thresh= ',f4.1,' sigma, nsmax=',i3,', ncandsmax=',i8)
+ 200	format(f9.3,3x,i2,3x,i10,3x,f7.2,3x,i2)
+ 300	format(f9.3,3x,i8)
+	else 
+	   n_to_print = 0
+	end if
+	call system('rm best_tmp best_tmp1 best_tmp2 best_tmp.sorted')
 
-       end
+  	 end
       SUBROUTINE sort3(n,arr,brr,crr)
       INTEGER n,M,NSTACK
       INTEGER arr(n),brr(n),crr(n) !changed fron REAL (MBy 01/11/01)

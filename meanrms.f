@@ -7,7 +7,7 @@ c with iterative spike rejection.
 c AGL Feb07
 c
       implicit none
-      integer n,nrej,nrejold,i,counter
+      integer n,nrej,nrejold,i
       real*4 d(*),s,ss,sum,sumsq,mean,rms
     
 
@@ -31,8 +31,6 @@ c
          sumsq=sumsq+s*s
       enddo
 
-c Counter to stop it going forever - MJK/AGL 2007
-      counter = 0
 c Store sums
       s=sum
       ss=sumsq
@@ -52,10 +50,8 @@ c Remove points from the sums which are .gt. 3*rms from mean
          endif
       enddo
 c Exit if no more points rejected.
-      if((nrej.eq.nrejold).or.(counter.gt.4)) return
+      if(nrej.eq.nrejold) return
       nrejold=nrej
-c Increment the counter each time we 'loop'
-      counter = counter + 1
       goto 10
 c
       end

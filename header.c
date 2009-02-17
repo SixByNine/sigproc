@@ -134,6 +134,9 @@ main(int argc, char *argv[])
 					puts("barycentric");
 				else 
 					puts("topocentric");
+			} else if (strings_equal(argv[i],"-radec")) {
+				printf("%02d:%02d:%s ",rah,ram,sra);
+				printf("%c%02d:%02d:%s\n",decsign,abs(ded),dem,sde);
 			} else if (strings_equal(argv[i],"-barycentric")) {
 				puti(barycentric);
 			} else if (strings_equal(argv[i],"-pulsarcentric")) {

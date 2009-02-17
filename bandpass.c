@@ -7,7 +7,7 @@ FILE *input;
 main(int argc, char *argv[])
 {
   char string[80];
-  int increment=0,i,j,k,l,ndumps,ic,x,y,z,a,cube,dumpcount;
+  int increment=0,i,j,k,l,ndumps,ic,x,y,cube,dumpcount;
   double elapsed_time;
   unsigned char c;
   unsigned short s;
@@ -59,26 +59,6 @@ main(int argc, char *argv[])
   k=l=0;
   while (!feof(input)) {
     switch (nbits) {
-    case 1:
-      fread(&c,1,1,input);
-      for (j=0;j<8;j++){
-        f[l] = c&1;
-	if(j<7)
-	  l++;
-	c>>=1;
-      }
-      break;
-    case 2:
-      fread(&c,1,1,input);
-      char2fourints(c,&x,&y,&z,&a);
-      f[l]=(float) x;
-      l++;
-      f[l]=(float) y;
-      l++;
-      f[l]=(float) z;
-      l++;
-      f[l]=(float) a;
-      break;      
     case 4:
       fread(&c,1,1,input);
       char2ints(c,&x,&y);
@@ -121,7 +101,6 @@ main(int argc, char *argv[])
 	  }
 	  printf("\n");
 	}
-	if(cube) printf("\n");
 	if (!cube) puts("#STOP");
 	k=0;
       }

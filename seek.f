@@ -24,6 +24,8 @@ c     06/04/05 - (dunc) added -mmzap option for Methanol multibeam survey
 c     07/01/26 - (dunc) added Ralph Eatough's fftw wrapper using -fftw option
 c     07/02/01 - (dunc) added Ralph Eatough's profile recon mods using -recon
 c     07/02/22 - (dunc) added header output to .prd file via -head option
+c     07/06/13 - (dunc) added -fftdump option to write out .fft files
+c     07/03/13 - (dunc) can now read PRESTO .dat/inf time series format
 c
 c=============================================================================
       implicit none
@@ -51,6 +53,7 @@ c=============================================================================
       acsearch=accn.ne.0.0.or.adot.ne.0.0
       tanalyse=(index(filename,'.ser').gt.0.0)
      &     .or.(index(filename,'.tim').gt.0.0)
+     &     .or.(index(filename,'.dat').gt.0.0)
      &     .or.(index(filename,'.dis').gt.0.0)
       if (rspc) tanalyse=.false.
       if (tanalyse) then                     ! (time series analysis only)
@@ -59,6 +62,10 @@ c=============================================================================
          	call fftwdata(llog)          ! fft the data using FFTW
 	 else 
          	call fftdata(llog)           ! fft the data using SINGLETON
+         endif
+         if (dumpfft) then
+            call dumpdat(filename(1:index(filename,'.tim')-1)//'.fft')
+            stop
          endif
       endif                                  ! (standard analysis follows)
       call dosearch(llog,dump,rspc,oldw,pmzap,

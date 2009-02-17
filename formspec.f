@@ -19,11 +19,6 @@ c
          series(i)=0.0
       enddo
 
-c     Trying to take out the nyqyst frequency
-      series(ntim)  =0.0
-      series(ntim-1)=0.0
-
-
       npf=ntim/2
       do j=1,npf-1
         ar=series(2*j+1)

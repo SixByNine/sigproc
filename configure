@@ -23,11 +23,6 @@ echo "BIN = $bin_dir" >> $makefile
 echo "# edit this by hand if you want to change the C compiler options" \
 		>> $makefile
 echo "CCC = gcc -O2" >> $makefile
-echo "#LINK.f = gfortran"  >> $makefile
-echo "#F77 = gfortran"  >> $makefile
-
-
-
 echo "# The following optional libraries need to be edited by hand..." \
 		>> $makefile
 set pgplotdir = `printenv PGPLOT_DIR`
@@ -65,11 +60,6 @@ else
   	echo "	FFTWF = fftwdummy.o"                 >> $makefile
         echo "endif"                                 >> $makefile
 endif
-
-echo '%.o : %.f' >> $makefile
-echo '	$(F77)  -c $< -o $@' >> $makefile
-
-
 echo "DONE"
 echo "You are ready to compile the programs by typing 'make' at the prompt"
 echo "contact Duncan.Lorimer@mail.wvu.edu if you have any problems......"

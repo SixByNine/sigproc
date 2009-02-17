@@ -16,13 +16,11 @@ FILE *output;
 main (int argc, char **argv)
 {
   int i=1, j, k, channum, *numbt, kchans=0, ns, nbytes, *keep, simple;
-  unsigned int bit;
   int force=1;
   double *frmhz;
   FILE *input,*keepfile;
   float *block;
   unsigned char *charblock;
-  unsigned char *onebitblock;
   unsigned short *shortblock;
 
   output=stdout;
@@ -113,7 +111,6 @@ main (int argc, char **argv)
   send_string("HEADER_END");
 
   block = (float *) malloc(nchans*sizeof(float));
-  onebitblock = (unsigned char *) malloc(nchans/8); //* sizeof(unsigned char));
   charblock = (unsigned char *) malloc(nchans*sizeof(unsigned char));
   shortblock = (unsigned short *) malloc(nchans*sizeof(unsigned short));
 
@@ -130,32 +127,6 @@ main (int argc, char **argv)
       for (i=0; i<nchans; i++) if (keep[i]) block[k++]=block[i];
     }
     switch (nbits) {
-    case 1:
-//      for (i=0;i<k/8;i++){
-//        for(j=0;j<8;j++){
-//	  if (block[8*i+j]>0.5){
-//      	    bit = 1;
-//	    charblock[i] = charblock[i]|bit;
-//	  }
-//	  else{
-//	    bit = 0;
-//	    charblock[i] = charblock[i]|bit;
-//	  }
-//	  if (j<7)
- //          charblock[i] = charblock[i]<<1;
-//	}
-//    }
-      for (i=0;i<k/8;i++){
-        onebitblock[i]=0;
-	for(j=0;j<8;j++){
-          if (block[8*i+j]>0){
-            bit = 1<<j;
-            onebitblock[i] = onebitblock[i]|bit;
-          }
-        }
-      }
-      fwrite(onebitblock,1,k/8,output);
-      break;
     case 8:
       for (i=0;i<k;i++) charblock[i]=block[i];
       fwrite(charblock,1,k,output);

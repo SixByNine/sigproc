@@ -210,7 +210,7 @@ void machine2prf(FILE *input, FILE *output) /* includefile */
 	 fprintf(output,"%d %d %d %f\n",b,i,c,profile[c*nbins*nifs+i*nbins+b]);
   } else if (stream) {
     for (i=0;i<nifs;i++) {
-      for (c=0;c<nchans;c++) {
+      for (c=nchans-1;c>=0;c--) {
 	fprintf(output,"#START %d %f %f\n",nbins,tstart,chanfreq[c]);
 	for (b=0;b<nbins;b++) {
 	 fprintf(output,"%d %f\n",b,profile[c*nbins*nifs+i*nbins+b]);

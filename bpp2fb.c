@@ -14,6 +14,7 @@ void bpp2fb(FILE *input, FILE *output) /* includefile */
 {
   FILE *fpou;
   int np,ns,nc,i,c,b,s,nchars,idump,doit,opened,nsblk,i1,i2,*chtab,blocksize;
+  int channel;
   float *tempblock, *datablock,realtime=0.0;
   unsigned char *charblock,sample;
   static unsigned char *charcarry;
@@ -179,12 +180,19 @@ void bpp2fb(FILE *input, FILE *output) /* includefile */
 	/* loop over all samples, summing IFs 1+2 -> total power if neccessary */
 	while (s<nsblk) {
 	  for (i=0;i<nifs;i++) {
+	    channel=0;
+	    if (invert_band) channel=nchans-1;
 	    for (c=0;c<nchans;c++) {
+	      if (invert_band) 
 	      if (sumifs) {
-		if (i<2) datablock[i1+c]+=tempblock[i2+chtab[i*nchans+c]];
+		if (i<2) datablock[i1+channel]+=tempblock[i2+chtab[i*nchans+c]];
 	      } else {
-		datablock[i1+i*nchans+c]=tempblock[i2+chtab[i*nchans+c]];
+		datablock[i1+i*nchans+channel]=tempblock[i2+chtab[i*nchans+c]];
 	      }
+	      if (invert_band)
+		channel--;
+	      else
+		channel++;
 	      s++;
 	    }
 	  }

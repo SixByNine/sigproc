@@ -59,12 +59,10 @@ $(LIB)(glun.o)\
 $(LIB)(gmrt2fb.o)\
 $(LIB)(help.o)\
 $(LIB)(histmax.o)\
-$(LIB)(head_parse.o)\
 $(LIB)(ignored_channels.o)\
 $(LIB)(indexxf77.o)\
 $(LIB)(indexx.o)\
 $(LIB)(inv_cerf.o)\
-$(LIB)(inputclip.o)\
 $(LIB)(length.o)\
 $(LIB)(lookup.o)\
 $(LIB)(machine2prf.o)\
@@ -106,7 +104,6 @@ $(LIB)(rdfbtab.o)\
 $(LIB)(rdhead.o)\
 $(LIB)(read_aoscan.o)\
 $(LIB)(read_block.o)\
-$(LIB)(subzero.o)\
 $(LIB)(readdat.o)\
 $(LIB)(read_header.o)\
 $(LIB)(read_polyco.o)\
@@ -117,7 +114,6 @@ $(LIB)(rebin.o)\
 $(LIB)(recipes.o)\
 $(LIB)(recon_prof.o)\
 $(LIB)(resample.o)\
-$(LIB)(reverse_baseline_normalise.o)\
 $(LIB)(rotate_time.o)\
 $(LIB)(rwepn.o)\
 $(LIB)(scaledata.o)\
@@ -187,6 +183,10 @@ extract  : extract.o library
 fake  : fake.o library 
 	$(CC) -o $(BIN)/fake fake.o  $(LIB) -lm
 	rm -f fake.o
+
+gmrt2fil  : gmrt2fil.o library 
+	$(CC) -o $(BIN)/gmrt2fil gmrt2fil.o  $(LIB) -lm
+	rm -f gmrt2fil.o
 
 tune  : tune.o library
 	$(CC)  -c tune.c 
@@ -261,6 +261,14 @@ blanker  : blanker.o library
 	$(CC) -o $(BIN)/blanker blanker.o $(LIB) -lm 
 	rm -f blanker.o
 
+clipper  : clipper.o library 
+	$(CC) -o $(BIN)/clipper clipper.o $(LIB) -lm 
+	rm -f clipper.o
+
+brute  : brute.o library 
+	$(CC) -o $(BIN)/brute brute.o $(LIB) -lm 
+	rm -f brute.o
+
 giant  : giant.o library 
 	$(CXX) -o $(BIN)/giant giant.o $(LIB) $(LPGPLOT) -lm 
 	rm -f giant.o
@@ -284,11 +292,6 @@ polyco2period  : polyco2period.o library
 monitor :
 	./mkmonitor.csh > $(BIN)/monitor
 	chmod +x $(BIN)/monitor
-
-makePsrXml : sigproc.h library
-	$(CC) -o $(BIN)/makePsrXml makePsrXml.c $(LIB) -lm $(SUNLM)
-	rm -f makePsrXml.o
-
 
 pgplotter: pgplotter.o library
 	$(CC) -c pgplotter.c
@@ -318,6 +321,10 @@ foldsignals :
 seek : seek.o library
 	$(LINK.f) -o $(BIN)/seek seek.o $(LIB) $(LFFTW)
 	rm -f seek.o
+
+sumfft : sumfft.o library
+	$(LINK.f) -o $(BIN)/sumfft sumfft.o $(LIB)
+	rm -f sumfft.o
 
 peak : peak.o library
 	$(LINK.f) -o $(BIN)/peak peak.o $(LIB) $(LPGPLOT)
@@ -393,13 +400,13 @@ getpulse : getpulse.o library
 	$(CC) -c getpulse.c
 	$(F77) -o $(BIN)/getpulse getpulse.o $(LIB) $(LPGPLOT) -lm
 
-#head_parse.o: head_parse.c mkheaderlex.c
-#	$(CC) -I. -I/opt/local/include -D$(OSTYPE) -c head_parse.c
-#	ar rv $(LIB) head_parse.o
-#	rm -f head_parse.o
+head_parse.o: head_parse.c mkheaderlex.c
+	$(CC) -I. -I/opt/local/include -D$(OSTYPE) -c head_parse.c
+	ar rv $(LIB) head_parse.o
+	rm -f head_parse.o
 
 wapp2fb.o: wapp2fb.c 
-	$(CC) -I. -D$(OSTYPE) -c wapp2fb.c $(LFFTW)
+	$(CC) -I. -D$(OSTYPE) -c wapp2fb.c
 	ar rv $(LIB) wapp2fb.o
 	rm -f wapp2fb.o
 

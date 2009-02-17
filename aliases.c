@@ -25,9 +25,6 @@ char tempo_site(int telescope_id) /*includefile*/
   case 8:
     return('g'); /*Effelsberg*/
     break;
-  case 9:
-    return('a'); /*140ft*/
-    break;
   default:
     return('?'); /*unknown*/
     /*error_message("tempo_site: unknown telescope!");*/
@@ -65,9 +62,6 @@ char *telescope_name (int telescope_id) /*includefile*/
     break;
   case 8: 
     strcpy(string,"Effelsberg");
-    break;
-  case 9: 
-    strcpy(string,"140ft");
     break;
   default: 
     strcpy(string,"???????"); 
@@ -108,11 +102,6 @@ char *backend_name (int machine_id) /*includefile*/
   case 8:
     strcpy(string,"PULSAR2000");
     break;
-  case 9:
-    strcpy(string,"PARSPEC");
-    break;
-  case 10:
-    strcpy(string,"BPSR");
   default:
     strcpy(string,"?????");
     break;

@@ -7,6 +7,19 @@
 
 FILE *timfile;
 
+void openpresto_(char *filename){
+  int i;
+  /* first fix filename */
+  for (i=0; i<strlen(filename); i++) {
+    if (filename[i]==' ') {
+      filename[i]='\0';
+      break;
+    }
+  }
+  timfile=open_file(filename,"rb");
+  nbits=32;
+}
+
 void readhd_(char filename[80], float *rdm, float *rtsmp, char ra[12], char dec[12], float *fref, double *mjdstart, char srcname[80], char telname[80])
 {
   int i;

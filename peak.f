@@ -463,6 +463,8 @@ c
          lst=index(filename,'.ser')-1
       else if (index(filename,'.tim').gt.0) then
          lst=index(filename,'.tim')-1
+      else if (index(filename,'.dat').gt.0) then
+         lst=index(filename,'.dat')-1
       else if (index(filename,'.dis').gt.0) then
          lst=index(filename,'.dis')-1
          dmidx=1

@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include "sigproc.h"
-
-
+int remove_mean,nchans;
 int read_block(FILE *input, int nbits, float *block, int nread) /*includefile*/
 {
-  int i,j,k,s1,s2,s3,s4,iread;
+  int i,j,k,s1,s2,iread,s,c,offset;
+  float mean;
   unsigned char *charblock;
   unsigned short *shortblock;
   long seed=0;
@@ -27,22 +27,6 @@ int read_block(FILE *input, int nbits, float *block, int nread) /*includefile*/
       }
     }
     iread=k; /* this is the number of samples read in */
-    free(charblock);
-    break;
-  case 2:
-    /* read n/4 bytes into character block containing n 2-bit pairs */
-    charblock=(unsigned char *) malloc(nread/4);
-    iread=fread(charblock,1,nread/4,input);
-    j=0;
-    /* unpack 2-bit pairs into the datablock */
-    for (i=0; i<iread; i++) {
-      char2fourints(charblock[i],&s1,&s2,&s3,&s4);
-      block[j++]=(float) s1;
-      block[j++]=(float) s2;
-      block[j++]=(float) s3;
-      block[j++]=(float) s4;
-    }
-    iread*=4; /* this is the number of samples read in */
     free(charblock);
     break;
   case 4:
@@ -87,6 +71,15 @@ int read_block(FILE *input, int nbits, float *block, int nread) /*includefile*/
     error_message("read_block - nbits can only be 4,8,16 or 32!");
   }
 
+  if (!remove_mean) return iread;
+  /* subtract the mean of the channels from each individual channel */
+  for (s=0; s<iread/nchans; s++) {
+	mean=0.0;
+	offset=s*nchans;
+	for (c=0; c<nchans; c++) mean+=block[offset+c];
+	mean/=(float)nchans;
+	for (c=0; c<nchans; c++) block[offset+c]-=mean;
+  }	
   /* return number of samples read */
   return iread;
 }

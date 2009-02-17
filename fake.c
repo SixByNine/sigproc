@@ -21,7 +21,7 @@
 
 char inpfile[80], outfile[80];
 
-FILE *output;
+FILE *input,*output;
 
 
 struct BinaryParams{
@@ -47,11 +47,13 @@ main (int argc, char *argv[])
 {
 	int i,c,j,k,s,swapout,smear,nsblk=512,ic,arraysize,evenodd,headerless;
 	float pulse,snr,min=-4.0,max=4.0;
-	char string[80];
+	char string[80],timfile[80],filfile[80];
+	long long numsamp;
+	int hs, existing_data=0, samplecount=0;
 	double psrdm,faketime,obstime,period,pulsephase,rising,trailing,dc,*shift;
 	double nexttime,timestep,tdm,p0,pdot,accn,speed_of_light=299792458.0,plst;
 	long seed;
-	float *fblock;
+	float *fblock, *timeseries, *iblock;
 	unsigned short *sblock;
 	unsigned char *cblock;
 
@@ -75,6 +77,8 @@ main (int argc, char *argv[])
 	/* set up default variables */
 	strcpy(inpfile,"stdin");
 	strcpy(outfile,"stdout");
+	strcpy(timfile,"");
+	strcpy(filfile,"");
 	machine_id=telescope_id=0;
 	nchans=128;
 	nbits=4;
@@ -115,6 +119,10 @@ main (int argc, char *argv[])
 			} else if (strings_equal(argv[i],"-period")) {
 				i++;
 				period=1.0e-3*atof(argv[i]);
+			} else if (strings_equal(argv[i],"-tim")) {
+			        strcpy(timfile,argv[++i]);
+			} else if (strings_equal(argv[i],"-fil")) {
+			        strcpy(filfile,argv[++i]);
 			} else if (strings_equal(argv[i],"-pdot")) {
 				i++;
 				pdot=atof(argv[i]);
@@ -199,6 +207,29 @@ main (int argc, char *argv[])
 		}
 	}
 
+	/* read in stuff from the existing tim file */
+	if (file_exists(timfile)) {
+	  input=open_file(timfile,"rb");
+	  if (!(hs=read_header(input))) 
+	    error_message("error reading header of pre-supplied timfile");
+	  numsamp=nsamples(timfile,hs,nbits,nifs,nchans);
+	  timeseries=malloc(sizeof(float)*numsamp);
+	  fread(timeseries,sizeof(float),numsamp,input);
+	  obstime=tsamp*numsamp;
+	  existing_data=1;
+	  psrdm=refdm;
+	}
+
+	/* read in stuff from the existing tim file */
+	if (file_exists(filfile)) {
+	  input=open_file(filfile,"rb");
+	  if (!(hs=read_header(input))) 
+	    error_message("error reading header of pre-supplied filfile");
+	  numsamp=nsamples(filfile,hs,nbits,nifs,nchans);
+	  obstime=tsamp*numsamp;
+	  existing_data=2;
+	}
+
 	/* get seed from ship's clock if not set */
 	if (seed == -1) seed = startseed();
 
@@ -236,8 +267,13 @@ main (int argc, char *argv[])
 	/* define the data blocks */
 	arraysize=nchans*nifs*nsblk;
 	fblock=(float *) malloc(sizeof(float)*arraysize);
+	iblock=(float *) malloc(sizeof(float)*arraysize);
 	sblock=(unsigned short *) malloc(sizeof(unsigned short)*arraysize);
 	cblock=(unsigned char *) malloc(sizeof(unsigned char)*arraysize);
+
+	if (existing_data==2) {
+	  read_block(input, nbits, iblock, arraysize);
+	}
 
 
 	/* open up logfile */
@@ -307,7 +343,13 @@ main (int argc, char *argv[])
 							}
 							plst=pulsephase;
 						}
+						if (existing_data==1) {
+						fblock[s*ic+i*nchans+c]=timeseries[samplecount++]+pulse;
+						} else if (existing_data==2) {
+						  fblock[s*ic+i*nchans+c]=iblock[s*ic+i*nchans+c]+pulse;
+						} else {
 						fblock[s*ic+i*nchans+c]=gasdev(&seed)+pulse;
+						}
 					}
 				}
 			}
@@ -331,19 +373,13 @@ main (int argc, char *argv[])
 				float2four(fblock,arraysize,min,max,cblock);
 				fwrite(cblock,sizeof(unsigned char),arraysize/2,output);
 				break;
-			case 2:
-				float2two(fblock,arraysize,min,max,cblock);
-				fwrite(cblock,sizeof(unsigned char),arraysize/4,output);
-				break;
-
-			case 1:
-				float2one(fblock,arraysize,min,max,cblock);
-				fwrite(cblock,sizeof(unsigned char),arraysize/8,output);
-				break;
 			default:
 				sprintf(string,"fake cannot quantize data to %d bits",nbits);
 				error_message(string);
 				break;
+		}
+		if (existing_data==2) {
+		  read_block(input, nbits, iblock, arraysize);
 		}
 	} while (faketime < obstime);
 
