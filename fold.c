@@ -3,6 +3,7 @@
   pulse profiles or single pulses.
 */
 #include "fold.h"
+#include <string.h>
 
 main (int argc, char *argv[])
 {

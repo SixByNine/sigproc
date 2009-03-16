@@ -23,6 +23,7 @@ c     98/04/28 (dunc@mpifr-bonn.mpg.de) just return if zapfile is empty.
 c     98/04/29 (dunc@mpifr-bonn.mpg.de) range check on bin numbers.
 c     98/04/29 (dunc@mpifr-bonn.mpg.de) fold number passed down.
 c     02/02/26 (drl@jb.man.ac.uk) widths of filters in proportion to frequency
+c     07/11/30 (mkeith@pulsarastronomy.net) Allowing for harmonic series not starting at 1
 c
 c     To do:
 c
@@ -41,7 +42,7 @@ c
       character*80 line
       integer nb
       real blo,bhi,bf,df
-      integer i,j,lun,nlo,nhi,fbin,nh,nz
+      integer i,j,lun,nlo,nhi,fbin,nh,nh_start,nz,dummy
       logical first,static
       data first/.true./
       save
@@ -60,33 +61,52 @@ c
       open(unit=lun,file=zapfile,status='old',err=3)
       do while(.true.)
          read(lun,'(a)',end=1) line
-	 if (line.eq.' ') return      ! return if file empty
+         if (line.eq.' ') return      ! return if file empty
          if (line(1:1).ne.'#') then
-            read(line,*,err=4) blo,bhi,nh
-	    write(llog,*)
-     &      'Filter:',blo,' ->',bhi,' Hz.',nh,' harmonic(s)'
+ 
+           read(line,*,end=100,err=4) blo,bhi,nh_start,nh
+c          We read the 4-part line ok, so continue
+c          Jump to line 101
+           goto 101
+
+c          else, we need to read the old 3-part format
+ 100       read(line,*,err=4) blo,bhi,nh
+           nh_start = 1
+           goto 101
+
+ 101        write(llog,*)
+     &      'Filter:',blo,' ->',bhi,' Hz.',nh,' harmonic(s)'//
+     &      ', start at #',nh_start
             nb=nb+1
             bf=0.5*(bhi+blo)
             df=0.5*(bhi-blo)
             if (nh.lt.0) then
-		static=.true.
-		nh=-1*nh
+               static=.true.
+               nh=-1*nh
             else
-		static=.false.
+            static=.false.
             endif
-            do i=1,nh
-	       if (static) then
+            do i=nh_start,nh
+               if (static) then
                   blo=bf*real(i)-df
                   bhi=bf*real(i)+df
                 else
                   blo=(bf-df)*real(i)
                   bhi=(bf+df)*real(i)
-	        endif
+            endif
 c
 c              Convert frequencies to bin numbers
 c
                nlo=fbin(tsamp,npts,fold,blo)
                nhi=fbin(tsamp,npts,fold,bhi)
+
+c              If the signal is aliased, then the lo and hi need to be swapped
+               if(nlo.gt.nhi) then
+                  dummy = nlo
+                  nlo = nhi
+                  nhi = dummy
+               endif
+
 c
 c              Zero spectrum within these ranges provided
 c              that they are sensible (i.e. within npts)

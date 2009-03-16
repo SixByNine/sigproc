@@ -5,8 +5,9 @@ c=============================================================================
 c
 c   Controls the command-line inputs to seek
 c
+      IMPLICIT NONE
       include 'seek.inc'
-      integer narg,iargc,i,llog,p2,lun
+      integer narg,iargc,f,i,llog,p2,lun
       character*80 option,sfile
       logical dump,rspc,pmzap,mmzap,pulse,app,pzero,fftw,recon,prdh
       integer oldw
@@ -43,7 +44,7 @@ c
          write(*,1)'The input file may be a time series, or a set of'//
      &             'Fourier coefficients.'
          write(*,1)'The file extension MUST, however, be either'//
-     &             ' ".tim" ".ser" ".dat" ".dis" or ".fft"'
+     &             ' ".tim" ".ser" ".dis" or ".fft"'
          write(*,1)'In the latter case, the FFT stage is skipped.'
          write(*,*)
          write(*,1)'options:'
@@ -56,18 +57,18 @@ c
          write(*,1)'-pulse   - calls Maura single pulse search'
          write(*,1)'-pzero   - pads out data with zeros (def=Gaussian)'
          write(*,1)'-maxft   - report max length of Fourier transform'
-	 write(*,1)'-nofft   - turns off FFT search'
-         write(*,1)'-dumpfft - dump Fourier coefficients to a .fft file'
-	 write(*,1)'-fftw    - uses FFTW instead of SINGLETON routine'
-	 write(*,1)'-hsums   - show harmonic summing used'
-	 write(*,1)'-recon   - calculate and report reconstructed S/N'
-	 write(*,1)'-submn   - mean subtraction (old method) to whiten spectrum'
-	 write(*,1)'-submd   - median subtraction to whiten spectrum'
-	 write(*,1)'-head    - adds header info to output .prd files'
+         write(*,1)'-nofft   - turns off FFT search'
+         write(*,1)'-fftw    - uses FFTW instead of SINGLETON routine'
+         write(*,1)'-hsums   - show harmonic summing used'
+         write(*,1)'-recon   - calculate and report reconstructed S/N'
+         write(*,1)'-submn   - mean subtraction (old method) to' //
+     &   ' whiten spectrum'
+         write(*,1)'-submd   - median subtraction to whiten spectrum'
+         write(*,1)'-head    - adds header info to output .prd files'
          write(*,*)
          write(*,1)'-m[file] - mask birdies from file (def="mask")'
          write(*,1)'-z[file] - zap birdies from file (def="birdies")'
-	 write(*,1)'-b[freq] - zap 10-sig+ spikes < freq (def=100 Hz)'
+         write(*,1)'-b[freq] - zap 10-sig+ spikes < freq (def=100 Hz)'
          write(*,1)'-c[cfac] - add every cfac samples before FFT'
          write(*,1)'-a[accn] - re-sample at constant accn (m/s/s)'
          write(*,1)'-d[adot] - re-sample at constant adot (cm/s/s/s)'
@@ -75,9 +76,12 @@ c
          write(*,1)'-t[tlen] - fix transform length to 2**tlen'
          write(*,1)'-i[tsec] - ignore tsec seconds of data on reading'
          write(*,1)'-p[pmax] - set maximum period of seach (def=9.999s)'
-	 write(*,1)'-T[spth] - set single-pulse search threshold (sigma)'
-	 write(*,1)'-n[nmax] - maximum number of single-pulse candidates per DM channel'
-	 write(*,1)'-w[smax] - number of times to smooth time series for single-pulse search'
+         write(*,1)'-T[spth] - set single-pulse search threshold' //
+     &   '(sigma)'
+         write(*,1)'-n[nmax] - maximum number of single-pulse' //
+     &   'candidates per DM channel'
+         write(*,1)'-w[smax] - number of times to smooth time series' //
+     &   ' for single-pulse search'
          write(*,*)
  1       format(a)
  2       format(a,i2,a)
@@ -102,7 +106,6 @@ c
       mmzap=.false.
       pulse=.false.
       nofft=.false.
-      dumpfft=.false.
       pzero=.false.
       fftw=.false.
       prdh=.false.
@@ -126,8 +129,6 @@ c
          dmidx=1
       else if (index(filename,'.fft').gt.0) then
          lst=index(filename,'.fft')-1
-      else if (index(filename,'.dat').gt.0) then
-         lst=index(filename,'.dat')-1
       else if (index(filename,'.spc').gt.0) then
          lst=index(filename,'.spc')-1
          rspc=.true.
@@ -196,8 +197,6 @@ c          endif
            pulse=.true.
 	else if (index(option,'-nofft').gt.0) then
 	   nofft=.true.
-	else if (index(option,'-fftdump').gt.0) then
-c	   dumpfft=.true.
 	else if (index(option,'-fftw').gt.0) then
 	   fftw=.true.
 	else if (index(option,'-head').gt.0) then

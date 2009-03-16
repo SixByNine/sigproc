@@ -3,6 +3,6 @@ c Maximum number of points possible in the time series.
 c==============================================================================
 c
       integer npts ! maximum size available
-      parameter(npts=2**25)
+      parameter(npts=2**26)
 c
 c==============================================================================

@@ -122,7 +122,7 @@ c     spseqw(2,k)=0.015
       enddo
 C 135Hz and 0.0308 sidelobes (covered with one 0.2 Hz filter)
 
-      do ii=1,fnyq4/f1
+      do ii=1,int(fnyq4/f1)
          freq = abs(ii*f1)
          freq = mod(freq,fnyq2)
 
@@ -133,7 +133,7 @@ C 135Hz and 0.0308 sidelobes (covered with one 0.2 Hz filter)
       enddo
 
 c 135 Hz, wide sidelobes of f = 135ii
-      do ii=1,fnyq2/f1
+      do ii=1,int(fnyq2/f1)
          freq = abs(ii*f1)
          freq = mod(freq,fnyq2)
          if (freq.gt.fnyq) freq=fnyq2-freq
@@ -150,7 +150,7 @@ c 135 Hz, wide sidelobes of f = 135ii
             
 c     Special sequence 3: f = 50.0*i
       k = 1
-      do ii=1,fnyq/50. - 1
+      do ii=1,int(fnyq/50. - 1)
          freq=ii*50.
          spseqf(3,k)=freq
          spseqw(3,k)=0.1

@@ -179,6 +179,7 @@ void scamp2fb(FILE *input, FILE *output) /* includefile */
 
     /* decide whether to write out this block */
     realtime=tsamp*idump;
+    idump+=8*nread/scamp_chans; /* fix for filterbank to skip SCAMP data. R.E. 21/03/07 */
     if ((doit=process(realtime,start_time,final_time))==-1) break;
     if (doit) {
       if (idump%1024 == 0) {

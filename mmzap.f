@@ -52,7 +52,7 @@ c
 c     Special sequence 2: f = 50.0*i
 c
       k = 1
-      do ii=1,fnyq/50. - 1
+      do ii=1,int(fnyq/50.) - 1
          freq=ii*50.
          spseqf(2,k)=freq
          spseqw(2,k)=0.2

@@ -18,6 +18,7 @@
    entire filterbank files can be barycentered/pulsarcentered.
 */
 #include "dedisperse.h"
+#include <string.h>
 char polyco_filename[80];
 int verbose;
 /* subroutine to call TEMPO to calculate a polyco.bar file for barycentering */

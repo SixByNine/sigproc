@@ -14,7 +14,11 @@ void decimate_header() /* includefile */
   send_coords(src_raj,src_dej,az_start,za_start);
   if (nchans/naddc==1) {
     send_int("data_type",2);
-    send_double("refdm",0.0);
+    //    send_double("refdm",0.0);
+   
+    send_double("refdm",refdm); 
+    /*== MKEITH: A hack to stop the dminfo being lost when decimating after dedisperse! ==*/
+  
   } else {
     send_int("data_type",1);
   }

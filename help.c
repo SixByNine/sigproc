@@ -127,10 +127,10 @@ void dedisperse_help() /*includefile*/
   puts("-J Jyf1 Jyf2 - multiply dedispersed data by Jyf1 and Jyf2 to convert to Jy (use only for two-polarization data)");
   puts("-wappinvert - invert WAPP channel order (when using LSB data) (def=USB)");
   puts("-wappoffset - assume wapp fsky between two middle channels (for pre-52900 data ONLY)");
-  puts("-rmean      - subtract the mean of channels from each sample before dedispersion (def=no)");
   puts("-swapout    - perform byte swapping on output data (def=native)");
   puts("-nobaseline - don't subtract baseline from the data (def=subtract)");
   puts("-sumifs     - sum 2 IFs when creating the final profile (def=don't)");
+  puts("-subzero    - subtract the zeroDM mean from each sample (def=don't)");
   puts("-headerless - write out data without any header info");
   puts("-epn        - write profiles in EPN format (def=ASCII)");
   puts("-asciipol   - write profiles in ASCII format for polarization package");

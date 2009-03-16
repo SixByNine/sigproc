@@ -3,54 +3,23 @@ c=============================================================================
 c=============================================================================
         implicit none 
 	include 'seek.inc'
-	real rtsamp,tmin,temp,sum,sumsq,mean,sigma,sample,tmpdm,firstone
+	real rtsamp,tmin,temp,sum,sumsq,mean,sigma,sample,tmpdm
 	integer lun,i,j,llog,near2,imin,isec,nskip,isamp,ichan,nadd
 	integer length,nsrec,nchan,nread,seed,norg,nmax,ihour
  	integer readsample,skipsample
-	character*80 pfile,presto
+	character*80 pfile
 	real f0,chbw
 	logical filterbank,opened,pzero
 	data opened/.false./
 	save
 
-	if (index(filename,'.tim').gt.0.or.
-     &     index(filename,'.dat').gt.0) then
+	if (index(filename,'.tim').gt.0) then
 	   header=' '
 	   refac=0.0
 	   nchans=1
-	   if (index(filename,'.tim').gt.0) then
-	      write(llog,*) 'Working with SIGPROC time series data...'
-	      call readhd(filename,tmpdm,rtsamp,ra,dec,fref,
-     &         mjdstart,source_name,telname)
-	   else
-	      write(llog,*) 'Working with PRESTO time series data...'
-	      call glun(lun)
-	      open(unit=lun,
-     &        file=filename(1:index(filename,'.dat')-1)//'.inf',
-     &        status='old')
-	      presto=''
-	      refac=0
-	      do while (presto(1:15).ne.' Number of bins')
-		 read(lun,'(a)') presto
-	      enddo
-	      read(presto(index(presto,'=')+1:),*) ntim
-	      
-	      rewind(lun)
-	      do while (presto(1:19).ne.' Width of each time')
-		 read(lun,'(a)') presto
-	      enddo
-	      read(presto(index(presto,'=')+1:),*) rtsamp
-	      
-	      rewind(lun)
-	      do while (presto(1:11).ne.' Dispersion')
-		 read(lun,'(a)') presto
-	      enddo
-	      read(presto(index(presto,'=')+1:),*) refdm
-	      close(lun)
-	      
-	      call openpresto(filename)
-	   endif
-
+	   write(llog,*) 'Working with time series data...'
+	   call readhd(filename,tmpdm,rtsamp,ra,dec,fref,
+     &     mjdstart,source_name,telname)
 	   if (refdm.eq.0.0) refdm=tmpdm
 	   ntim=1
 	   nread=1
@@ -73,8 +42,6 @@ c=============================================================================
 	   do while (ntim.lt.nmax.and.nread.ne.0) 
 	      nread=readsample(sample)
 	      j=j+1
-	      if (j.eq.1) firstone=sample
-	      sample=sample-firstone
 	      if (j.gt.nskip) then
 		 sum=sum+sample
 		 nadd=nadd+1
@@ -111,7 +78,7 @@ c	   write(llog,'(x,a80)') header
 	   goto 2
 	endif
 
-	filterbank=.false.
+	filterbank=index(filename,'.dat').gt.0
 	if (filterbank) then
 	   if (.not.opened) call rdfbtab(skyfreq,maxchans,nchans)
 	   write(llog,*) 'Working with filterbank data...'
@@ -129,7 +96,8 @@ c	   write(llog,'(x,a80)') header
 	ichan=0
         write(llog,'('' Opened input data file: '',a)')
      &  filename(1:lst+4)
-	header=' '
+	read(lun) header
+c	header=' '
 	header=header(1:length(header))
 	
 	if (filterbank) then
@@ -148,6 +116,7 @@ c	   write(llog,'(x,a80)') header
 	endif
 	
  	write(llog,*) 'Reading',ntim/1024,' kpt data file...',ntim 
+	write(llog,'(x,a80)') header
 	write(llog,*) 'Reference DM:',refdm
 	write(llog,*) 'Sampling time:',rtsamp*1.0e6,' us'
 	tsamp=rtsamp
@@ -241,20 +210,5 @@ c
  999    write(llog,*) 'Data file not found!'
         stop
         end
-c==============================================================================
-	subroutine dumpdat(outfile)
-c==============================================================================
-	implicit none
-	character*80 outfile
-	include 'seek.inc'
-	integer lun,i
-	write(*,'(a)') ' Dumping '//outfile(1:index(outfile,' ')-1)
-	call glun(lun)
 
-	open(unit=lun,file=outfile,status='unknown',
-     &          form='unformatted')
-	write(lun) ntim,real(tsamp),refdm,refac
-        write(lun) (series(i),i=1,ntim)
-	close(unit=lun)
-	end
-c==============================================================================
+

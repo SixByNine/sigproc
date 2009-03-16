@@ -17,9 +17,8 @@ c=============================================================================
       implicit none
       include 'seek.inc'
       include 'csamp.inc'
-      real junk,minsamp,maxsamp
       integer llog
-      logical dump,rspc,pmzap,mmzap,prdh,filex
+      logical dump,rspc,pmzap,mmzap,prdh
       integer oldwhite
       character*80 sfile
 c
@@ -30,8 +29,8 @@ c
       real saverms
       integer indx(npts/8),snum(npts/8)
       integer top,nsm,nf1,c(nfolds),cmin,cmax
-      parameter(top=1024,nsm=1024*8)
-c      parameter(top=4096,nsm=4096*8)
+c      parameter(top=1024,nsm=1024*8)
+      parameter(top=4096,nsm=4096*8)
       real rmea(nsm),rrms(nsm),fastmea(npts),sres,flo,fhi,fhr,smax
 c      real ralphmea(npts)   ! to  check what effect the running mean has on snr
       real*8 freq,pmax,fbest,ratio,pc(top)
@@ -63,32 +62,15 @@ c      parameter(snfact=1.1284) ! = sqrt(4/pi)
       fnyq=0.5/real(tsamp)
       write(llog,*) 'Nyquist frequency:',fnyq,' Hz'
 
-      pfile="zerodm.spc"
-      inquire(file=pfile,exist=filex)
-      if (refdm.gt.0.0.and.filex) then
-         call readspec(pfile,fold,zerodm,junk,junk,tsamp,npf)
-         maxsamp=0.0
-         do i=1,npf
-            samp(i)=samp(i)-zerodm(i)
-            maxsamp=max(maxsamp,samp(i))
-c            if (samp(i).lt.0.0) samp(i)=0.0
-         enddo
-c         minsamp=-1.0*maxsamp
-c         do i=1,npf
-c            if (samp(i).lt.minsamp) samp(i)=minsamp
-c         enddo
-c         write(*,*) maxsamp,minsamp
-      endif
-
       if (dumpraw) then
-	  fold=0
-	  if (sfile.ne.' ') then
-	    pfile=sfile
-	  else
+          fold=0
+          if (sfile.ne.' ') then
+                  pfile=sfile
+          else
             write(pfile,'(a,i1,a)') filename(1:lst)//'_',fold,'.spc'
-	  endif
+          endif
           call writespec(llog,pfile,fold,samp,refdm,refac,tsamp,npf)
-	  stop
+          stop
       else if (dump) then
 c         write(pfile,'(a4,i1,a4)') 'fold',0,'.spc'
          write(pfile,'(a,i2.2,a4)') filename(1:lst)//'_',fold,'.spc'
@@ -104,8 +86,8 @@ c
            write(llog,*) 'Reading spectral masks...'
         endif
         call glun(lun)
-	istat=0
-	open(unit=lun,file=maskfile(1),status='old',iostat=istat)
+        istat=0
+        open(unit=lun,file=maskfile(1),status='old',iostat=istat)
         if (istat.ne.0) then
            write(*,*) 'WARNING - mask file not found...'
         else
@@ -193,8 +175,8 @@ c
 c              New method (default) is to divide by running median
 c              to minimize biases and then subtract unity from the result
 c
-	       if (rmea(h).ne.0.0) samp(i)=(samp(i)/rmea(h))-1.0
-	       if (rmea(h).eq.0.0) samp(i)=0.0
+               if (rmea(h).ne.0.0) samp(i)=(samp(i)/rmea(h))-1.0
+               if (rmea(h).eq.0.0) samp(i)=0.0
 
                if (rmea(h).eq.0.0) then
                   series(2*i-1) = 0
@@ -216,7 +198,7 @@ c
 c
 c this line is the -b option which brutally zaps all RFI and psrs < fbrute Hz
 c changed for 47tuc analysis Mar 17, 2003
-	 if (fbrute.gt.0.0.and.freq(tsamp,npf,1,i).lt.fbrute.and.
+      if (fbrute.gt.0.0.and.freq(tsamp,npf,1,i).lt.fbrute.and.
      &      samp(i).gt.10.0) samp(i)=1.0
       enddo
 
@@ -234,6 +216,11 @@ c         write(88,*) i, samp(i), series(2*i-1), series(2*i)
       rms=sqrt(rms/real(n))
 
       write(llog,*) 'Resulting spectral RMS:',rms
+      if (rms.le.0) then
+              print *,"ERROR: RMS is zero! Cannot continue, file likely"
+     &        //" all zeros"
+              stop 1
+      endif
 
 c     save rms for later recall
       saverms = rms
@@ -262,7 +249,7 @@ c
          write(llog,*) 'Lyne-Ashworth harmonic summing'
          call oldsumhrm(samp,npf,nf1) ! Lyne-Ashworth code
       else
-         write(llog,*) 'DB\'s slow-but-simple harmonic summing routine'
+         write(llog,*) 'DBs slow-but-simple harmonic summing routine'
          call sumhrm(samp,npf,nf1)    ! David Barnes code
       endif
 c      
@@ -296,7 +283,31 @@ c     Search for candidates over all harmonic folds
 c
       write(llog,*) 'Doing harmonic searching...'
       do fold=1,nfolds
-         rms = saverms * sqrt(real(foldvals(fold)))
+
+c Set snr threshold depending on harmonic fold to account for candidate 
+c probability density function going from Rayleigh to Gasussian, 
+c R.E. 20/07/07 
+c Moved this earlier in the file, so that we can change thresh later
+c M.Keith 2008
+        if (fold.eq.1) then
+           thresh = 5.00
+        endif
+        if (fold.eq.2) then
+           thresh = 4.75
+        endif
+        if (fold.eq.3) then
+           thresh = 4.55
+        endif
+        if (fold.eq.4) then
+           thresh = 4.37
+        endif
+        if (fold.eq.5) then
+           thresh = 4.30
+        endif
+
+
+
+ 6       rms = saverms * sqrt(real(foldvals(fold)))
 
 c
 c        for Parkes Data - call zapping algorithms if selected
@@ -316,7 +327,8 @@ c     &     call zap_mmbrd(samp,npf,nf1,tsamp*1000.0,rms,0.0,fold)
            enddo
         endif
         c(fold)=0
-        thresh = 5.0 
+c        thresh = 5.0  old line 
+
  5      do i=1,npf
 c          ptmp=1.0/freq(tsamp,npf,fold,i)
           ptmp=1.0/freqff(tsamp,npf,foldvals(fold),i)
@@ -324,7 +336,16 @@ c          ptmp=1.0/freq(tsamp,npf,fold,i)
 
           snrc=power(fold,i)/rms 
 
-          if (snrc.gt.thresh.and.c(fold).lt.top) then
+          if (snrc.gt.thresh) then
+                  if (c(fold).ge.top) then
+                          write(*,*)"WARNING, number of spectral bins"//
+     &           " above SNR",thresh,"in fold",fold,
+     &           "is more than the max allowed=",top
+                          thresh = thresh + 0.2
+c                          This goto basicaly tries to restart the loop
+c                          with a bigger thresh value.
+                          goto 6
+                  endif
              c(fold)=c(fold)+1
              samp(c(fold))=power(fold,i)
              snum(c(fold))=i
@@ -349,7 +370,9 @@ c          pcand(fold,j)=1000.0/freq(tsamp,npf,fold,snum(indx(i)))
           icand(fold,j) = snum(indx(i))
           pcand(fold,j)=1000.0/freqff(tsamp,npf,foldvals(fold),
      &         snum(indx(i)))
-          snrc=samp(indx(i))/rms   + real(foldvals(fold))/rms
+c       MJK 2008 : I am not sure who added the addition below, but it
+c                  seems to be completely arbatrary.
+          snrc=samp(indx(i))/rms  !+ real(foldvals(fold))/rms
           scand(fold,j)=snrc  
           if (snrc.gt.snrbest) then
             snrbest=snrc
@@ -459,7 +482,12 @@ c     &       pcand(fold,i)))/saverms
          endif
          write(lun,'(a)')   '##END HEADER##'
       endif
-      write(lun,*) 'DM:',refdm,' AC:',refac,' AD:',refad
+      if(prdh) then
+        write(lun,*) 'DM:',refdm,' AC:',refac,' AD:',refad,
+     & ' TSAMP:',tsamp
+      else
+        write(lun,*) 'DM:',refdm,' AC:',refac,' AD:',refad
+      endif
       do i=1,cmax
          do j=1,nfolds
             if (i.gt.c(j)) then
@@ -473,6 +501,15 @@ c     &       pcand(fold,i)))/saverms
             if (.not.recon) then
                write(lun,71) scand(kk,i),pcand(kk,i)
             else
+c
+c               Fix to stop the broken ReconSNRs from causing best to fail
+c               M.Keith 2007
+c
+
+                if(temp_snrecon(kk,i).gt.99999.0) then
+                    temp_snrecon(kk,i) = 99999.0
+                endif
+
                write(lun,72) scand(kk,i),temp_snrecon(kk,i),pcand(kk,i)
             endif
 c            write(lun,81) scand(kk,i),pcand(kk,i),icand(kk,i)

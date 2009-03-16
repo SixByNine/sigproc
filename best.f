@@ -73,13 +73,6 @@ c==============================================================================
 c
 c     If no command line input given - tell user what to do...
 c
-         gridmin=+1.0e32
-         gridmax=-1.0e32
-         do k=1,mg
-            do l=1,mg
-               grid(k,l)=0.0
-            enddo
-         enddo
       lmode5 = .false.
       narg=iargc()
       call getarg(1,option)
@@ -180,7 +173,6 @@ c
             if (ad(i).ne.0.0) lad=.true.
          enddo
       endif
-
       if (ldm.and.(.not.lac).and.(.not.lad)) then
          write(*,*) '1-D DM search...'
          mode=1
@@ -195,8 +187,8 @@ c
             write(*,*) '2-D AC+AD search...'
             mode=4
          endif
-      else if(ldm.and.lac.and.(.not.lad)) then
-         write(*,*) '2-D DM+AC search...'
+      else if(ldm.and.(lac.and.lad)) then
+         write(*,*) '3-D DM+AC+AD search...'
          mode=5
       endif
       
@@ -207,10 +199,6 @@ c     selected ranges.
 c
       j=0
       k=0
-      if (mode.eq.5) then
-         call gdim(dm,nt,ngx,parmin(1),parmax(1),xval)
-         call gdim(ac,nt,ngy,parmin(2),parmax(2),yval)
-      endif
       do i=1,nc
          consider=(par(i).ge.prdmin.and.par(i).le.prdmax)
          k=trid(i)
@@ -222,13 +210,6 @@ c
      &   consider=.false.         
          if (mode.eq.3.and.(ad(k).lt.parmin(1).or.ad(k).gt.parmax(1)))
      &   consider=.false.
-         if (mode.eq.5) then
-            ix=gidx(xval,ngx,dm(k))
-            iy=gidx(yval,ngy,ac(k))
-            grid(ix,iy)=max(grid(ix,iy),snr(i))
-            gridmin=min(gridmin,grid(ix,iy))
-            gridmax=max(gridmax,grid(ix,iy))
-         endif
          if (consider) then
             j=j+1
             par(j)=par(i)
@@ -250,7 +231,7 @@ c
 c     Establish ranges of DMs (or ACs) searched
 c
       do i=1,2
-         parmin(i)=1.0e32
+         parmin(i)=0.0
          parmax(i)=0.0
       enddo
       dmdsp=dm(1)
@@ -262,17 +243,9 @@ c
          else if (mode.eq.3) then
             dd(i)=ad(i)
          endif
-c         if (mode.eq.5) then
-c            parmin(1)=min(parmin(1),dm(i))
-c            parmax(1)=max(parmax(1),dm(i))
-c            parmin(2)=min(parmin(2),ac(i))
-c            parmax(2)=max(parmax(2),ac(i))
-c         else
-            parmin(1)=min(parmin(1),dd(i))
-            parmax(1)=max(parmax(1),dd(i))
-c         endif
+         parmin(1)=min(parmin(1),dd(i))
+         parmax(1)=max(parmax(1),dd(i))
       enddo
-
 c
 c     Display info concerning number of candidates read in
 c
@@ -293,12 +266,19 @@ c
         write(*,*) 'AC range:',parmin(1),parmax(1),' m/s/s'
         write(*,*) 'AD range:',parmin(2),parmax(2),' cm/s/s/s'
       else if (mode.eq.5) then
-         write(*,*) nt/nf,' DM/AC group(s). ',nc,' candidates'
-         call gdim(dm,nt,ngx,parmin(1),parmax(1),xval)
-         call gdim(ac,nt,ngy,parmin(2),parmax(2),yval)
+         
+
+
+
+         write(*,*) nt/nf,' DM/AD/AC group(s). ',nc,' candidates'
+         call gdim(dm,nt,ngz,parmin(1),parmax(1),zval)
+         call gdim(ac,nt,ngx,parmin(2),parmax(2),xval)
+         call gdim(ad,nt,ngy,parmin(3),parmax(3),yval)
+         
          write(*,*) 'DM range:',parmin(1),parmax(1),' pc/cc'
+         write(*,*) 'AC x AD grid dimensions:',ngx,' x',ngy
          write(*,*) 'AC range:',parmin(2),parmax(2),' m/s/s'
-         write(*,*) 'DM x AC grid dimensions:',ngx,' x',ngy
+         write(*,*) 'AD range:',parmin(3),parmax(3),' cm/s/s/s'
       endif
 
       
@@ -328,33 +308,31 @@ c
                   if (ratio.lt.1.0) ratio=1.0/ratio      
                   ratio2=ratio
                   ratio=ratio-int(ratio)
-                  harm=(ratio.gt.0.98.or.ratio.lt.0.02)
+                  harm=(ratio.gt.0.9975.or.ratio.lt.0.0025)
                   if (hzap) then ! non-integer harmonics clobbered here
-                   harm=harm.or.(ratio.gt.0.16.and.ratio.lt.0.167)
+                   harm=harm.or.(ratio.gt.0.16664.and.ratio.lt.0.16668)
                    harm=harm.or.(ratio.gt.0.19999.and.ratio.lt.0.20001)
                    harm=harm.or.(ratio.gt.0.24995.and.ratio.lt.0.25005)
                    harm=harm.or.(ratio.gt.0.29999.and.ratio.lt.0.30001)
                    harm=harm.or.(ratio.gt.0.3332.and.ratio.lt.0.3334)
                    harm=harm.or.(ratio.gt.0.39.and.ratio.lt.0.41)
-                   harm=harm.or.(ratio.gt.0.19.and.ratio.lt.0.21)
-                   harm=harm.or.(ratio.gt.0.76.and.ratio.lt.0.78)
                    harm=harm.or.(ratio.gt.0.4995.and.ratio.lt.0.5005)
                    harm=harm.or.(ratio.gt.0.5997.and.ratio.lt.0.6003)
                    harm=harm.or.(ratio.gt.0.6665.and.ratio.lt.0.6668)
                    harm=harm.or.(ratio.gt.0.7499.and.ratio.lt.0.7501)
                    harm=harm.or.(ratio.gt.0.7997.and.ratio.lt.0.8003)
-                     harm=harm.or.(ratio.gt.0.249.and.ratio.lt.0.251)
-                     harm=harm.or.(ratio.gt.0.332.and.ratio.lt.0.334)
-                     harm=harm.or.(ratio.gt.0.499.and.ratio.lt.0.501)
-                     harm=harm.or.(ratio.gt.0.599.and.ratio.lt.0.601)
-                     harm=harm.or.(ratio.gt.0.665.and.ratio.lt.0.667)
-                     harm=harm.or.(ratio.gt.0.749.and.ratio.lt.0.751)
+c                     harm=harm.or.(ratio.gt.0.249.and.ratio.lt.0.251)
+c                     harm=harm.or.(ratio.gt.0.332.and.ratio.lt.0.334)
+c                     harm=harm.or.(ratio.gt.0.499.and.ratio.lt.0.501)
+c                     harm=harm.or.(ratio.gt.0.599.and.ratio.lt.0.601)
+c                     harm=harm.or.(ratio.gt.0.665.and.ratio.lt.0.667)
+c                     harm=harm.or.(ratio.gt.0.749.and.ratio.lt.0.751)
                   endif
 c
 c     check to see if candidate is harmonically related out to 32nd
 c
 c                  write(*,*) par(k),par(j),harm,ratio,ratio2
-                  if (harm.and.ratio2.lt.16.0) then
+                  if (harm.and.ratio2.lt.32.0) then
                      cidx(j)=k
                      if (snr(k).ge.snrmin.and.snr(j).ge.snrmin)
      &                    nids(k)=nids(k)+1
@@ -487,8 +465,7 @@ c
      &           ad(trid(j)),trid(j),
      &           nids(j),fld(j),ratio,1.0/ratio,
      &           filename(1:index(filename,' ')-5)
-            write(lun2,12) par(j),snr(j),dm(trid(j)),ac(trid(j)),
-     &           ad(trid(j)),trid(j),
+            write(lun2,2) par(j),snr(j),ac(trid(j)),ad(trid(j)),trid(j),
      &           nids(j),fld(j),ratio,1.0/ratio,
      &           filename(1:index(filename,' ')-5)
             call wstr8(par(j),period)
@@ -505,30 +482,6 @@ c
       enddo
       close(unit=lun3)
       close(unit=lun2)
-
-      if (mode.eq.5) then
-         deltax=(parmax(1)-parmin(1))/real(ngx)
-         deltay=(parmax(2)-parmin(2))/real(ngy)
-         tr(1)=parmin(1)-0.5*deltax
-         tr(2)=deltax
-         tr(3)=0.0
-         tr(4)=parmin(2)-0.5*deltay
-         tr(5)=0.0
-         tr(6)=deltay
-         call pgbegin(0,'/xs',1,1)
-         call pgvport(0.1,0.9,0.1,0.9)
-         call pgwindow(parmin(1),parmax(1),parmin(2),parmax(2))
-         call pgbox('bcnst',0.0,0,'bcnst',0.0,0)
-         call pgsch(1.0)
-         call pgscf(2)
-         call pglabel('DM (cm\\u-3\\d pc)',
-     &        'Acceleration (m s\\u-2\\d)',' ')
-         call pggray(grid,mg,mg,1,ngx,1,ngy,gridmax,gridmin,tr)
-         call pgend
-         stop
-      endif
-
-
 c
 c     Stop here if nothing else to be done (default mode)
 c
@@ -642,11 +595,11 @@ c     We need to reset the x and y arrays for mode 5
             do k=1,nc
                if (abs(cidx(k)).eq.j.and.fld(k).eq.fld(j))then
                   ok=.true.
-                  if (mode.eq.5) then
+                  if (mode.eq.4) then
                      l=trid(k)
-                     ix=gidx(xval,ngx,dm(l))
-                     iy=gidx(yval,ngy,ac(l))
-                     grid(ix,iy)=grid(ix,iy)+snr(k)
+                     ix=gidx(xval,ngx,ac(l))
+                     iy=gidx(yval,ngy,ad(l))
+                     grid(ix,iy)=snr(k)
                      write(lsum,*) ix,iy,tr(1)+real(ix)*tr(2),
      &               tr(4)+real(iy)*tr(6),grid(ix,iy)
                      gridmin=min(gridmin,grid(ix,iy))
@@ -659,6 +612,64 @@ c     We need to reset the x and y arrays for mode 5
                      tr(4)=parmin(2)-0.5*deltay
                      tr(5)=0.0
                      tr(6)=deltay
+                  else if(mode.eq.5) then
+c                     if (ndm.gt.0) ok=dd(trid(k)).ne.x(ndm)
+c                     if (ok) then   
+c                        ndm=ndm+1
+c                        x(ndm)=dd(trid(k))
+c                        y(ndm)=snr(k)
+c                        write(lsum,*) ndm,x(ndm),y(ndm)
+c                        snrmax=max(snrmax,snr(k))
+c                     endif
+
+
+                     l=trid(k)
+                     iz=gidx(zval,ngz,dm(l))
+                     ix=gidx(xval,ngx,ac(l))
+                     iy=gidx(yval,ngy,ad(l))
+                     if(grid(ix,iy).lt.snr(k)) grid(ix,iy)=snr(k)
+                     ndm = ndmm
+                     ndmi = 1
+c     A fake 'while' loop
+ 100                 continue
+                     if(ndmi.lt.ndmm.or.ndmi.eq.ndmm) then
+c                        write(*,*)ndmi,x(ndmi),dm(trid(k))
+                        if(x(ndmi).eq.dm(trid(k))) then
+                           ndm = ndmi
+c     if we already have the dm then use the old value
+                        else
+                           ndmi = ndmi + 1
+                           goto 100
+                        endif
+                     endif
+c     increment the max ndmval
+                     
+                     if(ndm.eq.ndmm) then
+                        x(ndm) = dm(trid(k))
+                        ndmm = ndmm + 1
+                     endif
+
+                     if(y(ndm).lt.snr(k)) y(ndm) = snr(k)
+c                    write(lsum,*) ix,iy,iz,tr(1)+real(ix)*tr(2),
+c     &              tr(4)+real(iy)*tr(6),grid(ix,iy)
+                     write(lsum,*) ix, dm(trid(k)),iy, ac(trid(k)),iz
+     &                    ,ad(trid(k)),snr(k)
+
+                     snrmax=max(snrmax,snr(k))
+c                     write(*,*)ndm,ndmm,x(ndm),y(ndm),snrmax
+                     
+                     
+                     gridmin=min(gridmin,grid(ix,iy))
+                     gridmax=max(gridmax,grid(ix,iy))
+                     deltax=(parmax(2)-parmin(2))/real(ngx)
+                     deltay=(parmax(3)-parmin(3))/real(ngy)
+                     tr(1)=parmin(2)-0.5*deltax
+                     tr(2)=deltax
+                     tr(3)=0.0
+                     tr(4)=parmin(3)-0.5*deltay
+                     tr(5)=0.0
+                     tr(6)=deltay
+
                   else
                      if (ndm.gt.0) ok=dd(trid(k)).ne.x(ndm)
                      if (ok) then   
@@ -683,8 +694,8 @@ c
             write(title,3) par(j),snr(j),dd(trid(j))
             if (laccn) write(title,4) par(j),snr(j),dd(trid(j)),dmdsp
             if (mode.eq.4) write(title,7) par(j),snr(j),xx,yy
-            if (mode.eq.5) write(title,8) par(j),snr(j),
-     &           dd(trid(k)),ac(trid(j))
+            if (mode.eq.5) write(title,8) par(j),snr(j),ac(trid(j)),
+     &           ad(trid(j)),dm(trid(j))
 c
 c           Sort out whether this plot will get displayed...
 c           always the case in auto mode, on demand otherwise
@@ -760,9 +771,6 @@ c                  xmin=parmin(1)
                else if (mode.eq.4) then
                   call pglabel('Trial Acceleration (m s\\u-2\\d)',
      &                'Trial Adot (cm s\\u-3\\d)',' ')
-               else if (mode.eq.5) then
-                  call pglabel('Trial DM (cm\\u-3\\d pc)',
-     &                'Trial Acceleration (m s\\u-2\\d)',' ')
                endif
                if (mode.eq.2.or.mode.eq.3) then
                   call pgsls(2)

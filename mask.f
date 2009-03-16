@@ -97,7 +97,7 @@ c            smin=min(smin,samp(i))
       call pgadvance
 
 c      call minmax(samp,npf,smin,smax)
-      call pgwindow(lo,hi,0.0,smax)
+      call pgwindow(lo,hi,smin,smax)
       call pgbox('bcnst',0.0,0,'bcnst',0.0,0)
       call pgline(npf,fbin,samp)
 

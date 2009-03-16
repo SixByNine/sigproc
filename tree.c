@@ -16,9 +16,11 @@ int     DMMin, DMMax, FlipSwitch, FlipSwitch;
 double  TSkip, TRead, DMMinv, DMMaxv;
 char   *unfname;
 
+int headerless;
 #include "sigproc.h"
+//#include "dedisperse.h"
 #include "header.h"
-int nbands, nobits, userdm;
+int nbands, nobits;
 FILE *output;
 
 void tree_help() {

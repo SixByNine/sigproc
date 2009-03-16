@@ -63,20 +63,42 @@ c
 c     include fundamental in the array
 c
 c      open(78,file='cdat_prof.tmp',status='unknown',access='append')
-
+      
       do i=1,min(nharm,nharmmax)
+c     do i=1,4
+         ifun=nint(df0*i)*2+1 
 
-c      do i=1,4
-       ifun=nint(df0*i)*2+1 
+c==============================================
+
+c         call glun(slun)
+c         write(*,*)"Dumping reconstructed profile"
+c         write(sfilename,"(i2.2,a,i5.5)")fold,"fun",candno
+c         write(*,*)"Dumping to  ",sfilename
+c         open(unit=slun,file=sfilename,status='unknown',access='append')
+cc        do i=1,nfft*2,2
+cc         do i=1,nfft,2
+c         do i=1,nfft*2
+cc           amp=sqrt(profile(i)*profile(i)+profile(i+1)
+cc     &           *profile(i+1))
+cc            write(slun,*)i,amp 
+c            write(slun,*)ifun, series(ifun), series(ifun+1)
+c     write(60,*)profile(i)
+c         enddo   
+c         close(slun)
+
+c===============================================
+
+
 c        ifun=nint(df0)*i
-c         write(llog,*)'ifun', ifun
+c       write (62,*)ifun
+c       write(llog,*)'ifun', ifun
 c        write(*,*) 'Harmonic ',i,' Power ',
 c     &  sqrt(cdat(ifun)**2+cdat(ifun+1)**2)
 c        write(llog,*)series(ifun),series(ifun+1)
-        profile(i*2+1)=series(ifun)
-        profile(i*2+2)=series(ifun+1)
-        profile((nfft-i)*2+1)=series(ifun)
-        profile((nfft-i)*2+2)=-series(ifun+1)
+       profile(i*2+1)=series(ifun)
+       profile(i*2+2)=series(ifun+1)
+       profile((nfft-i)*2+1)=series(ifun)
+       profile((nfft-i)*2+2)=-series(ifun+1)
       enddo
 
 c================================
@@ -105,39 +127,41 @@ c.      end do
 
 
 C reconstruct profile
-         call sglfft(profile(1),profile(2),nfft,nfft,nfft,-2)
+      call sglfft(profile(1),profile(2),nfft,nfft,nfft,-2)
 cc        call four1(profile,nfft,-1)
 
 C find peak 
 c.         write(llog,*)' ----------------------------------------------'
 c.         write(llog,*)' Period   Nharm'
 c.         write(llog,*)pcand,nharm
-c.         write(llog,*)' Real     Imag      Amp'
-         peak=0
-         do i=1,nfft*2,2
-c            amp=sqrt(profile(i)*profile(i)+profile(i+1)*profile(i+1))
-c            write(llog,*)i,amp
-c.           write(*,*)i/2,amp
-             peak=max(peak,profile(i))
-         enddo
-c        write(llog,*)'***', amp,peak
-c        write(llog,*)
+c     .         write(llog,*)' Real     Imag      Amp'
+      peak=0
+      do i=1,nfft*2,2
+c     amp=sqrt(profile(i)*profile(i)+profile(i+1)*profile(i+1))
+c     write(llog,*)i,amp
+c     .           write(*,*)i/2,amp
+         peak=max(peak,profile(i))
+      enddo
+c     write(llog,*)'***', amp,peak
+c     write(llog,*)
          
-c         call glun(slun)
-c         write(*,*)"Dumping reconstructed profile"
-c         write(sfilename,"(i2.2,a,i5.5)")fold,"prof",candno
-c         write(*,*)"Dumping to  ",sfilename
-c         open(unit=slun,file=sfilename,status='unknown')
-cc        do i=1,nfft*2,2
-cc         do i=1,nfft,2
-c         do i=1,nfft*2
-cc           amp=sqrt(profile(i)*profile(i)+profile(i+1)
-cc     &           *profile(i+1))
-cc            write(slun,*)i,amp 
-c            write(slun,*)profile(i) 
-c         enddo   
-c         close(slun)
-
-
-      end
-
+c     call glun(slun)
+c     write(*,*)"Dumping reconstructed profile"
+c     write(sfilename,"(i2.2,a,i5.5)")fold,"prof",candno
+c     write(*,*)"Dumping to  ",sfilename
+c     open(unit=slun,file=sfilename,status='unknown')
+c     c        do i=1,nfft*2,2
+c     c         do i=1,nfft,2
+c     do i=1,nfft*2
+c     c           amp=sqrt(profile(i)*profile(i)+profile(i+1)
+c     c     &           *profile(i+1))
+c     c            write(slun,*)i,amp 
+c     write(slun,*)profile(i) 
+c     write(60,*)profile(i)
+c     enddo   
+c     close(slun)
+         
+         
+         end
+      
+      

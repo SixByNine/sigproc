@@ -24,6 +24,8 @@ c
       integer npf,fold
       real freq
       fbin=real(freq)*(2.0*real(tsamp)*npf*2.0**(fold-1))
+      fbin=mod(fbin,2*npf)
+      if(fbin.gt.npf) fbin=2*npf-fbin
       end
 c=============================================================================
       real*8 function freqff(tsamp,npf,fold,k)
