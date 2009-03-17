@@ -34,7 +34,7 @@ c
       include 'folds.inc'
       
       character*80 filename,option,title*160,susfile,cline,prf,ps
-      character*70 string(10),period,acceln,accdot,dmidx*4,dmval*8
+      character*90 string(10),period,acceln,accdot,dmidx*4,dmval*8
 
       integer fold,nc,mc,nt,mt,lst,lun2,lun3,lsum,length,mg,ngx,ngy
       integer ngz,ndmi,ndmm
@@ -315,7 +315,7 @@ c
                    harm=harm.or.(ratio.gt.0.24995.and.ratio.lt.0.25005)
                    harm=harm.or.(ratio.gt.0.29999.and.ratio.lt.0.30001)
                    harm=harm.or.(ratio.gt.0.3332.and.ratio.lt.0.3334)
-                   harm=harm.or.(ratio.gt.0.39.and.ratio.lt.0.41)
+                   harm=harm.or.(ratio.gt.0.3999.and.ratio.lt.0.4001)
                    harm=harm.or.(ratio.gt.0.4995.and.ratio.lt.0.5005)
                    harm=harm.or.(ratio.gt.0.5997.and.ratio.lt.0.6003)
                    harm=harm.or.(ratio.gt.0.6665.and.ratio.lt.0.6668)
@@ -715,7 +715,9 @@ c
                endif
             else if (autop) then
                call pgbegin(0,
-     &         susfile(1:index(susfile,'.sum')-1)//'.ps/ps',1,1)
+c           uncomment this line if .ps files wanted
+C     &         susfile(1:index(susfile,'.sum')-1)//'.ps/ps',1,1)
+     &         '/null',1,1)
                plotit=.true.
             else
                plotit=.false.

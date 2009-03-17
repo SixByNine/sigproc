@@ -371,8 +371,9 @@ c          pcand(fold,j)=1000.0/freq(tsamp,npf,fold,snum(indx(i)))
           pcand(fold,j)=1000.0/freqff(tsamp,npf,foldvals(fold),
      &         snum(indx(i)))
 c       MJK 2008 : I am not sure who added the addition below, but it
-c                  seems to be completely arbatrary.
-          snrc=samp(indx(i))/rms  !+ real(foldvals(fold))/rms
+c                  seems to be completely arbatrary. 
+c       llevin: adds snr 0.2*sqrt(fold no) to each fold
+          snrc=samp(indx(i))/rms  + real(foldvals(fold))/(5*rms)
           scand(fold,j)=snrc  
           if (snrc.gt.snrbest) then
             snrbest=snrc
