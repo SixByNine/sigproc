@@ -216,7 +216,7 @@ c         write(88,*) i, samp(i), series(2*i-1), series(2*i)
       rms=sqrt(rms/real(n))
 
       write(llog,*) 'Resulting spectral RMS:',rms
-      if (rms.le.0) then
+      if (rms.le.0.1) then
               print *,"ERROR: RMS is zero! Cannot continue, file likely"
      &        //" all zeros"
               stop 1

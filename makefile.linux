@@ -1,26 +1,23 @@
 # makefile.linux - your system-specific makefile for SIGPROC
-BIN = /u/kei041/bin/
+BIN = /nfs/cluster/psr/hitrun/bin
 # edit this by hand if you want to change the C compiler options
-CCC = gcc -O2 -g0
-#CCC = gcc -O0 -g3
+CCC = gcc -O2
+#LINK.f = gfortran
+#F77 = gfortran
 # The following optional libraries need to be edited by hand...
-#LPGPLOT = -L/usr/local/pgplot -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11 -lpng
-LPGPLOT = /data/RUBICON_2/kei041/usr//pgplot/libcpgplot.a /data/RUBICON_2/kei041/usr//pgplot/libpgplot.a -L/usr/X11R6/lib -lX11 -lpng
+LPGPLOT = -L/nfs/cluster/psr/packages/linux_64/pgplot -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11
 #LFITS = -L/usr/local/src/cfitsio -lcfitsio
-LFFTW = -L/data/RUBICON_2/kei041/usr/lib -lfftw3 -lfftw3f
+LFFTW = -L/nfs/cluster/psr/hitrun/lib -lfftw3 -lfftw3f -I/nfs/cluster/psr/hitrun/include
 F77_LIBS = 
-LINK.f = gfortran
-F77 = gfortran
 SUNLM = 
 ifneq ($(origin LFITS), undefined)
 	DFITS = -DPSRFITS
 endif
 ifneq ($(origin LFFTW), undefined)
-	DFFTW = -DFFTW -I/data/RUBICON_2/kei041/usr/include/
+	DFFTW = -DFFTW
 	FFTWF = fftwdata.o
 else
 	FFTWF = fftwdummy.o
 endif
 %.o : %.f
 	$(F77)  -c $< -o $@
-
