@@ -25,6 +25,7 @@ c
 c     Local variables
 c      
       integer h,i,j,k,npf,fold,fb,lun,nc,ncal,istat,n
+      integer loopcounter
       real snrbest,rms,sumsq,snrc,thresh,fnyq,spcsnr
       real saverms
       integer indx(npts/8),snum(npts/8)
@@ -305,10 +306,16 @@ c M.Keith 2008
            thresh = 4.30
         endif
 
-
-
+        loopcounter=0
+         
  6       rms = saverms * sqrt(real(foldvals(fold)))
-
+        loopcounter = loopcounter +1
+        if(loopcounter.gt.10) then
+             write(*,*)"Tried to adjust SNR thresh too many times"//
+     &                 ", giving up"
+             stop 2
+         endif
+         write(*,*)"SNR threshold for fold",fold,"is",thresh
 c
 c        for Parkes Data - call zapping algorithms if selected
 c
@@ -355,7 +362,7 @@ c             write(*,*) 'WARNING: not enough candidates saved!!'
         enddo
         if (c(fold).lt.2) then
            thresh=thresh-1.0
-           goto 5
+           goto 6
         endif
 c
 c       Sort amplitude spectrum in s/n order using the dreaded indexx
