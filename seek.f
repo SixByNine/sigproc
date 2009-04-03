@@ -24,23 +24,24 @@ c     06/04/05 - (dunc) added -mmzap option for Methanol multibeam survey
 c     07/01/26 - (dunc) added Ralph Eatough's fftw wrapper using -fftw option
 c     07/02/01 - (dunc) added Ralph Eatough's profile recon mods using -recon
 c     07/02/22 - (dunc) added header output to .prd file via -head option
-c
+c     '
 c=============================================================================
       implicit none
       include 'seek.inc'
       logical dump,rspc,acsearch,tanalyse,pmzap,mmzap,pulse,
-     &        append,pzero,fftw,recon,prdh
+     &        append,pzero,fftw,recon,prdh,nopowtwo
       integer oldw ! = 0 new mean, = 1 old mean, = 2 median
       character*80 sfile
       real accn,adot
       real*8 pmax
       integer llog       
       call seekin(llog,dump,rspc,pmzap,mmzap,sfile,pulse,append,pzero,
-     &	  pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax)
+     &    pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax,
+     &    nopowtwo)
       accn=refac
       adot=refad
       call timstart(llog)                    ! fire up the ship's clock
-      if (.not.rspc) call readdat(llog,pzero)! read in the time series 
+      if (.not.rspc) call readdat(llog,pzero,nopowtwo)! read in the time series 
       if (pulse) then
         call baseline(llog)
         call singlepulse(llog,append,spthresh,ncandsmax,nsmax)

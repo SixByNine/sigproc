@@ -1,5 +1,5 @@
 c=============================================================================
-	subroutine readdat(llog,pzero)
+	subroutine readdat(llog,pzero,nopowtwo)
 c=============================================================================
         implicit none 
 	include 'seek.inc'
@@ -9,7 +9,7 @@ c=============================================================================
  	integer readsample,skipsample
 	character*80 pfile
 	real f0,chbw
-	logical filterbank,opened,pzero
+	logical filterbank,opened,pzero,nopowtwo
 	data opened/.false./
 	save
 
@@ -163,10 +163,16 @@ c        endif
 	temp=log10(real(ntim))/log10(2.0)
 	near2=nint(temp)
 
+
 	if (tsize.eq.0) then
-	   write(llog,*) 'Nearest power of 2:',near2
-	   tsize=near2
-	   ntim=2**tsize
+           if (nopowtwo) then
+              write(llog,*) 'Transforming using non-power-of-two'
+              write(llog,*) 'This could be a little slow.'
+           else
+	      write(llog,*) 'Nearest power of 2:',near2
+	      tsize=near2
+	      ntim=2**tsize
+           endif
 	else
 	   write(llog,*) 'Requested transform power of 2:',tsize
 	   ntim=2**tsize

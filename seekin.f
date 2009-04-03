@@ -1,6 +1,7 @@
 c=============================================================================
       subroutine seekin(llog,dump,rspc,pmzap,mmzap,sfile,pulse,app,
-     & pzero,pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax)
+     & pzero,pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax,
+     & nopowtwo)
 c=============================================================================
 c
 c   Controls the command-line inputs to seek
@@ -10,6 +11,7 @@ c
       integer narg,iargc,f,i,llog,p2,lun
       character*80 option,sfile
       logical dump,rspc,pmzap,mmzap,pulse,app,pzero,fftw,recon,prdh
+      logical nopowtwo
       integer oldw
       real*8 pmax
 
@@ -65,6 +67,8 @@ c
      &   ' whiten spectrum'
          write(*,1)'-submd   - median subtraction to whiten spectrum'
          write(*,1)'-head    - adds header info to output .prd files'
+         write(*,1)'-nopow2  - Do not force power of 2 samples'//
+     &             ' (EXPERIMENTAL)'
          write(*,*)
          write(*,1)'-m[file] - mask birdies from file (def="mask")'
          write(*,1)'-z[file] - zap birdies from file (def="birdies")'
@@ -118,6 +122,7 @@ c
       rspc=.false.
       sfile='fold0.spc'
       refdm=0.0 
+      nopowtwo=.false.
       call getarg(1,filename)
       
       if (index(filename,'.ser').gt.0) then
@@ -201,6 +206,9 @@ c          endif
 	   fftw=.true.
 	else if (index(option,'-head').gt.0) then
 	   prdh=.true.
+        else if (index(option,'-nopow2').gt.0) then
+           nopowtwo=.true.
+           fftw=.true.
         else if (index(option,'-pzero').gt.0) then
            pzero=.true.
         else if (index(option,'-p').gt.0) then
