@@ -36,8 +36,10 @@ c     spectrum having npf points. Tsamp is the sampling interval
 c     of the corresponding time domain data (seconds), whilst fold
 c     refers to the number of harmonics summed, eg. 1,2,4,6,...
 c
+c     M.Keith 2009: subtracted 1/4 of a bin to make the frequency 
+c                   correct after the Fourier interpolation.
       real*8 tsamp
       integer npf,fold,k
-      freqff=real(k)/(2.0*tsamp*npf*fold)
+      freqff=(real(k)-0.25)/(2.0*tsamp*npf*fold)
       end
 c=============================================================================
