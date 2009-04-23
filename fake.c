@@ -87,7 +87,8 @@ main (int argc, char *argv[])
 	output=stdout;
 	seed=-1;
 	faketime=plst=0.0;
-	psrdm=period=-1.0;
+	psrdm=-1.0;
+	period=-1.0;
 	pdot=accn=0.0;
 	pulse=0.0;
 	snr=1.0;
@@ -203,7 +204,7 @@ main (int argc, char *argv[])
 	if (seed == -1) seed = startseed();
 
 	/* get random period between 1 ms and 1 s if not set */
-	if (period < 0.0) period=flat(1.0e-3,1.0,&seed);
+	if (period < 0.0) period=flat(1.0e-3,-period,&seed);
 
 	/* get random DM between 1  and 1000 pc/cc if not set */
 	if (psrdm < 0.0) psrdm=flat(1.0,1.0e3,&seed);
