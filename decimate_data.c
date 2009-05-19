@@ -54,6 +54,10 @@ void decimate_data(FILE *input, FILE *output) /*includefile*/
 	fwrite(cblock,sizeof(unsigned char),nout/2,output);
       }
       break;
+    case 2:
+      float2two(fblock,nout,min,max,cblock);
+      fwrite(cblock,sizeof(unsigned char),nout/4,output);
+      break;
     }
     realtime+=(float) tsamp * (float) ns/(float) nchans/(float) nifs;
     sprintf(string,"time:%.1fs",realtime);
