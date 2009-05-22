@@ -103,7 +103,7 @@ int blen;
 	fprintf(output,"<psrxml version='1'>\n");
 	fprintf(output,"\t<source_name>%s</source_name>\n",source_name);
 	fprintf(output,"\t<day_of_observation units='MJD'>%d</day_of_observation>\n",(int)floor(tstart));
-	fprintf(output,"\t<midnight_to_first_sample units='ns'>%d</midnight_to_first_sample>\n",(tstart - floor(tstart))*8.64e13  );
+	fprintf(output,"\t<midnight_to_first_sample units='ns'>%lld</midnight_to_first_sample>\n",(unsigned long long)((tstart - floor(tstart))*8.64e13));
 	fprintf(output,"\t<current_sample_interval units='us'>%lf</current_sample_interval>\n",tsamp*1e6);
 	fprintf(output,"\t<number_of_samples>%d</number_of_samples>\n",nsamp);
 	fprintf(output,"\t<actual_obs_time units='s'>%lf</actual_obs_time>\n",nsamp*tsamp);
@@ -150,6 +150,9 @@ int blen;
 	}
 	fprintf(output,"\t<observing_programme>%s</observing_programme>\n",project);
 
+	if(telescope_id==4){
+		fprintf(output,"\t<telescope_identifying_string>Parkes</telescope_identifying_string>");
+	}
 	fprintf(output,"\t<data>\n");
 	fprintf(output,"\t\t<filename>%s</filename>\n",inpfile);
 	fprintf(output,"\t\t<data_uid type='djb2:4096'>%016llx</data_uid>\n",hashdjb2(dataSample,len));
