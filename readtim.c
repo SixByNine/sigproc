@@ -67,8 +67,8 @@ int skipsample_(int *nskip)
 }
 int readsample_(float *sample) 
 {
-  unsigned short *twobytes;
-  char *byte;
+  unsigned short twobytes;
+  char byte;
 
   if (feof(timfile)) {
     fclose(timfile);
@@ -79,12 +79,12 @@ int readsample_(float *sample)
     fread(sample,nbits/8,1,timfile);
     break;
   case 16:
-    fread(twobytes,nbits/8,1,timfile);
-    *sample = (float) *twobytes;
+    fread(&twobytes,nbits/8,1,timfile);
+    *sample = (float) twobytes;
     break;
   case 8:
-    fread(byte,nbits/8,1,timfile);
-    *sample = (float) *byte;
+    fread(&byte,nbits/8,1,timfile);
+    *sample = (float) byte;
     break;
   }
   return(1);
