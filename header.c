@@ -195,7 +195,7 @@ main(int argc, char *argv[])
 			}else if (strings_equal(argv[i],"-ra_deg")) {
 				printf("%f\n",rah*15+ram/4.0+ras/240.0);
 			} else if (strings_equal(argv[i],"-dec_deg")) {
-				printf("%f\n",ded+dem/60.0+des/3600.0);
+				printf("%c%f\n",decsign,abs(ded)+dem/60.0+des/3600.0);
 			} else {
 				header_help();
 				sprintf(message,"unknown argument (%s) passed to header",argv[i]);
