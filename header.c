@@ -6,6 +6,8 @@
 #include <math.h>
 #include "header.h"
 #include "sigproc.h"
+#include <string.h>
+
 int wapp_header_size, wapp_incfile_length;
 int nbins;
 	double period;
@@ -190,6 +192,10 @@ main(int argc, char *argv[])
 				printf("%02d:%02d:%s\n",rah,ram,sra);
 			} else if (strings_equal(argv[i],"-src_dej")) {
 				printf("%c%02d:%02d:%s\n",decsign,abs(ded),dem,sde);
+			}else if (strings_equal(argv[i],"-ra_deg")) {
+				printf("%f\n",rah*15+ram/4.0+ras/240.0);
+			} else if (strings_equal(argv[i],"-dec_deg")) {
+				printf("%f\n",ded+dem/60.0+des/3600.0);
 			} else {
 				header_help();
 				sprintf(message,"unknown argument (%s) passed to header",argv[i]);
