@@ -314,15 +314,12 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 	int mask;
 	int rem,stor;
 
-	printf("point one\n");
 	byte=0;
 	// rewind the file
 	printf("\n",SEEK_SET);
 	fseek(file,0,SEEK_SET);
-	printf("point 1.5\n");
 	// read the file header
 	read_header(file);
-	printf("point two\n");
 	if ((nchans*nbits)%8){
 		fprintf(stderr,"ERROR: bytes per sample is not an integer\n");
 		exit(1);
@@ -338,7 +335,6 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 		tz_start = tzaps[0][0];
 		tz_end = tzaps[0][1];
 	}
-	printf("point three\n");
 	srand ( time(NULL) );
 	rem=0;
 	for(c=0;c<ARRL;c++){
