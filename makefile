@@ -203,6 +203,8 @@ downsample  : downsample.o library
 	$(CC) -o $(BIN)/downsample downsample.o  $(LIB) -lm $(LFITS)
 	rm -f downsample.o
 
+filedit : filedit.o library
+	$(CC) -o $(BIN)/filedit filedit.c $(LIB) -lm
 
 
 fold  : fold.o library 

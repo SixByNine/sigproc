@@ -1,10 +1,11 @@
 # makefile.darwin - your system-specific makefile for SIGPROC
-BIN = /Users/mkeith/Code/bin/
+BIN = /Users/mkeith/Code/bin
 # edit this by hand if you want to change the C compiler options
-CCC = gcc -O2 -g3
-
+CCC = gcc -O2
+LINK.f = gfortran
+F77 = gfortran
 # The following optional libraries need to be edited by hand...
-LPGPLOT =  -L/sw/lib/ -L/usr/X11R6/lib -Wl,-framework -Wl,Foundation  -lX11 -lpng -lz -lgfortran -laquaterm ~/Code/C_and_Fortran/pgplot/libpgplot.a ~/Code/C_and_Fortran/pgplot/libcpgplot.a
+LPGPLOT = -L/Users/mkeith/Code/C_and_Fortran/pgplot -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11 -lpng
 #LFITS = -L/usr/local/src/cfitsio -lcfitsio
 #LFFTW = -L/usr/local/lib/ -lfftw3 -lfftw3f
 F77_LIBS = -lSystemStubs /Developer/SDKs/MacOSX10.3.9.sdk/usr/lib/gcc/darwin/2.95.2/libcc_dynamic.a
@@ -19,4 +20,4 @@ else
 	FFTWF = fftwdummy.o
 endif
 %.o : %.f
-	gfortran  -c $< -o $@
+	$(F77)  -c $< -o $@
