@@ -205,7 +205,7 @@ downsample  : downsample.o library
 
 filedit : filedit.o library
 	$(CC) -o $(BIN)/filedit filedit.c $(LIB) -lm
-
+	rm -f filedit.o
 
 fold  : fold.o library 
 	$(CC) -o $(BIN)/fold fold.o  $(LIB) -lm $(LFITS)

@@ -29,7 +29,7 @@ void print_usage(){
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:r:m:s:";
+	const char* args = "d:hn:t:r:m:s:k:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int timezaps[1024][2];
@@ -41,6 +41,8 @@ int main (int argc, char** argv){
 	char newname[1024];
 	int c;
 	FILE* file;
+	char killfile[20];
+	int killswitch=0;
 
 	newname[0]='\0';
 	ntimezaps=0;
@@ -88,6 +90,10 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'n';
 
+	long_opt[long_opt_idx].name = "tkill";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'k';
 
 
 	long_opt[long_opt_idx].name = 0;
@@ -124,19 +130,90 @@ int main (int argc, char** argv){
 					case 's':
 						sigma=atof(optarg);
 						break;
+				        case 'k':
+					  sscanf(optarg, "%s",killfile);
+					  killswitch = 1;
+					        break;
 				}
 		}
 	}
 
+	if (killswitch){
+	  printf("Using file %s as sample killer...\n",killfile);
+	  FILE *killer;
+	  if ((killer = fopen(killfile, "r")) == NULL){
+	    printf("Failed to open the killfile: %s\n",killfile);
+	    exit(-1);
+	  }
+	  int a, j=0, arr_size=1024;
+	  //	  while (!feof(killer)){
+	  //	    fscanf(killer,"%i",&a);
+	  //	    j++;
+	  //	  }
+	  //	  fclose(killer);
+	  int *tsamps;
+	  tsamps = malloc((arr_size)* sizeof(int));
+	  if (tsamps == NULL){
+	    printf("Failed to allocate tsamps memory!\n");
+	    exit(-3);
+	  }
+	  if ((killer = fopen(killfile, "r")) == NULL){
+	    printf("Failed to open the killfile: %s\n",killfile);
+	    exit(-1);
+	  }
+	  j=0;
+	  char byte;
+	  /* Skip the first line of the file */
+	  while (!feof(killer)){
+	    fread(&byte,1,1,killer);
+	    
+	    if( byte == '\n' )break;
+	  }
+
+	  while (!feof(killer)){
+	    if ( j > arr_size){
+	      arr_size*=2;
+	      tsamps=realloc(tsamps,arr_size*sizeof(int));
+	    }
+	    fscanf(killer,"%i",&tsamps[j]);
+	    j++;
+	  }
+	  fclose(killer);
+	  int i;
+	  printf("tsamps: %i\n",j);
+	  for (i=0;i<=j;i++){
+	    //printf("%i\n",i);
+	    if (ntimezaps>1023){
+	      printf("Too many tsamps to kill!\n");
+	      exit(-4);
+	    }
+	    if (tsamps[i]==0){
+	      //printf("%i\t%i\n",i,ntimezaps);
+	      timezaps[ntimezaps][0]=i;
+	      timezaps[ntimezaps][1]=i+1;
+	      ntimezaps++;
+	    }
+	  }
+	  //printf("done this\n");
+	  //exit(0);
+	  free(tsamps);
+	}
+	
+	
 	if (optind >= argc) {
 		printf("Error: Need a fil file to work on... (use --help for options)\n");
 		exit(1);
 	}
 
-	file = fopen(argv[optind],"r+");
-
+	//printf("%s\n",argv[optind]);
+	if ((file = fopen(argv[optind],"r+")) ==NULL){
+	  printf("Failed to open file passed as CLA.\n");
+	  exit(-5);
+	}
+	//printf("done this\n");
 
 	fix_header(file,newname,newra,newdec);
+	//printf("Got here\n");
 	zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
 
 	return 0;
@@ -237,13 +314,15 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 	int mask;
 	int rem,stor;
 
-	
+	printf("point one\n");
 	byte=0;
 	// rewind the file
+	printf("\n",SEEK_SET);
 	fseek(file,0,SEEK_SET);
+	printf("point 1.5\n");
 	// read the file header
 	read_header(file);
-
+	printf("point two\n");
 	if ((nchans*nbits)%8){
 		fprintf(stderr,"ERROR: bytes per sample is not an integer\n");
 		exit(1);
@@ -259,7 +338,7 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 		tz_start = tzaps[0][0];
 		tz_end = tzaps[0][1];
 	}
-
+	printf("point three\n");
 	srand ( time(NULL) );
 	rem=0;
 	for(c=0;c<ARRL;c++){
