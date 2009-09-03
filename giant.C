@@ -67,8 +67,8 @@ void  zap_improbables(float pdfs[][100], float ** time_series, int nbeam,
 /* sigproc global variables describing the operating mode */
 int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, 
   baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off;
-double refrf,userdm,fcorrect;
-float clipvalue,jyf1,jyf2;
+//double refrf,userdm,fcorrect;
+//float clipvalue,jyf1,jyf2;
 
 int main (int argc, char *argv[]) 
 {
