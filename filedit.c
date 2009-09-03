@@ -9,7 +9,7 @@
 #include "header.h"
 
 void fix_header(FILE* file, char* newname, double newra, double newdec);
-void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma);
+void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma);
 float get_random_value(float mean, float sigma);
 
 void print_usage(){
@@ -32,7 +32,7 @@ int main (int argc, char** argv){
 	const char* args = "d:hn:t:r:m:s:k:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
-	int timezaps[1024][2];
+	int* timezaps[2];
 	int fzaps[1024];
 	int ntimezaps,nfreqzaps;
 	double newra;
@@ -43,6 +43,7 @@ int main (int argc, char** argv){
 	FILE* file;
 	char killfile[20];
 	int killswitch=0;
+	int arr_size = 1024;
 
 	newname[0]='\0';
 	ntimezaps=0;
@@ -112,7 +113,7 @@ int main (int argc, char** argv){
 						exit(0);
 						break;
 					case 't':
-						sscanf(optarg,"%d %d",timezaps[ntimezaps]+0,timezaps[ntimezaps]+1);
+						sscanf(optarg,"%d %d",timezaps[0]+ntimezaps,timezaps[1]+ntimezaps);
 						ntimezaps++;
 						break;
 					case 'r':
@@ -138,6 +139,11 @@ int main (int argc, char** argv){
 		}
 	}
 
+	timezaps[0] = malloc((arr_size)* sizeof(int));
+	timezaps[1] = malloc((arr_size)* sizeof(int));
+
+
+
 	if (killswitch){
 	  printf("Using file %s as sample killer...\n",killfile);
 	  FILE *killer;
@@ -145,18 +151,14 @@ int main (int argc, char** argv){
 	    printf("Failed to open the killfile: %s\n",killfile);
 	    exit(-1);
 	  }
-	  int a, j=0, arr_size=1024;
+	  int a, j=0;
 	  //	  while (!feof(killer)){
 	  //	    fscanf(killer,"%i",&a);
 	  //	    j++;
 	  //	  }
 	  //	  fclose(killer);
-	  int *tsamps;
-	  tsamps = malloc((arr_size)* sizeof(int));
-	  if (tsamps == NULL){
-	    printf("Failed to allocate tsamps memory!\n");
-	    exit(-3);
-	  }
+
+	  
 	  if ((killer = fopen(killfile, "r")) == NULL){
 	    printf("Failed to open the killfile: %s\n",killfile);
 	    exit(-1);
@@ -169,34 +171,25 @@ int main (int argc, char** argv){
 	    
 	    if( byte == '\n' )break;
 	  }
-
+	  int good_sample=1;
 	  while (!feof(killer)){
-	    if ( j > arr_size){
-	      arr_size*=2;
-	      tsamps=realloc(tsamps,arr_size*sizeof(int));
+	    
+	    fscanf(killer,"%i\n",&good_sample);
+	    if(!good_sample){
+	      if ( ntimezaps > arr_size){
+		arr_size*=2;
+		timezaps[0]=realloc(timezaps[0],arr_size*sizeof(int));
+		timezaps[1]=realloc(timezaps[1],arr_size*sizeof(int));
+	      }
+	      timezaps[0][ntimezaps]=j;
+	      timezaps[1][ntimezaps]=j+1;
+	      //	      printf("%d\t%d\t%d\t%d\n",ntimezaps,j,timezaps[0][0],timezaps[1][0]);
+	      ntimezaps++;
 	    }
-	    fscanf(killer,"%i",&tsamps[j]);
 	    j++;
 	  }
 	  fclose(killer);
-	  int i;
-	  printf("tsamps: %i\n",j);
-	  for (i=0;i<=j;i++){
-	    //printf("%i\n",i);
-	    if (ntimezaps>1023){
-	      printf("Too many tsamps to kill!\n");
-	      exit(-4);
-	    }
-	    if (tsamps[i]==0){
-	      //printf("%i\t%i\n",i,ntimezaps);
-	      timezaps[ntimezaps][0]=i;
-	      timezaps[ntimezaps][1]=i+1;
-	      ntimezaps++;
-	    }
-	  }
-	  //printf("done this\n");
-	  //exit(0);
-	  free(tsamps);
+	  printf("Zapping %d/%d time samples\n",ntimezaps,j);
 	}
 	
 	
@@ -214,6 +207,7 @@ int main (int argc, char** argv){
 
 	fix_header(file,newname,newra,newdec);
 	//printf("Got here\n");
+	
 	zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
 
 	return 0;
@@ -300,7 +294,7 @@ void fix_header(FILE* file, char* newname, double newra, double newdec){
 }
 
 #define ARRL 100000
-void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma){
+void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma){
 	long long unsigned cur_sample;
 	int sample_nbytes;
 	int cur_tzap;
@@ -314,12 +308,15 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 	int mask;
 	int rem,stor;
 
+
 	byte=0;
 	// rewind the file
 	printf("\n",SEEK_SET);
 	fseek(file,0,SEEK_SET);
+
 	// read the file header
 	read_header(file);
+
 	if ((nchans*nbits)%8){
 		fprintf(stderr,"ERROR: bytes per sample is not an integer\n");
 		exit(1);
@@ -333,8 +330,9 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 
 	if (cur_tzap < ntzaps){
 		tz_start = tzaps[0][0];
-		tz_end = tzaps[0][1];
+		tz_end = tzaps[1][0];
 	}
+
 	srand ( time(NULL) );
 	rem=0;
 	for(c=0;c<ARRL;c++){
@@ -373,6 +371,7 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 //		printf("Zapping: %d -> %d\n",tz_start,tz_end);
 		// start zapping
 		while (cur_sample < tz_end){
+		  //		  printf("cur = %d\t%d\t%d\n",cur_sample,tz_start, tz_end);
 			i=0;
 			for(c=0;c<sample_nbytes;c++){
 				i=(int)((rand()*(ARRL-1.0))/(float)RAND_MAX);
@@ -383,8 +382,8 @@ void zap_em(FILE* file, int tzaps[1024][2], int ntzaps, int fzaps[1024], int nfz
 		}
 		cur_tzap++;
 		if (cur_tzap < ntzaps){
-			tz_start = tzaps[cur_tzap][0];
-			tz_end = tzaps[cur_tzap][1];
+			tz_start = tzaps[0][cur_tzap];
+			tz_end = tzaps[1][cur_tzap];
 		}
 	}
 }
