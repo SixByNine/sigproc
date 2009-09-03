@@ -160,7 +160,14 @@ $(LIB)(write_pulses.o)\
 $(LIB)(writespec.o)\
 $(LIB)(y.tab.o)\
 $(LIB)(zap_birdies.o)\
-$(LIB)(zapit.o)
+$(LIB)(zapit.o)\
+$(LIB)(dialog.o)\
+$(LIB)(libplotfil.o)\
+$(LIB)(gtools.o)\
+$(LIB)(filedit.o)\
+$(LIB)(newnewsumhrm.o)\
+$(LIB)(newoldsumhrm.o)
+
 ###############################################################################
 all: library programs scripts 
 
@@ -264,7 +271,7 @@ blanker  : blanker.o library
 	rm -f blanker.o
 
 giant  : giant.o library 
-	$(CXX) -o $(BIN)/giant giant.o $(LIB) $(LPGPLOT) -lm 
+	$(CXX) -o $(BIN)/giant giant.o Creadspec.C find_fft.C find_formspec.C $(LIB) $(LPGPLOT) $(F77_LIBS) -lm 
 	rm -f giant.o
 
 barycentre  : barycentre.o library 
