@@ -172,8 +172,8 @@ int main (int argc, char *argv[])
   // sbates 2009 ; switch to make a .killtchan file for time samples > 3.5 sigma
 
   int ngulp=ngulp_original;
-  int nrejects_max=ngulp_original/100;
-  int * mown = new int[nrejects_max];
+//  int nrejects_max=ngulp_original/100;
+  int * mown = new int[ngulp_original];
   int nstart=0;
   if (zapswitch){
     float dummy;
@@ -913,35 +913,47 @@ void normalise(int n, float * d, float threshold){
     printf("new mean, %f new sigma! %f\n",mean,sigma);
 }
 
-/**
- * Public domain quicksort algorithm
- *
- *
- */
-char quicksort_inplace(int *arr, int elements) {
- 
-#define  MAX_LEVELS  1000
- 
-  int  piv;
-     int beg[MAX_LEVELS], end[MAX_LEVELS], i=0, L, R ;
- 
-      beg[0]=0; end[0]=elements;
-      while (i>=0) {
-          L=beg[i]; R=end[i]-1;
-           if (L<R) {
-                      piv=arr[L]; if (i==MAX_LEVELS-1) return 0;
-                      while (L<R) {
-                           while (arr[R]>=piv && L<R) R--; if (L<R) arr[L++]=arr[R];
-                               while (arr[L]<=piv && L<R) L++; if (L<R) arr[R--]=arr[L]; 
-                      }
-                       arr[L]=piv; beg[i+1]=L+1; end[i+1]=end[i]; end[i++]=L; 
-         }
-               else {
-                  i--; 
-           }
-       }
-       return 1; 
+
+int quicksort_inplace_partition(int* array, int top, int bottom);
+void quicksort_inplace(int* array, int top, int bottom){
+	int middle;
+	if (top < bottom)
+	{
+		middle = quicksort_inplace_partition(array, top, bottom);
+		quicksort_inplace(array, top, middle);
+		quicksort_inplace(array, middle+1, bottom);
+	}
+	return;
 }
+
+
+int quicksort_inplace_partition(int* array, int top, int bottom){
+	int x = array[top];
+	int topidx = top - 1;
+	int botidx = bottom + 1;
+	int swap;
+	do
+	{
+		do
+		{
+			botidx --;
+		}while (x <array[botidx]);
+
+		do
+		{
+			topidx++;
+		} while (x >array[topidx]);
+
+		if (topidx < botidx)
+		{
+			swap = array[topidx];
+			array[topidx] = array[botidx];
+			array[botidx] = swap;
+		}
+	}while (topidx < botidx);
+	return botidx;
+}
+
 
 void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int max_nscrunch){
     printf("Mowing lawn %d samples\n",n);
@@ -1002,7 +1014,7 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
      int i=0;
     
      while (noff<current_n) {
-       if (d[noff]>threshold || d[noff]<(0.0-threshold)){
+       if (fabs(d[noff]) > threshold){
 	 //printf("d[%d]=%f\n",noff,d[noff]);
 	 d[noff]= mean;
 	 for(int z = 0 ; z < nscrunch; z++){
@@ -1013,10 +1025,10 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
        }
 
        noff++;
-       if ( *nrejects > (n/100)-1 ){
+    /*   if ( *nrejects > (n/100)-1 ){
 	 printf("Too many rejects %d (out of %d) change threshold......\n",*nrejects,n/100-1);
 	 exit(-1);
-       }
+       }*/
      }
 
 
@@ -1036,7 +1048,10 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
     fprintf(chantkill,"#%lf\t%lf\n",meankeep,sigmakeep);
 
     
-    quicksort_inplace(mown,*nrejects);
+    quicksort_inplace(mown,0,*nrejects);
+//    for (int i =0 ; i < *nrejects; i++){
+//	    printf("%d\n",mown[i]);
+  //  }
     int currzap=0;
     for (int i =0 ; i < n; i++){
       // Skip on, writing 1s, until we reach the next thing that was mown
