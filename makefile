@@ -164,7 +164,6 @@ $(LIB)(zapit.o)\
 $(LIB)(dialog.o)\
 $(LIB)(libplotfil.o)\
 $(LIB)(gtools.o)\
-$(LIB)(filedit.o)\
 $(LIB)(newnewsumhrm.o)\
 $(LIB)(newoldsumhrm.o)
 

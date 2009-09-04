@@ -1,13 +1,12 @@
 # makefile.darwin - your system-specific makefile for SIGPROC
-BIN = /Users/mkeith/Code/bin
+BIN = /Users/sbates/Documents/Physics/Pulsars/hitrun/pipeline/code/git/sigproc
 # edit this by hand if you want to change the C compiler options
-CCC = gcc -O2
-LINK.f = gfortran
-F77 = gfortran
+CCC = gcc -O2 -g3
+
 # The following optional libraries need to be edited by hand...
-LPGPLOT = -L/Users/mkeith/Code/C_and_Fortran/pgplot -lpgplot -lcpgplot -L/usr/X11R6/lib -lX11 -lpng
-#LFITS = -L/usr/local/src/cfitsio -lcfitsio
-#LFFTW = -L/usr/local/lib/ -lfftw3 -lfftw3f
+LPGPLOT =  -L/sw/lib/ -L/usr/X11R6/lib -Wl,-framework -Wl,Foundation  -lX11 -lpng -lz -lgfortran -laquaterm /Users/sbates/Documents/Physics/Pulsars/soft/ph-pipeline/packages/pgplot_5.2/pgplot/libpgplot.a /Users/sbates/Documents/Physics/Pulsars/soft/ph-pipeline/packages/pgplot_5.2/pgplot/libcpgplot.a
+#LFITS = -L/Users/sbates/Documents/Physics/Pulsars/soft/ph-pipeline/packages/cfitsio_3.0/lib -lcfitsio
+#LFFTW = -L//Users/sbates/Documents/Physics/Pulsars/soft/ph-pipeline/packages/fftw_3.1.2/lib -lfftw3 -lfftw3f
 F77_LIBS = -lSystemStubs /Developer/SDKs/MacOSX10.3.9.sdk/usr/lib/gcc/darwin/2.95.2/libcc_dynamic.a
 SUNLM = 
 ifneq ($(origin LFITS), undefined)
@@ -20,4 +19,4 @@ else
 	FFTWF = fftwdummy.o
 endif
 %.o : %.f
-	$(F77)  -c $< -o $@
+	gfortran  -c $< -o $@
