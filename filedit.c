@@ -5,8 +5,9 @@
 #include <math.h>
 #include <time.h>
 
-#include "sigproc.h"
 #include "header.h"
+
+int read_header(FILE *inputfile);
 
 void fix_header(FILE* file, char* newname, double newra, double newdec);
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma);
@@ -203,12 +204,10 @@ int main (int argc, char** argv){
 	  printf("Failed to open file passed as CLA.\n");
 	  exit(-5);
 	}
-	//printf("done this\n");
 
-	fix_header(file,newname,newra,newdec);
-	//printf("Got here\n");
-	
-	zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
+	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000)fix_header(file,newname,newra,newdec);
+
+	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
 
 	return 0;
 }
@@ -225,6 +224,7 @@ void fix_header(FILE* file, char* newname, double newra, double newdec){
 	float a_float;
 	int i;
 
+	printf("Fixing header\n");
 	newlen = strlen(newname);
 
 	fseek(file,0,SEEK_SET);
@@ -308,10 +308,10 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 	int mask;
 	int rem,stor;
 
+	printf("Zapping data\n");
 
 	byte=0;
 	// rewind the file
-	printf("\n",SEEK_SET);
 	fseek(file,0,SEEK_SET);
 
 	// read the file header

@@ -209,9 +209,11 @@ downsample  : downsample.o library
 	$(CC) -o $(BIN)/downsample downsample.o  $(LIB) -lm $(LFITS)
 	rm -f downsample.o
 
-filedit : filedit.o library
-	$(CC) -o $(BIN)/filedit filedit.c $(LIB) -lm
+filedit : filedit.c read_header.o strings_equal.o
+	$(CC) -o $(BIN)/filedit filedit.c read_header.o strings_equal.o -lm
 	rm -f filedit.o
+	rm -f strings_equal.o
+	rm -f read_header.o
 
 fold  : fold.o library 
 	$(CC) -o $(BIN)/fold fold.o  $(LIB) -lm $(LFITS)

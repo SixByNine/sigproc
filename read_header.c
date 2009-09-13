@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "header.h"
 int nbins;
 double period;
+int strings_equal (char *string1, char *string2);
 /* read a string from the input which looks like nchars-char[1-nchars] */
-void get_string(FILE *inputfile, int *nbytes, char string[]) /* includefile */
+void get_string(FILE *inputfile, int *nbytes, char string[])
 {
   int nchar;
   strcpy(string,"ERROR");
