@@ -1,4 +1,4 @@
-#include "find_baseline.C"
+#include "find_baseline.h"
 #include "cpgplot.h"
 #include "dialog.h"
 #include "string.h"

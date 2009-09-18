@@ -6,7 +6,7 @@ c     Create postscript summary plot of output from the "quicklook" script
 c
       implicit none
 
-      include 'epnhdr.f'
+      include 'epnhdr.inc'
       integer nepnrec,i,j,nchan,nshift,nsubints,slen,nc,lun,istat
       real x(maxbin),y(maxbin),xmin,xmax,ymin,ymax,dat(maxbin,1024),mean
       real psnr,ssnr,smmax,fc,bw,f1,cb,pdm,ts,to,window,phasestart,trms
@@ -598,7 +598,7 @@ c==============================================================================
 c
       implicit none
       character*(*) filename2
-      include 'epnhdr.f' 
+      include 'epnhdr.inc' 
 c
 c     Data buffers...
 c
