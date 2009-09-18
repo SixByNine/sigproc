@@ -95,6 +95,7 @@ c       write(llog,*)'ifun', ifun
 c        write(*,*) 'Harmonic ',i,' Power ',
 c     &  sqrt(cdat(ifun)**2+cdat(ifun+1)**2)
 c        write(llog,*)series(ifun),series(ifun+1)
+
        profile(i*2+1)=series(ifun)
        profile(i*2+2)=series(ifun+1)
        profile((nfft-i)*2+1)=series(ifun)
@@ -145,22 +146,21 @@ c     .           write(*,*)i/2,amp
 c     write(llog,*)'***', amp,peak
 c     write(llog,*)
          
-c     call glun(slun)
-c     write(*,*)"Dumping reconstructed profile"
-c     write(sfilename,"(i2.2,a,i5.5)")fold,"prof",candno
-c     write(*,*)"Dumping to  ",sfilename
-c     open(unit=slun,file=sfilename,status='unknown')
-c     c        do i=1,nfft*2,2
-c     c         do i=1,nfft,2
-c     do i=1,nfft*2
-c     c           amp=sqrt(profile(i)*profile(i)+profile(i+1)
-c     c     &           *profile(i+1))
-c     c            write(slun,*)i,amp 
-c     write(slun,*)profile(i) 
-c     write(60,*)profile(i)
-c     enddo   
-c     close(slun)
-         
+c      call glun(slun)
+c      write(*,*)"Dumping reconstructed profile"
+c      write(sfilename,"(i2.2,a,i5.5)")fold,"prof",candno
+c      write(*,*)"Dumping to  ",sfilename
+c      open(unit=slun,file=sfilename,status='unknown')
+c              do i=1,nfft*2,2
+c               do i=1,nfft,2
+c      do i=1,nfft*2
+c                 amp=sqrt(profile(i)*profile(i)+profile(i+1)
+c           &           *profile(i+1))
+c                  write(slun,*)i,amp 
+c      write(slun,*)profile(i) 
+c      write(60,*)profile(i)
+c      enddo   
+c      close(slun)
          
          end
       
