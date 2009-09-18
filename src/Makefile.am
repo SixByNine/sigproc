@@ -1,25 +1,74 @@
-core_src=add_channels.c add_samples.c aliases.c angle_split.c aoftm.c bandfactors.c baseline.f bit.c bpp2fb.c cel2gal.c chan_freqs.c clock.f close_log.c cpower.f cprofc.c decimate_data.c decimate_header.c dedisperse_data.c dedisperse_data.c.bak dedisperse_header.c deg2dms.c dialog.C dialog.h dmdelay.c dmshift.c dosearch.f epnpack.f eraseDP.c error_message.c fast_mean.f fetch_hdrval.c ffft.f ffreq.c fftdata.f file_exists.c filterbank_header.c find_norm.f fold_data.c fold_header.c formspec.f freq.f fshift_prof.c getddis.f getfast_rmea.f getmeanrms.f getmjd.f getrmea.f getrrms.f glun.f gmrt2fb.c help.csh help.c histmax.f head_parse.c ignored_channels.c indexxf77.f indexx.c indexxf77.f inv_cerf.c inputclip.c length.f lookup.c machine2prf.c meanrms.f minmax.f mjd.c mmzap.f normal.f norm_prof.c np2.c nrselect.c nrsort.c nrutil.c nrutil.h nsamples.c ooty2fb.c open_file.c open_files.c open_files.c open_log.c pack_unpack.c phcalc.c print_version.c process.c prof_adds.c prof_ddis.c prof_sbas.c prof_sumc.c prof_sumifs.c pspm2fb.c pspm_decode.c pspm_prof.c pspm_tstart.c pulsar2k2fb.c pulse.h pulse.c pulse.inc put.c quikgray.f ralphs_mean.f random.c rdfbtab.f rdhead.f read_aoscan.c read_block.c read_blocksubzero.c subzero.c readdat.f read_header.c read_polyco.c readspec.f readsus.f readtim.c rebin.f recipes.c recon_prof.f resample.f resample_old.f reverse_baseline_normalise.c rotate_time.f rwepn.f scaledata.c scale_prof.c scamp2fb.c seekin.f select.c send_stuff.c shift_prof.c short.f single_ch.c singlepulse.f sizeof_file.c slalib.c slalib.h slfit.f smooth.c spcsnr.f sprof.f ssm.c strings_equal.c submean.c submedian.c sumhrm.f swap_bytes.c thresh_1d.c timer.f typeof_inputdata.c update_log.c uttime.c vanvleck.c vmax.c vmin.c wappcorrect.c wapp_prof.c whiten.c write_epn.c writeepn.f write_profiles.c write_pulses.c writespec.f y.tab.c y.tab.h zap_birdies.f zapit.f dialog.C dialog.h libplotfil.h libplotfil.C gtools.C gtools.h newnewsumhrm.f newoldsumhrm.f 
+bin_PROGRAMS=seek spec header dedisperse extract tune fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker giant barycentre tree polyco2period makePsrXml pgplotter peak ffa best grey chaninfo step postproc quickplot plotpulses getpulse
+noinst_LIBRARIES=libsigproc.a
 
-fortran_src=baseline.f best.f chaninfo.f clock.f cpower.f dosearch.f epnpack.f fast_mean.f ffa.f ffft.f fftdata.f fftwdata.f fftwdummy.f find_norm.f formspec.f freq.f getddis.f getfast_rmea.f getmeanrms.f getmjd.f getrmea.f getrrms.f glun.f grey.f histmax.f indexxf77.f length.f mask.f meanrms.f minmax.f mmzap.f newnewsumhrm.f newoldsumhrm.f normal.f peak.f plotpulses.f plotpulses.old.f postproc.f ralphs_mean.f rdfbtab.f rdhead.f readdat.f readspec.f readsus.f rebin.f recon_prof.f resample.f resample_old.f rotate_time.f rwepn.f seekin.f short.f singlepulse.f slfit.f sort3.f spcsnr.f sprof.f step.f sumhrm.f tbary.f timer.f tssb.f writeepn.f writespec.f zap_birdies.f zapit.f
+sigproc.h: include.csh
+	./include.csh
+
+FFLAGS+=-fno-second-underscore
+INCLUDES=.
+
+f_headers=birdies.inc csamp.inc epnhdr.inc find_summary.inc folds.inc head.inc npts.inc peak.inc pulse.inc seek.inc time.inc vers.inc 
+c_headers=bacspin.h bpp.h bpphdr.h complex.h cpgplot.h decimate.h dedisperse.h dialog.h epn.h filterbank.h find_baseline.h find.h fitsio.h fold.h gtools.h header.h key.h libplotfil.h longnam.h nr.h nrutil.h older_wapp_header.h old_wapp_header.h ooty.h polyco.h prec_proto.h profile.h pspmhdr.h pulse.h scamp_header.h slalib.h slamac.h version.h wapp_header.h y.tab.h 
+
+libsigproc_a_SOURCES=$(c_headers) add_channels.c add_samples.c aliases.c angle_split.c aoftm.c bandfactors.c bit.c cel2gal.c chan_freqs.c close_log.c cprofc.c decimate_data.c decimate_header.c deg2dms.c dmdelay.c dmshift.c eraseDP.c error_message.c fetch_hdrval.c ffreq.c file_exists.c filterbank_header.c fold_data.c fold_header.c fshift_prof.c gmrt2fb.c head_parse.c help.c ignored_channels.c indexx.c inputclip.c inv_cerf.c lookup.c mjd.c mkheader.c norm_prof.c np2.c nrselect.c nrsort.c nrutil.c nsamples.c ooty2fb.c open_file.c open_files.c open_log.c pack_unpack.c phcalc.c print_version.c process.c prof_adds.c prof_cent.c prof_ddis.c prof_sbas.c prof_sumc.c prof_sumifs.c pspm2fb.c pspm_decode.c pspm_prof.c pspm_tstart.c pulsar2k2fb.c pulse.c put.c random.c read_aoscan.c read_block.c read_blocksubzero.c read_header.c read_polyco.c readtim.c recipes.c reverse_baseline_normalise.c scaledata.c scale_prof.c scamp2fb.c select.c send_stuff.c shift_prof.c single_ch.c sizeof_file.c slalib.c smooth.c ssm.c strings_equal.c submean.c submedian.c subzero.c swap_bytes.c thresh_1d.c typeof_inputdata.c update_log.c uttime.c vanvleck.c vmax.c vmin.c wapp2fb.c wappcorrect.c wapp_prof.c whiten.c write_epn.c write_profiles.c write_pulses.c ffft.f dedisperse_data.c dedisperse_header.c machine2prf.c mkheaderlex.c alfa_position.c
+
+LDADD=libsigproc.a -lm
+
+if HAVE_CFITSIO
+LDADD+=@CFITSIO_LIBS@
+INCLUDES+=@CFITSIO_CFLAGS@ -DPSRFITS
+endif
+
+if HAVE_PGPLOT
+# PGPLOT BASED CODE HERE...
+spec_SOURCES=spec.f readspec.f freq.f minmax.f histmax.f glun.f
+spec_LDADD=@PGPLOT_LIBS@
+
+tune_SOURCES=tune.c
+tune_LDADD=@PGPLOT_LIBS@ $(LDADD)
+
+giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f
+giant_LDADD=@PGPLOT_LIBS@ $(LDADD)
+
+pgplotter_LDADD=@PGPLOT_LIBS@ $(LDADD)
+
+getpulse_LDADD=@PGPLOT_LIBS@ $(LDADD)
+
+peak_SOURCES=sigproc.h peak.f glun.f writeepn.f timer.f rwepn.f readdat.f getmjd.f readtim.c read_header.c epnpack.f strings_equal.c angle_split.c  rdhead.f clock.f baseline.f aliases.c open_files.c open_file.c length.f getddis.f rdfbtab.f slfit.f sprof.f
+peak_LDADD=@PGPLOT_LIBS@ 
+
+best_SOURCES=best.f length.f glun.f indexxf77.f readsus.f
+best_LDADD=@PGPLOT_LIBS@
 
 
-pgpl_src=quickplot.f quikgray.f
+quickplot_SOURCES=quickplot.f
+quickplot_LDADD=@PGPLOT_LIBS@
 
 
+plotpulses_SOURCES=plotpulses.f
+plotpulses_LDADD=@PGPLOT_LIBS@
 
-bin_PROGRAMS=seek spec
+endif
 
-seek_SOURCES=seek.f dosearch.f ffft.f fftdata.f  find_norm.f formspec.f freq.f glun.f sumhrm.f seekin.f baseline.f readspec.f writespec.f singlepulse.f getrmea.f getmeanrms.f zapit.f timer.f indexxf77.f slfit.f meanrms.f getrrms.f readdat.f resample.f rotate_time.f zap_birdies.f mmzap.f recon_prof.f length.f rdhead.f rdfbtab.f getddis.f getmjd.f  sigproc.h readtim.c pulse.c read_header.c angle_split.c clock.f open_file.c strings_equal.c aliases.c open_files.c single_ch.c write_pulses.c thresh_1d.c smooth.c
+# seek
+seek_SOURCES=sigproc.h $(f_headers) seek.f dosearch.f ffft.f fftdata.f  find_norm.f formspec.f freq.f glun.f sumhrm.f seekin.f baseline.f readspec.f writespec.f singlepulse.f getrmea.f getmeanrms.f zapit.f timer.f indexxf77.f slfit.f meanrms.f getrrms.f readdat.f resample.f rotate_time.f zap_birdies.f mmzap.f recon_prof.f length.f rdhead.f rdfbtab.f getddis.f getmjd.f readtim.c pulse.c read_header.c angle_split.c clock.f open_file.c strings_equal.c aliases.c open_files.c single_ch.c write_pulses.c thresh_1d.c smooth.c 
+
+ffa_SOURCES=ffa.f glun.f timer.f clock.f getmjd.f
+
+grey_SOURCES=grey.f glun.f writeepn.f timer.f rwepn.f readdat.f getmjd.f  clock.f epnpack.f sprof.f rdfbtab.f getddis.f rdhead.f length.f
+
+chaninfo_SOURCES=chaninfo.f
+
+step_SOURCES=step.f
+postproc_SOURCES=postproc.f
 
 if HAVE_FFTW
 seek_SOURCES+=fftwdata.f
 seek_LDFLAGS=@FFTW_LIBS@
-INCLUDES=@FFTW_CFLAGS@
+INCLUDES+=@FFTW_CFLAGS@
 else
 seek_SOURCES+=fftwdummy.f
 endif
 
-spec_SOURCES=spec.f $(fortran_src)
-
-sigproc.h: include.csh
-	./include.csh
+MOSTLYCLEANFILES=sigproc.h
+EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh 

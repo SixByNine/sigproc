@@ -842,6 +842,11 @@ X_LIBS
 X_PRE_LIBS
 X_CFLAGS
 XMKMF
+HAVE_CFITSIO_FALSE
+HAVE_CFITSIO_TRUE
+CFITSIO_CFLAGS
+CFITSIO_LIBS
+SOCKET_LIBS
 XML_LIBS
 XML_CPPFLAGS
 XML2_CONFIG
@@ -941,6 +946,9 @@ enable_libtool_lock
 with_xml_prefix
 with_xml_exec_prefix
 enable_xmltest
+with_cfitsio_dir
+with_cfitsio_include_dir
+with_cfitsio_lib_dir
 with_x
 with_pgplot_extra
 with_psrxml_dir
@@ -1616,6 +1624,11 @@ Optional Packages:
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-xml-prefix=PFX   Prefix where libxml is installed (optional)
   --with-xml-exec-prefix=PFX Exec prefix where libxml is installed (optional)
+  --with-cfitsio-dir=DIR  cfitsio is in DIR
+  --with-cfitsio-include-dir=DIR
+                          cfitsio header files are in DIR
+  --with-cfitsio-lib-dir=DIR
+                          cfitsio library is in DIR
   --with-x                use the X Window System
   --with-pgplot-extra=LIBS
                           Specify LIBS required by PGPLOT drivers
@@ -7858,13 +7871,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:7861: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:7874: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:7864: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:7877: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:7867: output\"" >&5)
+  (eval echo "\"\$as_me:7880: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -8962,7 +8975,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 8965 "configure"' > conftest.$ac_ext
+  echo '#line 8978 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -11185,11 +11198,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11188: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11201: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11192: \$? = $ac_status" >&5
+   echo "$as_me:11205: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11509,11 +11522,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11512: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11525: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11516: \$? = $ac_status" >&5
+   echo "$as_me:11529: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11614,11 +11627,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11617: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11630: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11621: \$? = $ac_status" >&5
+   echo "$as_me:11634: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11669,11 +11682,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11672: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11685: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11676: \$? = $ac_status" >&5
+   echo "$as_me:11689: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14461,7 +14474,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 14464 "configure"
+#line 14477 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -14561,7 +14574,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 14564 "configure"
+#line 14577 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16572,11 +16585,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16575: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16588: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16579: \$? = $ac_status" >&5
+   echo "$as_me:16592: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16671,11 +16684,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16674: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16687: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16678: \$? = $ac_status" >&5
+   echo "$as_me:16691: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16723,11 +16736,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16726: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16739: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16730: \$? = $ac_status" >&5
+   echo "$as_me:16743: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18120,11 +18133,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18123: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18136: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18127: \$? = $ac_status" >&5
+   echo "$as_me:18140: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -18219,11 +18232,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18222: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18235: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18226: \$? = $ac_status" >&5
+   echo "$as_me:18239: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18271,11 +18284,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18274: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18287: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18278: \$? = $ac_status" >&5
+   echo "$as_me:18291: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20576,6 +20589,481 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 
 
   rm -f conf.xmltest
+
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for libraries containing socket functions" >&5
+$as_echo_n "checking for libraries containing socket functions... " >&6; }
+if test "${ac_cv_socket_libs+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+        oCFLAGS=$CFLAGS
+
+        cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+                        #include <sys/types.h>
+                        #include <sys/socket.h>
+                        #include <netinet/in.h>
+                        #include <arpa/inet.h>
+
+int
+main ()
+{
+
+                        struct in_addr add;
+                        int sd = socket(AF_INET, SOCK_STREAM, 0);
+                        inet_ntoa(add);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_socket_libs=-lc
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_socket_libs=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+        if test x"$ac_cv_socket_libs" = "xno"
+        then
+                CFLAGS="$oCFLAGS -lsocket"
+                cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+                                #include <sys/types.h>
+                                #include <sys/socket.h>
+                                #include <netinet/in.h>
+                                #include <arpa/inet.h>
+
+int
+main ()
+{
+
+                                struct in_addr add;
+                                int sd = socket(AF_INET, SOCK_STREAM, 0);
+                                inet_ntoa(add);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_socket_libs=-lsocket
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_socket_libs=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+        fi
+
+        if test x"$ac_cv_socket_libs" = "xno"
+        then
+                CFLAGS="$oCFLAGS -lsocket -lnsl"
+                cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+                                #include <sys/types.h>
+                                #include <sys/socket.h>
+                                #include <netinet/in.h>
+                                #include <arpa/inet.h>
+
+int
+main ()
+{
+
+                                struct in_addr add;
+                                int sd = socket(AF_INET, SOCK_STREAM, 0);
+                                inet_ntoa(add);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_socket_libs="-lsocket -lnsl"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_socket_libs=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+        fi
+
+        CFLAGS=$oCFLAGS
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_socket_libs" >&5
+$as_echo "$ac_cv_socket_libs" >&6; }
+
+        if test x"$ac_cv_socket_libs" = "xno"
+        then
+                { $as_echo "$as_me:$LINENO: WARNING: Cannot find socket libraries" >&5
+$as_echo "$as_me: WARNING: Cannot find socket libraries" >&2;}
+        elif test x"$ac_cv_socket_libs" = "x-lc"
+        then
+                SOCKET_LIBS=""
+        else
+                SOCKET_LIBS="$ac_cv_socket_libs"
+        fi
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --with-cfitsio-dir was given.
+if test "${with_cfitsio_dir+set}" = set; then
+  withval=$with_cfitsio_dir;
+fi
+
+
+
+# Check whether --with-cfitsio-include-dir was given.
+if test "${with_cfitsio_include_dir+set}" = set; then
+  withval=$with_cfitsio_include_dir;
+fi
+
+
+
+# Check whether --with-cfitsio-lib-dir was given.
+if test "${with_cfitsio_lib_dir+set}" = set; then
+  withval=$with_cfitsio_lib_dir;
+fi
+
+
+  if test x"$with_cfitsio_dir" = x"no" ||
+     test x"$with_cfitsio_include-dir" = x"no" ||
+     test x"$with_cfitsio_lib_dir" = x"no"; then
+
+    # user disabled [cfitsio]. Leave cache alone.
+    have_cfitsio="user disabled"
+
+  else
+
+    # "yes" is not a specification
+    if test x"$with_cfitsio_dir" = xyes; then
+      with_cfitsio_dir=""
+    fi
+
+    if test x"$with_cfitsio_include_dir" = xyes; then
+      with_cfitsio_include_dir=""
+    fi
+
+    if test x"$with_cfitsio_lib_dir" = xyes; then
+      with_cfitsio_lib_dir=""
+    fi
+
+    # _dir overrides include_dir and lib_dir
+    if test x"$with_cfitsio_dir" != x; then
+      with_cfitsio_include_dir=$with_cfitsio_dir/include
+      with_cfitsio_lib_dir=$with_cfitsio_dir/lib
+    fi
+
+  fi
+
+
+
+  { $as_echo "$as_me:$LINENO: checking for CFITSIO installation" >&5
+$as_echo_n "checking for CFITSIO installation... " >&6; }
+
+  if test "$have_cfitsio" != "user disabled"; then
+
+
+
+
+  swin_cfitsio_found=""
+
+  if test x"$PACKAGES" != x; then
+    for cf_file in `find $PACKAGES -name "fitsio.h" 2> /dev/null`; do
+      cf_path=`dirname $cf_file`
+      swin_cfitsio_found="$swin_cfitsio_found $cf_path"
+    done
+  fi
+
+
+
+
+  cf_include_path_list="$with_cfitsio_include_dir $swin_cfitsio_found  ."
+
+  ac_save_CFLAGS="$CFLAGS"
+
+  for cf_dir in $cf_include_path_list; do
+    CFLAGS="-I$cf_dir $ac_save_CFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fitsio.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  have_cfitsio=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	have_cfitsio=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    if test $have_cfitsio = yes; then
+      if test x"$cf_dir" != x.; then
+        cfitsio_CFLAGS="-I$cf_dir"
+        swin_cfitsio_include_dir="$cf_dir"
+      fi
+      break
+    fi
+  done
+
+  CFLAGS="$ac_save_CFLAGS"
+
+
+
+
+
+  swin_cfitsio_found=""
+
+  if test x"$PACKAGES" != x; then
+    for cf_file in `find $PACKAGES -name "libcfitsio.*" 2> /dev/null`; do
+      cf_path=`dirname $cf_file`
+      swin_cfitsio_found="$swin_cfitsio_found $cf_path"
+    done
+  fi
+
+
+
+
+  swin_search_path="$swin_cfitsio_found"
+  if test x"$swin_cfitsio_include_dir" != x; then
+    swin_base=`dirname $swin_cfitsio_include_dir`
+    if test -d $swin_base/lib; then
+      swin_search_path="$swin_base/lib $swin_search_path"
+    fi
+  fi
+
+  cf_lib_path_list="$with_cfitsio_lib_dir $swin_search_path  ."
+
+  ac_save_CFLAGS="$CFLAGS"
+  CFLAGS="$cfitsio_CFLAGS $ac_save_CFLAGS"
+
+  ac_save_LIBS="$LIBS"
+
+  for cf_dir in $cf_lib_path_list; do
+    LIBS="-L$cf_dir -lcfitsio -lm $SOCKET_LIBS $ac_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <fitsio.h>
+int
+main ()
+{
+fits_movnam_hdu(0,0,0,0,0);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  have_cfitsio=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	have_cfitsio=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+    if test $have_cfitsio = yes; then
+      if test x"$cf_dir" = x.; then
+        cfitsio_LIBS="-lcfitsio -lm $SOCKET_LIBS"
+      else
+        cfitsio_LIBS="-L$cf_dir -lcfitsio -lm $SOCKET_LIBS"
+      fi
+      break
+    fi
+  done
+
+  CFLAGS="$ac_save_CFLAGS"
+  LIBS="$ac_save_LIBS"
+
+
+
+  fi
+
+  { $as_echo "$as_me:$LINENO: result: $have_cfitsio" >&5
+$as_echo "$have_cfitsio" >&6; }
+
+  if test $have_cfitsio = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CFITSIO 1
+_ACEOF
+
+
+  else
+    { $as_echo "$as_me:$LINENO: WARNING: The PSRFITS code will not be compiled" >&5
+$as_echo "$as_me: WARNING: The PSRFITS code will not be compiled" >&2;}
+
+  fi
+
+  CFITSIO_LIBS="$cfitsio_LIBS"
+  CFITSIO_CFLAGS="$cfitsio_CFLAGS"
+
+
+
+   if test $have_cfitsio = yes; then
+  HAVE_CFITSIO_TRUE=
+  HAVE_CFITSIO_FALSE='#'
+else
+  HAVE_CFITSIO_TRUE='#'
+  HAVE_CFITSIO_FALSE=
+fi
+
 
 
 { $as_echo "$as_me:$LINENO: checking for X" >&5
@@ -24384,6 +24872,13 @@ LTLIBOBJS=$ac_ltlibobjs
 
 
 
+if test -z "${HAVE_CFITSIO_TRUE}" && test -z "${HAVE_CFITSIO_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_CFITSIO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_CFITSIO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_PGPLOT_TRUE}" && test -z "${HAVE_PGPLOT_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_PGPLOT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
