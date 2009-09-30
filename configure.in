@@ -49,17 +49,13 @@ SWIN_LIB_CFITSIO
 SWIN_LIB_PGPLOT
 MJK_LIB_PSRXML
 
-if test X$have_psrxml != Xyes; then
-	AC_ERROR("Need psrxml library to compile! Specify location with --with-psrxml-dir") 
-fi
-
+CHECK_ZLIB
 MJK_LIB_FFTW
 
 if test X$have_fftw != Xyes; then
-	AC_ERROR("Need single precision FFTW 3 library to compile (libfftw3f.a)! Specify location with --with-fftw-dir")
+	AC_WARN("No FFTW3 found... you will have to use the slower 'singleton' FFT. Specify location with --with-fftw-dir")
 fi
 
-CHECK_ZLIB
 
 
 AC_SUBST(XML_CPPFLAGS)

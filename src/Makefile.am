@@ -1,4 +1,4 @@
-bin_PROGRAMS=seek spec header dedisperse extract tune fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker giant barycentre tree polyco2period makePsrXml pgplotter peak ffa best grey chaninfo step postproc quickplot plotpulses getpulse 
+bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc 
 bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook 
 EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh 
 MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook 
@@ -22,6 +22,7 @@ INCLUDES+=@CFITSIO_CFLAGS@ -DPSRFITS
 endif
 
 if HAVE_PGPLOT
+bin_PROGRAMS+=spec tune giant pgplotter getpulse peak best quickplot plotpulses
 # PGPLOT BASED CODE HERE...
 spec_SOURCES=spec.f readspec.f freq.f minmax.f histmax.f glun.f
 spec_LDADD=@PGPLOT_LIBS@
@@ -42,10 +43,8 @@ peak_LDADD=@PGPLOT_LIBS@
 best_SOURCES=best.f length.f glun.f indexxf77.f readsus.f
 best_LDADD=@PGPLOT_LIBS@
 
-
 quickplot_SOURCES=quickplot.f
 quickplot_LDADD=@PGPLOT_LIBS@
-
 
 plotpulses_SOURCES=plotpulses.f
 plotpulses_LDADD=@PGPLOT_LIBS@
