@@ -1,5 +1,5 @@
 #
-# SWIN_LIB_CPGPLOT([ACTION-IF-FOUND [,ACTION-IF-NOT-FOUND]])
+# SWIN_LIB_CPSRXML([ACTION-IF-FOUND [,ACTION-IF-NOT-FOUND]])
 #
 # This m4 macro checks availability of the PSRXML io library
 # created by M.Keith.
@@ -46,12 +46,12 @@ AC_DEFUN([MJK_LIB_PSRXML],
   CFLAGS="$ac_save_CFLAGS"
 
   if test x"$have_psrxml" = xyes; then
-    AC_DEFINE([HAVE_PGPLOT], [1], [Define to 1 if you have the PGPLOT library])
+    AC_DEFINE([HAVE_PSRXML], [1], [Define to 1 if you have the PSRXML library])
     [$1]
   else
     AC_MSG_WARN([PsrXML code will not be compiled])
-    PGPLOT_CFLAGS=""
-    PGPLOT_LIBS=""
+    PSRXML_CFLAGS=""
+    PSRXML_LIBS=""
     [$2]
   fi
 

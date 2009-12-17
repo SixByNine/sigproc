@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
 	some useful routines written by Jeff Hagen for swapping
 	bytes of data between Big Endian and  Little Endian formats:

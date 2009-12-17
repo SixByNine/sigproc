@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   TREE - dedisperses filterbank data using the tree algorithm. 
   

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    depolyco.c - barycentre or take out binary motion 
    contained within a preprepared set of polynomial coefficients 

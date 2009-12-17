@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* scamp2fb - converts SCAMP search-mode data into "filterbank" data 
    modified - 05/04/04 (drl@jb.man.ac.uk) to flip the incoming data if
    it has been saved in the less-common lower sideband format i.e. lowest

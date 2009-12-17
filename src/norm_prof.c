@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* normalize prof by counts */
 void norm_prof(float *prof, float *cnt, int nbins, int nifs, int nchans) /*includefile*/
 {

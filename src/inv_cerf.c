@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 /* Approximation for Inverse Complementary Error Function */
 double inv_cerf(double input) /* includefile */

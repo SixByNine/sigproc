@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 int wapp_incfile_length;
 #include <stdio.h>

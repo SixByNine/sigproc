@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* reader.c - reads SIGPROC data files and formats human output */
 /* 14/7/2004 - added byte option for converting time series to single bytes */
 #include <stdlib.h>

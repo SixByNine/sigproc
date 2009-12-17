@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "decimate.h"
 
 void decimate_data(FILE *input, FILE *output) /*includefile*/

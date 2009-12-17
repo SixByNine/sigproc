@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   DECIMATE  - decimate filterbank data by adding channels and/or time samples
 */

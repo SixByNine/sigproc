@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <string.h>
 
 /* returns the correct TEMPO site code given SIGPROC's telescope_id */

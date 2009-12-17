@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include<math.h>
 double ffreq(double tsamp, int npf, int fold, int k) /*includefile*/
 {

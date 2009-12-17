@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* returns the maximum value of a vector */
 float vmax(float *vec, float n) /*includefile*/
 {

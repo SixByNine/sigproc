@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* scale profile so each bin occupies an integer value between 0 and 65535 */
 #include <stdio.h>
 #include "sigproc.h"

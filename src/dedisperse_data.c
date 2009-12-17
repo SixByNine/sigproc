@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "dedisperse.h"
 /* 
    orders incoming blocks of data into dedispersed sub-bands 

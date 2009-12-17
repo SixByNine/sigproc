@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    open_log.c - checks for monitor.running and enables logging if it exists 
    global variable logging mode is switched off otherwise so that update_log

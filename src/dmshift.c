@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include "sigproc.h"
 int *dmshift(double f1, double df, int nchans, int nbands, double dm, double refrf, double tsamp, double frequency_table[]) /*includefile*/

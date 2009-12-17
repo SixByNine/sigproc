@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* read a block of data into datablock and subtract the zero dm time sequence R.E. 12/07/07 */
 #include <stdio.h>
 #include <stdlib.h>

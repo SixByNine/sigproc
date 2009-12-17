@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    pack two integers into a single char containing two 4-bit words 
    first integer passed (i) takes the lower four bits of the char,

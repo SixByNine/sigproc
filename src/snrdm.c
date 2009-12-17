@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   snrdm - a program to produce the expected signal-to-noise versus DM curve 
   for a pulsar search given a set of observing parameters.

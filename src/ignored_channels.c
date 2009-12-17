@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include "sigproc.h"
 int *ignored_channels(char *filename, int nchans) /*includefile*/

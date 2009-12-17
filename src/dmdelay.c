@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    return the delay in seconds between two sky frequencies f1 and f2 (MHz) 
    N.B. constant of proportionality derived from e^2 pcm2 / (2pi c me) where 

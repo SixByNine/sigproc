@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* returns the minimum value of a vector */
 float vmin(float *vec, float n) /*includefile*/
 {

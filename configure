@@ -23082,15 +23082,15 @@ $as_echo "$have_psrxml" >&6; }
   if test x"$have_psrxml" = xyes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_PGPLOT 1
+#define HAVE_PSRXML 1
 _ACEOF
 
 
   else
     { $as_echo "$as_me:$LINENO: WARNING: PsrXML code will not be compiled" >&5
 $as_echo "$as_me: WARNING: PsrXML code will not be compiled" >&2;}
-    PGPLOT_CFLAGS=""
-    PGPLOT_LIBS=""
+    PSRXML_CFLAGS=""
+    PSRXML_LIBS=""
 
   fi
 

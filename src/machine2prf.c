@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
 ## help on machine2prf
 ## machine2prf - read and dedisperse pre-folded data from various machines

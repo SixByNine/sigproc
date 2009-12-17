@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* read a block of data into datablock */
 #include <stdio.h>
 #include <stdlib.h>

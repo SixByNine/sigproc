@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   FIND - a program to find periodic signals in a noisy time series. 
 */

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* collapses nchannels down to a number of sub-bands */
 #include <stdio.h>
 void prof_sumc(float *profile, int nbins, int nbands, int *nchans, int nifs, int *ignore) /* includefile */

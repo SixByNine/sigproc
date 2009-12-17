@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 int bit(int bitindex, unsigned char byte) /*includefile*/
 {

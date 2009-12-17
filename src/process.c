@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* do we need to process this record? 1=yes 0=no -1=break*/
 int process(float time, float start_time, float final_time) /* includefile */
 {

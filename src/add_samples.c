@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 void add_samples(float *data, int nifs, int nchans, int nadd) /* includefile */
 {
   int i,c,t,inc,nxc;

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   polyco2period-calculates period for MJD specified on command line 
 */

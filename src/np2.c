@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* np2 - returns the nearest power of two number to the integer passed down */
 #include<math.h>
 int np2(int n) /*includefile*/

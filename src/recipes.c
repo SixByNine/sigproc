@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 #define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
 void four1(float data[], unsigned long nn, int isign) /* includefile */

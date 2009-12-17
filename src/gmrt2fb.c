@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    gmrt2fb - converts GMRT search-mode data into "filterbank" data 
    adapted from f77 code gmrt2fb. This version produces identical

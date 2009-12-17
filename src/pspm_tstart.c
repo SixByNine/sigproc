@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
 ## help on pspm_tstart 
 ## double pspm_tstart - returns UT time stamp for the start of any PSPM scan

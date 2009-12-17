@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #define NRANSI 
 #include "nrutil.h"
 #define SWAP(a,b) itemp=(a);(a)=(b);(b)=itemp;

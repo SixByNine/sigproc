@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /**********************************************************************************/
 /* This is to convert combined 16bit data into sigproc filterbank format..        */
 /* i.e. it flips the frequency ordering as well writes a header...                */

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* help.c - on-line synopsis for each program called via "programname help" */
 int help_required(char *string) /* includefile */
 {

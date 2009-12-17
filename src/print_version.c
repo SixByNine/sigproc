@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "version.h"
 void print_version(char *program, char *argument) /*includefile*/
 {

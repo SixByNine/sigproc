@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* read_header.c - general handling routines for SIGPROC headers */
 #include <stdio.h>
 #include <stdlib.h>

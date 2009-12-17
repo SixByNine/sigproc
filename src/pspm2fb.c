@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* pspm2fb - converts PSPM search-mode data into "filterbank" data */
 
 #include "filterbank.h"

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   SPLICE - splice several filterbank files starting on same time stamp together
   for use to analyse data from cloned machines sampling several parts of the 

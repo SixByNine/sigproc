@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 
 /*  Compute pulsar phase and frequency at time mjd0+mjd1/86400.  

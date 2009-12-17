@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   This program will search for non-periodic pulses in single-byte
   dedispersed data. It applues a threshold test on a time series for

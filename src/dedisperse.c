@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
    dedisperse  - dedisperses raw filterbank data or folded pulse profiles
  */

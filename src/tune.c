@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
    TUNE
    MK 2005 -- Based on fold.c 

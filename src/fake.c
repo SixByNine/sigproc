@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -421,6 +424,7 @@ double binary_papp(struct BinaryParams params,double pRest, double time){
 			(1.0 - params.eccentricity*cos(eccentricAnomaly));
 		
 		if(fabs(eNext - eccentricAnomaly) < 1.0e-10) break;
+		eccentricAnomaly=eNext;
 	}
 
 

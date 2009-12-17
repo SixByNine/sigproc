@@ -23,7 +23,7 @@ unsigned long long baselineValidEnd;
 char baselineFile[80];
 
 /* global variables describing the operating mode */
-extern int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off,doSubZero,doInputClip;
+int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off,doSubZero,doInputClip;
 double refrf,userdm,fcorrect;
 float clipvalue,jyfactor,jyf1,jyf2,*inputClipHigh,*inputClipLow;
 

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* some wrappers for slalib routine calls */
 #include <stdio.h>
 #include "slalib.h"

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 void add_channels(float *data, int nsamples, int nadd) /* includefile */
 {
   int i,j,k;

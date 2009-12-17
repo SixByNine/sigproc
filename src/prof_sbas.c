@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* subtracts a baseline from the entire data set */
 #include <stdio.h>
 #include "sigproc.h"

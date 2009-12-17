@@ -33,6 +33,9 @@
 /* Define to 1 if you have the PGPLOT library */
 #undef HAVE_PGPLOT
 
+/* Define to 1 if you have the PSRXML library */
+#undef HAVE_PSRXML
+
 /* Define if you have POSIX threads libraries and header files. */
 #undef HAVE_PTHREAD
 

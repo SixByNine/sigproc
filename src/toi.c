@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
    look at the raw data file and establish origin and whether it's readable
    the following data types are currently recognizable:

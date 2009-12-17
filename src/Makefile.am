@@ -1,4 +1,4 @@
-bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc 
+bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit
 bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook 
 EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh 
 MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook 
@@ -30,7 +30,7 @@ spec_LDADD=@PGPLOT_LIBS@
 tune_SOURCES=tune.c
 tune_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
-giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f
+giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f pch-seek-normalise.C toolkit.h toolkit.C TKfit.h TKfit.C
 giant_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
 pgplotter_LDADD=@PGPLOT_LIBS@ $(LDADD)
@@ -50,6 +50,9 @@ plotpulses_SOURCES=plotpulses.f
 plotpulses_LDADD=@PGPLOT_LIBS@
 
 endif
+
+filedit_SOURCES=filedit.c header.h read_header.c strings_equal.c
+filedit_LDADD=-lm
 
 # seek
 seek_SOURCES=sigproc.h $(f_headers) seek.f dosearch.f ffft.f fftdata.f  find_norm.f formspec.f freq.f glun.f sumhrm.f seekin.f baseline.f readspec.f writespec.f singlepulse.f getrmea.f getmeanrms.f zapit.f timer.f indexxf77.f slfit.f meanrms.f getrrms.f readdat.f resample.f rotate_time.f zap_birdies.f mmzap.f recon_prof.f length.f rdhead.f rdfbtab.f getddis.f getmjd.f readtim.c pulse.c read_header.c angle_split.c clock.f open_file.c strings_equal.c aliases.c open_files.c single_ch.c write_pulses.c thresh_1d.c smooth.c 

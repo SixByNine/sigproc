@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 /* return UT hours minutes and seconds given an MJD */
 void uttime(double mjd, int *hh, int *mm, float *ss) /*includefile*/

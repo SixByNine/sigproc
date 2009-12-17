@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 /* 
    return a pointer to an array of filterbank channel frequencies given the

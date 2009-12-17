@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include "sigproc.h"
 void prof_adds(float *profile, int *nbins, int nchans, int nifs, int nadd)/*includefile*/

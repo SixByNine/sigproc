@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    pgplotter - a simple tool to plot SIGPROC streamed output with PGPLOT
    now included as part of sigproc-3.0 onwards (14-Jan-2005 - drl@jb.man.ac.uk)

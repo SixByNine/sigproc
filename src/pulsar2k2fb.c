@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* pulsar2k2fb - converts PULSAR2000 search-mode data into "filterbank" data */
 
 // 03/Apr/2002	bklein@MPIfR-Bonn.MPG.de

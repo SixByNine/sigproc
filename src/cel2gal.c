@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 /* J2000 coordinates of galactic north pole and x-axis */
 #define N_GAL_POLE_RA    (12 + (51 + (26.2754/60))/60)*15

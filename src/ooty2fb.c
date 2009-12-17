@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* ooty2fb - converts OOTY search-mode data into "filterbank" data */
 #include "filterbank.h"
 #define BUFSZ 4096

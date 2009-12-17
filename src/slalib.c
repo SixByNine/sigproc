@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "slalib.h"
 #include "slamac.h"
 double slaDranrm ( double angle ) /*includefile*/

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 void angle_split(double angle, int *dd, int *mm, double *ss) /*includefile*/
 {
   int negative;

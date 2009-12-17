@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   FOLD  - fold filterbank channels or time series data to produce integrated
   pulse profiles or single pulses.

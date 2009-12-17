@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   bpp2fb - converts BPP search-mode data into "filterbank" data 
 

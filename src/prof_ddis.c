@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* dedispserses profiles with respect to arbitrary sky frequency (MHz) */
 #include <stdio.h>
 #include "sigproc.h"

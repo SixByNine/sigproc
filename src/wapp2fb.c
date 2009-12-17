@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    wapp2fb - converts WAPP search-mode data into "filterbank" data 
 

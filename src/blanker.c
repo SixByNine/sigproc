@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* blanker - a program to blank out pulses from a time series */
 
 #include "dedisperse.h"

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*  ======================================================================  */
 /*                                                                          */
 /*  This is to find the size of the file by name "name". The out put is     */

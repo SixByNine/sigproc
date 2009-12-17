@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 double deg2dms(double angle) /*includefile*/
 {
   int deg,min;

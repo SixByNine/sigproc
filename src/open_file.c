@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 FILE *open_file(char *filename, char *descriptor) /* includefile */
 {

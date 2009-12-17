@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   profile - a program to produce quick ASCII/grey-scale plots of profiles
   to the standard output. To use, simply fold a time series file and pipe

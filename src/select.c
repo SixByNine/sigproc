@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #define SWAP(a,b) temp=(a);(a)=(b);(b)=temp;
 
 float select(unsigned long k, unsigned long n, float arr[])

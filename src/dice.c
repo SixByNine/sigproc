@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   DICE - dice up a filterbank file by removing unwanted channels
   Initial version (Feb 2006) adapted from splice.c

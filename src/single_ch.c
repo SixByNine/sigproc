@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /*
   This routine applies a threshold test on a time series. Matched
   boxcar filters are applied to the data, with different boxcar lengths,

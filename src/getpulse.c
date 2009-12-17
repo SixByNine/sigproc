@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* getpulse.c - reads SIGPROC dedispersed time series and outputs/plots a pulse */
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "fold.h"
 /* folds incoming blocks of data */
 /* modified 28 May 2001 to fix phase counting [JMC]

@@ -1,3 +1,4 @@
+#include <config.h>
 #include "find_baseline.h"
 #include "cpgplot.h"
 #include "dialog.h"
@@ -40,6 +41,9 @@ int load_dunc_data(FILE * fptr,int nstart,int nwanted);
 int load_killdata(int * killdata,int kchans,char * killfile);
 //void automow(int n, float * d, int * mown, int * nrejects, float threshold);
 
+void pch_seek_normalise_agl_mean(float* amplitudes, int ndat, int nrun);
+void pch_seek_normalise_median_smoothed(float* amplitudes, int ndat, int nrun);
+
 void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float inpDM, int pgpID, bool dokill, char *killfile);
 void formpdf(float * pdfs, int pdfmax, int ngulp, float * time_series);
 void  zap_improbables(float pdfs[][100], float ** time_series, int nbeam,
@@ -65,8 +69,8 @@ void  zap_improbables(float pdfs[][100], float ** time_series, int nbeam,
    char inpfile[80];
 
 /* sigproc global variables describing the operating mode */
-int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, 
-  baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off;
+/*int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, 
+  baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off;*/
 //double refrf,userdm,fcorrect;
 //float clipvalue,jyf1,jyf2;
 
@@ -99,6 +103,7 @@ int main (int argc, char *argv[])
   bool ssigned=true;
   int topfold=-1;
   int topgiant=-1;
+  int norm_method=0;
 
 
   if (argc<2 || help_required(argv[1])) {
@@ -120,6 +125,8 @@ int main (int argc, char *argv[])
     if (strings_equal(argv[i],"-c"))       sscanf(argv[++i],"%f",&Gsigmacut);
     if (strings_equal(argv[i],"-z"))       zapswitch=1;
     if (strings_equal(argv[i],"-k"))       {killfile=(char*)malloc(strlen(argv[++i])+1); strcpy(killfile,argv[i]);dokill=true;}
+    if (strings_equal(argv[i],"-norm-agl")) norm_method=1;
+    if (strings_equal(argv[i],"-norm-mjk")) norm_method=2;
     if (nfiles>MAXFILES) error_message("too many open files");
     i++;
   }
@@ -311,6 +318,10 @@ int main (int argc, char *argv[])
 	// Zap DC spike
 	  time_series[i][0]=0.0;
 	  time_series[i][1]=0.0;
+
+		  for(int x = 0; x < 4; x++){
+			  time_series[i][x]=0;
+		  }
 	}
 	spectra = 1;
 	nplot = ngulp;
@@ -369,7 +380,23 @@ int main (int argc, char *argv[])
     }
     if (button==NORMALISE) {
 	for (i=0; i<nfiles; i++){
-	  normalise(ngulp,time_series[i],3.0);
+		switch(norm_method){
+		case 0:
+		  normalise(ngulp,time_series[i],3.0);
+		  break;
+		case 1:
+		  for(int x = 0; x < 4; x++){
+			  time_series[i][x]=0;
+		  }
+		  pch_seek_normalise_agl_mean(time_series[i],ngulp,128);
+		  break;
+		case 2:
+		  for(int x = 0; x < 4; x++){
+			  time_series[i][x]=0;
+		  }
+		  pch_seek_normalise_median_smoothed(time_series[i],ngulp,16);
+		  break;
+		  }
 	}
 	button = PLOT;
 	Gsearched=false;

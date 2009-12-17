@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* centres profiles in the entire dataset */
 #include <stdio.h>
 #include "sigproc.h"

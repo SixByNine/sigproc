@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* 
    barycentre.c - refer a filterbank/timeseries file to the rest
    frame of the solar system barycentre by computing an appropriate

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <math.h>
 long long sizeof_file(char name[]) ;
 long long nsamples(char *filename,int headersize, int nbits, int nifs, int nchans) /*includefile*/

@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* standalone file for computing alfa position offsets */
 
 #include <stdlib.h>

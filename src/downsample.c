@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "filterbank.h"
 int obits;
 #define GULP 32768*16

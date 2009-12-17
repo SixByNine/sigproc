@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 /* sums IFs for the entire data set, sets nifs to 1 */
 #include <stdio.h>
 #include "sigproc.h"
