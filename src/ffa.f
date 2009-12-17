@@ -454,7 +454,7 @@ c        p = ip + x - dp * nint(xp/dp - 0.5*mod(ip,2))
             ioff = nmax - nmax / 2**max(k-2,0)
             ish = mod((n + np) / np / 2, ip)
             do i = 0, np-1
-	       iip = i * ip
+               iip = i * ip
                i0 = iip + joff
                i1 = 2 * iip + ioff
                i2 = i1 + ip
@@ -482,16 +482,16 @@ c        p = ip + x - dp * nint(xp/dp - 0.5*mod(ip,2))
          enddo
          sx = 0.0
          sxx = 0.0
-	 lp = 0.0
+         lp = 0.0
          do im = imax+ip10, imax+ip2, 1
-	    lp = lp + 1.
+            lp = lp + 1.
             lm = mod(im, ip)
             if(lm .eq. 0) lm = ip
             sx = sx + puls(lm+joff)
             sxx = sxx + puls(lm+joff)**2
          enddo
          do im = imax-ip10, imax-ip2, -1
-	    lp = lp + 1.
+            lp = lp + 1.
             lm = mod(im+ip, ip)
             if(lm .eq. 0) lm = ip
             sx = sx + puls(lm+joff)
@@ -514,9 +514,9 @@ c
          xmax0 = (xmax0 - sx/lp) / rms
 c
          if(xmax0 .gt. snr) then
-	    snr = xmax0
-	    p0 = p/fp
-	 endif
+            snr = xmax0
+            p0 = p/fp
+         endif
          
 c         write(*,*) rms, p0, lp,ip
 c         pause
@@ -606,7 +606,7 @@ c     - subtract non-zero mean -
       return
       end
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c @(#)supertopvals.f	3.1 12/17/92
+c @(#)supertopvals.f        3.1 12/17/92
       subroutine supertopvals(dat, ndat, istart, ntop,fracdif,delta,idx,
      &    next, bottom, status)
       

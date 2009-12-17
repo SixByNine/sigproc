@@ -10,7 +10,7 @@
 
 FILE *timfile;
 
-void readhd_(char filename[80], float *rdm, float *rtsmp, char ra[12], char dec[12], float *fref, double *mjdstart, char srcname[80], char telname[80])
+void readhd_(char filename[80], float *rdm, float *rtsmp, char ra[12], char dec[12], float *fref, double *mjdstart, char srcname[80], char telname[80], int* baryc)
 {
   int i;
   int rah,ram,ded,dem;
@@ -33,6 +33,7 @@ void readhd_(char filename[80], float *rdm, float *rtsmp, char ra[12], char dec[
   *mjdstart=tstart;
   *rtsmp=(float) tsamp;
   *rdm=(float) refdm;
+  *baryc=barycentric;
   angle_split(src_raj,&rah,&ram,&ras);
   strcpy(srcname,source_name);
   if (ras<10.0) {
