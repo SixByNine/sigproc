@@ -349,7 +349,7 @@ c         Zero the integer and character arrays
 c
           do i=1,maxbin
             intdata(i)=0
-	    chrdata(i)='0000'
+            chrdata(i)='0000'
           enddo
 c
 c         Scale the data
@@ -396,18 +396,18 @@ c
           if (reading) then
 c            read(recrd((lct-1)*80+1:lct*80),99)(chrdata(j),j=k,k+19)
             l=0
-	    do j=k,k+19
+            do j=k,k+19
               chrdata(j)=recrd((lct-1)*80+1+l:(lct-1)*80+4+l)
               call hex2b10(chrdata(j),intdata(j))
               l=l+4
-	    enddo
+            enddo
           else
 c            write(line(lct),99)(chrdata(j),j=k,k+19)
             l=1
-	    do j=k,k+19
+            do j=k,k+19
               line(lct)(l:l+3)=chrdata(j)
               l=l+4
-	    enddo
+            enddo
           endif
 c
 c         Un-comment this line for tracing...

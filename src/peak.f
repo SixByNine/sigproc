@@ -147,8 +147,8 @@ c      do i=1,ntim
 c         ymin=min(ymin,series(i))
 c         ymax=max(ymax,series(i))
 c      enddo
-	ymin=-1.5
-	ymax=+1.5
+        ymin=-1.5
+        ymax=+1.5
       call pgwindow(xmin,xmax,ymin,ymax*1.1)
       call pgbox('bcnst',0.0,0,'bc',0.0,0)
       call pglabel('Time (s)',' ',' ')
@@ -212,12 +212,12 @@ c      enddo
          call pgtext(real(pulidx(idx(i)))*rtsamp,pulsnr(idx(i)),rank)
       enddo
 
-	call glun(lout)
-	open(lout,file="peak.out",status="unknown")
+        call glun(lout)
+        open(lout,file="peak.out",status="unknown")
       do i=nfound,1,-1
          write(lout,*) real(pulidx(idx(i)))*rtsamp+skp,pulsnr(idx(i))
       enddo
-	close(lout)
+        close(lout)
 
       call pgsch(0.6)
       j=0
@@ -351,7 +351,7 @@ c=============================================================================
       do i=1,npts
          sum=sum+data(i)
          if (mod(i,2).eq.0) then
-	    j=j+1
+            j=j+1
             data(j)=sum/2.0
             sum=0.0
          endif
@@ -362,7 +362,7 @@ C from numerical recipes
       SUBROUTINE INDEXX(N,ARRIN,INDX)
       DIMENSION ARRIN(N),INDX(N)
       if (n.eq.1) then
-	indx(1)=1
+        indx(1)=1
         return
       endif
       DO 11 J=1,N
@@ -402,7 +402,7 @@ C from numerical recipes
       ENDIF
       INDX(I)=INDXT
       GO TO 10
-	write(*,*) 'hello there'
+        write(*,*) 'hello there'
       END
 c=============================================================================
       subroutine peakin(llog) 

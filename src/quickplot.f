@@ -78,30 +78,30 @@ c     & fc/1000.0,bw,nc,ts
       greyscale=0
       call getarg(1,comline)
       call getarg(2,junk)
-	
+        
       if (junk.eq.'greyscale'.or.junk.eq.'grayscale') greyscale=1
       if (junk.eq.'centre'.or.junk.eq.'center') then
          cent=.true.
       else
          cent=.false.
       endif
-	cent=.true.
+        cent=.true.
       call getarg(3,junk)
       if (junk.eq.'summary') then
-	summary=.true.
+        summary=.true.
       else
-	summary=.false.
+        summary=.false.
       endif
       if (comline.eq.'?') then
          call pgbegin(0,'?',1,1)
       else 
          if (summary) then
            call pgbegin(0,filename(1:slen(filename))//'.ps/ps',1,1)
-	   write(*,'(a)') filename(1:slen(filename))//'.png'
+           write(*,'(a)') filename(1:slen(filename))//'.png'
          else
            call pgbegin(0,filename(1:slen(filename))//'.ps/vps',1,1)
-	   write(*,'(a)') filename(1:slen(filename))//'.ps'
-	 endif
+           write(*,'(a)') filename(1:slen(filename))//'.ps'
+         endif
       endif
       if (comline.eq.'greyscale'.or.comline.eq.'grayscale') greyscale=1
       inquire(file=comline,exist=filexists)
@@ -114,9 +114,9 @@ c     & fc/1000.0,bw,nc,ts
       call pgsch(0.9)
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (summary) then
-	   call pgvport(0.08,0.98,0.6,0.7)
-	   call pgwindow(0.0,1.0,0.0,1.0)
-	   call pgtext(0.0,1.1,filename(1:slen(filename))//
+           call pgvport(0.08,0.98,0.6,0.7)
+           call pgwindow(0.0,1.0,0.0,1.0)
+           call pgtext(0.0,1.1,filename(1:slen(filename))//
      &               '    P = '//period(1:slen(period))//' ms'//
      &               '   DM = '//dmc(1:slen(dmc))//' cm-3 pc'
      &                 )
@@ -187,10 +187,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
          open(lun,file=comline,status='old',err=1)
          read(lun,'(a)',iostat=istat) junk
          if (junk(1:1).eq."#") then
-	   read(junk(2:),*) pfind,sussn,susdm
-	 else
-	   read(junk,*) pfind,sussn,susdm
-	 endif
+           read(junk(2:),*) pfind,sussn,susdm
+         else
+           read(junk,*) pfind,sussn,susdm
+         endif
          i=0
          do while (istat.eq.0) 
             i=i+1
@@ -199,27 +199,27 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
          close(lun)
          ndms=i-1
          bestrms=1.0e32
-	 bestdc=0.01
+         bestdc=0.01
          pms = real(pfold)
          do i=1,999
            dc  = real(i)/1000.
-	   testrms=dmmodelrms(ndms,x,y,z,xmin,xmax,pdm,bw,fc,pms,dc)
+           testrms=dmmodelrms(ndms,x,y,z,xmin,xmax,pdm,bw,fc,pms,dc)
            if (testrms.lt.bestrms) then
-		bestdc=dc
-		bestrms=testrms
-	   endif
+                bestdc=dc
+                bestrms=testrms
+           endif
          enddo 
          testrms=dmmodelrms(ndms,x,y,z,xmin,xmax,pdm,bw,fc,pms,bestdc) 
          if (summary) then
            call pgvport(0.3,0.5,0.5,0.7)
-	 else
+         else
            call pgvport(0.57,0.925,0.67,0.79)
-	 endif
+         endif
          ymin=y(1)
-	 ymax=y(1)
-	 do i=1,ndms
-	   ymin=min(y(i),ymin)
-	   ymax=max(y(i),ymax)
+         ymax=y(1)
+         do i=1,ndms
+           ymin=min(y(i),ymin)
+           ymax=max(y(i),ymax)
          enddo
          call pgwindow(xmin,xmax,ymin,ymax*1.1)
          call pgbox('bcnst',0.0,0,'bcnst',0.0,0)
@@ -231,7 +231,7 @@ c         call pgslw(4)
          call pgslw(1)
          call pgpoint(ndms,x,y,17)
          call pglabel('Trial DM (cm\\u-3\\d pc)','S/N',' ')
-	 call pgwindow(0.0,1.0,0.0,1.0)
+         call pgwindow(0.0,1.0,0.0,1.0)
          ssnr=ymax
       endif
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -316,7 +316,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       endif
 c      call pgwindow(0.0,window,0.0,real(nchan+1))
       if (summary) then
-	call pglabel('Pulse phase (turns)','Frequency band',' ')
+        call pglabel('Pulse phase (turns)','Frequency band',' ')
         call pgbox('bcnst',0.0,0,'bcnt',0.0,0)
       else
         call pglabel('','Frequency band',' ')
@@ -360,9 +360,9 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (summary) then
         call pgwindow(0.0,1.0,0.0,1.0)
-	write(junk,'(f6.1)') psnr
-	call pgtext(0.7,0.8,junk)
-	goto 333
+        write(junk,'(f6.1)') psnr
+        call pgtext(0.7,0.8,junk)
+        goto 333
       endif
       call pgvport(0.125,0.925,0.1,1.0)
       call pgvport(0.06,0.925,0.1,1.0)
@@ -397,19 +397,19 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       zmax=0.0
       wint=dc*pfold
       xmin=0.0
-      xmax=0.0	
+      xmax=0.0        
       ymax=0.0
       do i=1,ndms
         weff=sqrt(wint**2.0+(8.3e6*abs(pdm-x(i))*bw/fc/fc/fc)**2.0)
         if(weff.gt.pfold) then
-  	  z(i)=0.0
-	  if (xmin.ne.0.0.and.xmax.eq.0.0) xmax=x(i)*1.1
-	else
-	  if (xmin.eq.0.0.and.xmax.eq.0.0) xmin=x(i)*0.9
-	  z(i)=sqrt(pfold-weff)/sqrt(weff)
-	endif
+            z(i)=0.0
+          if (xmin.ne.0.0.and.xmax.eq.0.0) xmax=x(i)*1.1
+        else
+          if (xmin.eq.0.0.and.xmax.eq.0.0) xmin=x(i)*0.9
+          z(i)=sqrt(pfold-weff)/sqrt(weff)
+        endif
         ymax=max(ymax,y(i))
-	zmax=max(zmax,z(i))
+        zmax=max(zmax,z(i))
       enddo
       ssq=0.0
       do i=1,ndms
@@ -418,8 +418,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       enddo
       dmmodelrms=sqrt(ssq/real(ndms))
       if (xmax.eq.xmin) then
-	xmin=x(1)
-	xmax=x(ndms)
+        xmin=x(1)
+        xmax=x(ndms)
       endif
       if (xmax.eq.0.0) xmax=x(ndms)*1.1
       end
@@ -459,49 +459,49 @@ c  Assumed that viewport and window defined outside routine
         integer nxd,nyd
         integer nsym,flip
         parameter(nsym=10)
-	integer*4 ksym(nsym)
-	real*4 dat(nxd,nyd)
-	data ksym/1,20,21,2,3,14,15,17,16,18/
+        integer*4 ksym(nsym)
+        real*4 dat(nxd,nyd)
+        data ksym/1,20,21,2,3,14,15,17,16,18/
 
-	s=0.
-	ss=0.
-	smin=1.e30
-	smax=-smin
-	do j=1,ny
-	  do i=1,nx
-	    aa=dat(i,j)
-	    s=s+aa
-	  enddo
-	enddo
-	s=s/(nx*ny) 
-	do j=1,ny
-	  do i=1,nx
+        s=0.
+        ss=0.
+        smin=1.e30
+        smax=-smin
+        do j=1,ny
+          do i=1,nx
+            aa=dat(i,j)
+            s=s+aa
+          enddo
+        enddo
+        s=s/(nx*ny) 
+        do j=1,ny
+          do i=1,nx
             aa=dat(i,j)-s
-	    ss=ss+aa**2
-	    if(aa.gt.smax)smax=aa
-	    if(aa.lt.smin)smin=aa
-	  enddo
-	enddo
-	rms=sqrt(ss/(nx*ny))
+            ss=ss+aa**2
+            if(aa.gt.smax)smax=aa
+            if(aa.lt.smin)smin=aa
+          enddo
+        enddo
+        rms=sqrt(ss/(nx*ny))
 
         if (flip.eq.1) then
            call pgwindow(1.0,real(nx),real(ny+1),0.0)
         else 
            call pgwindow(1.0,real(nx),0.0,real(ny+1))
         endif
-	do j=1,ny
-	  do i=1,nx
-	    k=min(int((dat(i,j)-s)/rms),nsym)
-	    if(k.gt.0)then
-	      x=i
-	      y=j
-	      call pgpoint(1,x,y,ksym(k))
-	    endif
-	  enddo
-	enddo
+        do j=1,ny
+          do i=1,nx
+            k=min(int((dat(i,j)-s)/rms),nsym)
+            if(k.gt.0)then
+              x=i
+              y=j
+              call pgpoint(1,x,y,ksym(k))
+            endif
+          enddo
+        enddo
 
-	return
-	end
+        return
+        end
 
 
 
@@ -893,7 +893,7 @@ c         Zero the integer and character arrays
 c
           do i=1,maxbin
             intdata(i)=0
-	    chrdata(i)='0000'
+            chrdata(i)='0000'
           enddo
 c
 c         Scale the data
@@ -940,18 +940,18 @@ c
           if (reading) then
 c            read(recrd((lct-1)*80+1:lct*80),99)(chrdata(j),j=k,k+19)
             l=0
-	    do j=k,k+19
+            do j=k,k+19
               chrdata(j)=recrd((lct-1)*80+1+l:(lct-1)*80+4+l)
               call hex2b10(chrdata(j),intdata(j))
               l=l+4
-	    enddo
+            enddo
           else
 c            write(line(lct),99)(chrdata(j),j=k,k+19)
             l=1
-	    do j=k,k+19
+            do j=k,k+19
               line(lct)(l:l+3)=chrdata(j)
               l=l+4
-	    enddo
+            enddo
           endif
 c
 c         Un-comment this line for tracing...
@@ -1035,8 +1035,8 @@ c==============================================================================
       subroutine b102hex(b10no,hexstr)
 c==============================================================================
 c
-c	Converts a base 10 number passed down as the integer "b10no"
-c	to a hexadeximal string returned as the character*4 "hexstr"
+c        Converts a base 10 number passed down as the integer "b10no"
+c        to a hexadeximal string returned as the character*4 "hexstr"
 c       N.B. maximum integer for 4 character hex string is 65535
 c
       implicit none
@@ -1137,7 +1137,7 @@ c
             sum=sum+raw(i)
             sum=sum+raw(nbin-i+1)
           enddo
-	  ndiv=max(1.0,float(2*nbin/15))
+          ndiv=max(1.0,float(2*nbin/15))
           rms=sqrt(sumsq/ndiv)
           mean=sum/ndiv
         endif
@@ -1326,23 +1326,23 @@ c
       do 40 nn=1,6
         kw=2**(nn-1)
         if(kw.gt.nbin/2) return
-	s=0.0
-	do 50 k=1,kw
-	  s=s+pr(k)
-	  wrk(k)=pr(k)
+        s=0.0
+        do 50 k=1,kw
+          s=s+pr(k)
+          wrk(k)=pr(k)
    50   continue
-	ja=0
-	smax=s
-	do 60 j=2,nbin
-	  ja=ja+1
-	  if(ja.gt.kw) ja=ja-kw
-	  al=wrk(ja)
-	  jj=j+kw-1
-	  if(jj.gt.nbin)jj=jj-nbin
-	  an=pr(jj)
-	  s=s+an-al
-	  wrk(ja)=an
-	  if(s.gt.smax) smax=s
+        ja=0
+        smax=s
+        do 60 j=2,nbin
+          ja=ja+1
+          if(ja.gt.kw) ja=ja-kw
+          al=wrk(ja)
+          jj=j+kw-1
+          if(jj.gt.nbin)jj=jj-nbin
+          an=pr(jj)
+          s=s+an-al
+          wrk(ja)=an
+          if(s.gt.smax) smax=s
    60   continue
 
         sn=smax/(rmsp*sqrt(kw*(1.+real(kw)/nbin)))
@@ -1393,15 +1393,15 @@ c
       s=0.
       ss=0.
       do j=1,ny
-	 smin=1.0e30
+         smin=1.0e30
          do i=1,nx
-	    aa=dat(i,j)
-	    smin=min(smin,aa)
-	    s=s+aa
+            aa=dat(i,j)
+            smin=min(smin,aa)
+            s=s+aa
          enddo
-	 do i=1,nx
-	    dat(i,j)=dat(i,j)-smin
-	 enddo
+         do i=1,nx
+            dat(i,j)=dat(i,j)-smin
+         enddo
       enddo
       s=s/(nx*ny) 
       smin=1.e30
@@ -1409,10 +1409,10 @@ c
       do j=1,ny
          do i=1,nx
             aa=dat(i,j)-s
-	    ss=ss+aa**2
-	    smax=max(smax,dat(i,j))
-	    smin=min(smin,dat(i,j))
-	    smin=min(smin,dat(i,j))
+            ss=ss+aa**2
+            smax=max(smax,dat(i,j))
+            smin=min(smin,dat(i,j))
+            smin=min(smin,dat(i,j))
          enddo
       enddo
       rms=sqrt(ss/(nx*ny))
@@ -1453,7 +1453,7 @@ C from numerical recipes
       SUBROUTINE INDEXX(N,ARRIN,INDX)
       DIMENSION ARRIN(N),INDX(N)
       if (n.eq.1) then
-	indx(1)=1
+        indx(1)=1
         return
       endif
       DO 11 J=1,N

@@ -11,17 +11,17 @@
         do 12 j=l+1,ir
           a=arr(j)
           b=brr(j)
-	  c=crr(j)
+          c=crr(j)
           do 11 i=j-1,1,-1
             if(arr(i).le.a)goto 2
             arr(i+1)=arr(i)
             brr(i+1)=brr(i)
-	    crr(i+1)=crr(i)
+            crr(i+1)=crr(i)
 11        continue
           i=0
 2         arr(i+1)=a
           brr(i+1)=b
-	  crr(i+1)=c
+          crr(i+1)=c
 12      continue
         if(jstack.eq.0)return
         ir=istack(jstack)
@@ -35,9 +35,9 @@
         temp=brr(k)
         brr(k)=brr(l+1)
         brr(l+1)=temp
-	temp=crr(k)
-	crr(k)=crr(l+1)
-	crr(l+1)=temp
+        temp=crr(k)
+        crr(k)=crr(l+1)
+        crr(l+1)=temp
         if(arr(l+1).gt.arr(ir))then
           temp=arr(l+1)
           arr(l+1)=arr(ir)
@@ -45,9 +45,9 @@
           temp=brr(l+1)
           brr(l+1)=brr(ir)
           brr(ir)=temp
-	  temp=crr(l+1)
-	  crr(l+1)=crr(ir)
-	  crr(ir)=temp
+          temp=crr(l+1)
+          crr(l+1)=crr(ir)
+          crr(ir)=temp
         endif
         if(arr(l).gt.arr(ir))then
           temp=arr(l)
@@ -56,9 +56,9 @@
           temp=brr(l)
           brr(l)=brr(ir)
           brr(ir)=temp
-	  temp=crr(l)
-	  crr(l)=crr(ir)
-	  crr(ir)=temp
+          temp=crr(l)
+          crr(l)=crr(ir)
+          crr(ir)=temp
         endif
         if(arr(l+1).gt.arr(l))then
           temp=arr(l+1)
@@ -67,15 +67,15 @@
           temp=brr(l+1)
           brr(l+1)=brr(l)
           brr(l)=temp
-	  temp=crr(l+1)
-	  crr(l+1)=crr(l)
-	  crr(l)=temp
+          temp=crr(l+1)
+          crr(l+1)=crr(l)
+          crr(l)=temp
         endif
         i=l+1
         j=ir
         a=arr(l)
         b=brr(l)
-	c=crr(l)
+        c=crr(l)
 3       continue
           i=i+1
         if(arr(i).lt.a)goto 3
@@ -89,16 +89,16 @@
         temp=brr(i)
         brr(i)=brr(j)
         brr(j)=temp
-	temp=crr(i)
-	crr(i)=crr(j)
-	crr(j)=temp
+        temp=crr(i)
+        crr(i)=crr(j)
+        crr(j)=temp
         goto 3
 5       arr(l)=arr(j)
         arr(j)=a
         brr(l)=brr(j)
         brr(j)=b
-	crr(l)=crr(j)
-	crr(j)=c
+        crr(l)=crr(j)
+        crr(j)=c
         jstack=jstack+2
         if(jstack.gt.NSTACK)pause 'NSTACK too small in sort2'
         if(ir-i+1.ge.j-l)then

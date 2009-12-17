@@ -22,13 +22,13 @@
       narg=iargc()
       if (narg.gt.0) then
         call getarg(1,fname)
-	do i=2,narg
-	  call getarg(i,comline)
-	  if (comline(1:2).eq.'-t') read(comline(3:),*) thresh
-	  if (comline(1:2).eq.'-l') read(comline(3:),*) lo
-	  if (comline(1:2).eq.'-h') read(comline(3:),*) hi
-	  if (comline(1:2).eq.'-f') plotit=.false.
-	enddo
+        do i=2,narg
+          call getarg(i,comline)
+          if (comline(1:2).eq.'-t') read(comline(3:),*) thresh
+          if (comline(1:2).eq.'-l') read(comline(3:),*) lo
+          if (comline(1:2).eq.'-h') read(comline(3:),*) hi
+          if (comline(1:2).eq.'-f') plotit=.false.
+        enddo
       else
          write(*,*)
          write(*,*) 'MASK: ',version
@@ -72,8 +72,8 @@
       write(*,*) 'Fmax:',hi,' Hz'
 
       if (.not.plotit) then
-	call glun(lun)
-	open(unit=lun,file='mask.out',status='unknown')
+        call glun(lun)
+        open(unit=lun,file='mask.out',status='unknown')
       endif
       do i=1,npf
          if (fbin(i).ge.lo.and.fbin(i).le.hi.and.abs(samp(i)).gt.thresh
@@ -86,8 +86,8 @@ c            smin=min(smin,samp(i))
       enddo
 
       if (.not.plotit) then
-	write(*,*) '"mask.out" file created'
-	stop
+        write(*,*) '"mask.out" file created'
+        stop
       endif
 
       call pgbegin(0,'?',1,1)

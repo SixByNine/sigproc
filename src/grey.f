@@ -57,23 +57,23 @@ c
          
       if (help) then
       write(*,'('' GREY : A program to greyplot EPN data.'')')
-         write(*,'('' No options were specified!'')')
-         write(*,'('' usage: plotg [filename] <options>'')')
-         write(*,'('' N.B. Input file must be in EPN format!!'')')
-	 write(*,'('' -r: set start record number (def=1)'')')
-	 write(*,'('' -s: set min=0 & max=n*rms (def=autoscale)'')')
-	 write(*,'('' -c: centres profile to first record (optional)'')')
-         write(*,'('' Comments/Bugs etc. -> dunc@mpifr-bonn.mpg.de'')')
-         stop 
+        write(*,'('' No options were specified!'')')
+        write(*,'('' usage: plotg [filename] <options>'')')
+        write(*,'('' N.B. Input file must be in EPN format!!'')')
+        write(*,'('' -r: set start record number (def=1)'')')
+        write(*,'('' -s: set min=0 & max=n*rms (def=autoscale)'')')
+        write(*,'('' -c: centres profile to first record (optional)'')')
+        write(*,'('' Comments/Bugs etc. -> dunc@mpifr-bonn.mpg.de'')')
+        stop 
       else
          if (narg.ge.1) call getarg(1,filename)
          lfil=index(filename,'.ser')-1
          if (lfil.eq.0) lfil=index(filename,'.dis')-1
          if (lfil.gt.0) filename=filename(1:lfil)
          lfil=index(filename,' ')-1
-	 if (index(filename,'.epn').eq.0) then
-	   filename=filename(1:lfil)//'.epn'
-	   lfil=lfil+4
+         if (index(filename,'.epn').eq.0) then
+           filename=filename(1:lfil)//'.epn'
+           lfil=lfil+4
          endif
          nrec=nepnrec(filename)
          if (nrec.eq.0) then 
@@ -110,7 +110,7 @@ c     Read optional extras from the standard input if necessary...
 c      
       if (narg.ge.2) then
          do i=2,narg
-  	   call getarg(i,option)
+             call getarg(i,option)
            if (index(option,'-r').gt.0) then
               read(option(3:),'(i5)') recno
               recno=recno-1
@@ -193,7 +193,7 @@ c        if (centre) call sprof(tmp,nbins,binmax)
         do i=1,nbins
           j=(tmp(i)-dmin)/(dmax-dmin)*nc+1
           if (j.gt.nc) j=nc
-	  if (j.lt.1) j=1
+          if (j.lt.1) j=1
           cprof(nch)(i:i)=gry(j)
           grey(i)=tmp(i)
         enddo

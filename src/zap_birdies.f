@@ -1,4 +1,4 @@
-C @(#)zap_birdies.f	3.2 18 Feb 1994
+C @(#)zap_birdies.f        3.2 18 Feb 1994
 c------------------------------------------------------------
       subroutine zap_pmbrd(dat,dat2,nf,nf1,tsmp_data,sprms,mean,ifold)
 c------------------------------------------------------------

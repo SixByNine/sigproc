@@ -54,7 +54,7 @@ c
             ltmp=index(line,'DM:')+3
             read(line(ltmp:),*) dm(nt)
             ltmp=index(line,'AC:')+3
-	    read(line(ltmp:),*) ac(nt)
+            read(line(ltmp:),*) ac(nt)
             ltmp=index(line,'AD:')+3
             ad(nt)=0.0
             if (ltmp.gt.3) read(line(ltmp:),*) ad(nt)
@@ -66,10 +66,10 @@ c
               par(nc)=p(1)
               snr(nc)=s(1)
             else
-c	      do i=1,5
-c		p(i)=0.0
-c		s(i)=0.0
-c	      enddo
+c              do i=1,5
+c                p(i)=0.0
+c                s(i)=0.0
+c              enddo
 c              read(line,*,iostat=istat)
 c     &        s(1),p(1),s(2),p(2),s(3),p(3),s(4),p(4),s(5),p(5)
 c              par(nc)=p(fold)

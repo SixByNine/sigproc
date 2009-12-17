@@ -28,8 +28,8 @@ c==============================================================================
       subroutine b102hex(b10no,hexstr)
 c==============================================================================
 c
-c	Converts a base 10 number passed down as the integer "b10no"
-c	to a hexadeximal string returned as the character*4 "hexstr"
+c        Converts a base 10 number passed down as the integer "b10no"
+c        to a hexadeximal string returned as the character*4 "hexstr"
 c       N.B. maximum integer for 4 character hex string is 65535
 c
       implicit none
@@ -130,7 +130,7 @@ c
             sum=sum+raw(i)
             sum=sum+raw(nbin-i+1)
           enddo
-	  ndiv=max(1.0,float(2*nbin/15))
+          ndiv=max(1.0,float(2*nbin/15))
           rms=sqrt(sumsq/ndiv)
           mean=sum/ndiv
         endif

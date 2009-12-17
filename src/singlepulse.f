@@ -23,11 +23,11 @@ c  initialize parameters for single-pulse search and write headerfile
       lsd1=2
       if (dmidx.eq.0) 
      .write(llog,*) 'Searching for single pulses... (thresh=',spthresh,
-     .		     ', ncandsmax=',ncandsmax,', nsmax=',nsmax,')'
+     .                     ', ncandsmax=',ncandsmax,', nsmax=',nsmax,')'
 
 c       Search for pulses in this DM file and write out to file best.tmp.
 
-	ntim2=ntim2-10./tsamp
+        ntim2=ntim2-10./tsamp
       done_pulse = pulse(realdata, spthresh, nsmax,
      .     dmidx, ntim2, series, loopsize, scrdisk, lsd1)
 
@@ -42,9 +42,9 @@ c       best_pulses.
 
       return
       end
- 	subroutine best_smoothing(ncandsmax, dmidx, dm, length,
-     .			           best_pulses, hist_pulses, thresh,
-     .			 	   nsmax, scrdsk1, npulses, tsamp)
+         subroutine best_smoothing(ncandsmax, dmidx, dm, length,
+     .                     best_pulses, hist_pulses, thresh,
+     .                     nsmax, scrdsk1, npulses, tsamp)
       implicit none
 
 c reads output file from pulse.c that is 
@@ -72,7 +72,7 @@ c jmc 9 May 1995
       real rlength
 
       integer best_dm(maxcands), best_ns(maxcands),
-     .	      best_time(maxcands), best_snr(maxcands)
+     .              best_time(maxcands), best_snr(maxcands)
       integer itolerance, io_error, isamp
       character*80 inline, inline1
       character*132 scrdsk1
@@ -83,7 +83,7 @@ c jmc 9 May 1995
       integer ind
       logical latest
 
-      integer lnblnk			!fn to find line length
+      integer lnblnk                        !fn to find line length
       integer lunin, lunout
 
       integer nit, nitmax
@@ -96,7 +96,7 @@ c      lun=index(scrdsk1,' ')-1        ! MBy: for accomplishing modif done in
       lun=index(scrdsk1,' ')-2         ! pulse.c of the string scrdsk1
    
       call system('sort -n +2 '//scrdsk1(1:lun)//'/'//'best_tmp >
-     &		 '//scrdsk1(1:lun)//'/'//'best_tmp.sorted')
+     &                 '//scrdsk1(1:lun)//'/'//'best_tmp.sorted')
 
       call glun(l0)
       open(l0, file=scrdsk1(1:lun)//'/'//'best_tmp.sorted')
@@ -109,7 +109,7 @@ c      lun=index(scrdsk1,' ')-1        ! MBy: for accomplishing modif done in
 
       do nit = 1, nitmax
 
-       if(nit .eq. 1) then		!first time, use orig data file
+       if(nit .eq. 1) then                !first time, use orig data file
           lunin = l0
           lunout = l1
        else
@@ -136,7 +136,7 @@ c      lun=index(scrdsk1,' ')-1        ! MBy: for accomplishing modif done in
      .   ndm1, ns1, timebin1, snr1, mean1, rms1
       itolerance=(2.**ns+2.**ns1)/2.+1
       if(abs(timebin1-timebin).le.itolerance) then 
-           latest = .true.		!the better of the pair is written 
+           latest = .true.                !the better of the pair is written 
            if(snr1 .gt. snr) then 
              ind = lnblnk(inline1)
              write(lunout,*) inline1(1:ind)
@@ -181,34 +181,34 @@ c always save last line
       go to 2
  9999 continue
        
- 1000	close(l0)
-	close(l1)
-	close(l2)
+ 1000        close(l0)
+        close(l1)
+        close(l2)
 
-	if (npulses.gt.0) then
+        if (npulses.gt.0) then
 
-	call sort3(npulses,best_snr,best_time,best_ns)
+        call sort3(npulses,best_snr,best_time,best_ns)
         if (dmidx.eq.1) then
-	   call glun(l3)
+           call glun(l3)
            open(l3, file=best_pulses,access='append')
         else
-	   call glun(l3)
+           call glun(l3)
            open(l3, file=best_pulses)
         end if
 
-	if (dmidx.eq.1) then
-	   call glun(l4)
-	   open (l4, file=hist_pulses,access='append')
-	else
-	   call glun(l4)
-	   open (l4, file=hist_pulses)
-	end if
-	
-	if (ncandsmax.gt.npulses) then 
- 	   n_to_print = npulses
-	else
-	   n_to_print = ncandsmax
-	end if
+        if (dmidx.eq.1) then
+           call glun(l4)
+           open (l4, file=hist_pulses,access='append')
+        else
+           call glun(l4)
+           open (l4, file=hist_pulses)
+        end if
+        
+        if (ncandsmax.gt.npulses) then 
+            n_to_print = npulses
+        else
+           n_to_print = ncandsmax
+        end if
 
         rlength = length
         power = log(rlength)/log(2.) + 0.5
@@ -248,17 +248,17 @@ c always save last line
         do 12 j=l+1,ir
           a=arr(j)
           b=brr(j)
-	  c=crr(j)
+          c=crr(j)
           do 11 i=j-1,1,-1
             if(arr(i).le.a)goto 2
             arr(i+1)=arr(i)
             brr(i+1)=brr(i)
-	    crr(i+1)=crr(i)
+            crr(i+1)=crr(i)
 11        continue
           i=0
 2         arr(i+1)=a
           brr(i+1)=b
-	  crr(i+1)=c
+          crr(i+1)=c
 12      continue
         if(jstack.eq.0)return
         ir=istack(jstack)
@@ -272,9 +272,9 @@ c always save last line
         temp=brr(k)
         brr(k)=brr(l+1)
         brr(l+1)=temp
-	temp=crr(k)
-	crr(k)=crr(l+1)
-	crr(l+1)=temp
+        temp=crr(k)
+        crr(k)=crr(l+1)
+        crr(l+1)=temp
         if(arr(l+1).gt.arr(ir))then
           temp=arr(l+1)
           arr(l+1)=arr(ir)
@@ -282,9 +282,9 @@ c always save last line
           temp=brr(l+1)
           brr(l+1)=brr(ir)
           brr(ir)=temp
-	  temp=crr(l+1)
-	  crr(l+1)=crr(ir)
-	  crr(ir)=temp
+          temp=crr(l+1)
+          crr(l+1)=crr(ir)
+          crr(ir)=temp
         endif
         if(arr(l).gt.arr(ir))then
           temp=arr(l)
@@ -293,9 +293,9 @@ c always save last line
           temp=brr(l)
           brr(l)=brr(ir)
           brr(ir)=temp
-	  temp=crr(l)
-	  crr(l)=crr(ir)
-	  crr(ir)=temp
+          temp=crr(l)
+          crr(l)=crr(ir)
+          crr(ir)=temp
         endif
         if(arr(l+1).gt.arr(l))then
           temp=arr(l+1)
@@ -304,15 +304,15 @@ c always save last line
           temp=brr(l+1)
           brr(l+1)=brr(l)
           brr(l)=temp
-	  temp=crr(l+1)
-	  crr(l+1)=crr(l)
-	  crr(l)=temp
+          temp=crr(l+1)
+          crr(l+1)=crr(l)
+          crr(l)=temp
         endif
         i=l+1
         j=ir
         a=arr(l)
         b=brr(l)
-	c=crr(l)
+        c=crr(l)
 3       continue
           i=i+1
         if(arr(i).lt.a)goto 3
@@ -326,16 +326,16 @@ c always save last line
         temp=brr(i)
         brr(i)=brr(j)
         brr(j)=temp
-	temp=crr(i)
-	crr(i)=crr(j)
-	crr(j)=temp
+        temp=crr(i)
+        crr(i)=crr(j)
+        crr(j)=temp
         goto 3
 5       arr(l)=arr(j)
         arr(j)=a
         brr(l)=brr(j)
         brr(j)=b
-	crr(l)=crr(j)
-	crr(j)=c
+        crr(l)=crr(j)
+        crr(j)=c
         jstack=jstack+2
         if(jstack.gt.NSTACK)pause 'NSTACK too small in sort2'
         if(ir-i+1.ge.j-l)then

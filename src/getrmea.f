@@ -38,9 +38,9 @@ c
         j=j+1
         tmp(j)=data(i)
         if (j.eq.nrun) then
-  	   call indexxf77(nrun,tmp,idx)
+             call indexxf77(nrun,tmp,idx)
            k=k+1
-	   rmed(k)=tmp(idx(nrun/2))
+           rmed(k)=tmp(idx(nrun/2))
            j=0
         endif
       enddo

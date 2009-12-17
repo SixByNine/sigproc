@@ -88,7 +88,7 @@
          nadd=1
       else
          rbin=2**rbin
-	 nadd=rbin
+         nadd=rbin
       endif
 c      if (rbin.gt.npf) rbin=npf
 c      nadd=npf/rbin
@@ -134,7 +134,7 @@ c      nadd=npf/rbin
            endif
         enddo
         call minmax(samp2,j,smin,smax)
-c	smax=5000.0
+c        smax=5000.0
         snr=spcsnr(samp3,j)
       endif
 

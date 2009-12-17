@@ -149,12 +149,12 @@ c         do fold=1,5
             call readsus(filename, fold, mc, nc, mt, nt,
      &                   par, snr, trid, fld, dm, ac, ad)
          enddo
-	 nf=nfolds
+         nf=nfolds
       else
             write(*,*) 'Fold:',fold
             call readsus(filename, fold, mc, nc, mt, nt,
      &                   par, snr, trid, fld, dm, ac, ad)
-	 nf=1
+         nf=1
       endif
 c
 c     Look at dm,ac+ad arrays to establish parameter space of search
@@ -551,17 +551,17 @@ c
                write(susfile,'(a,i3,a)')'sus',nsus,'.sum'
             endif
             open(unit=lsum,file=susfile,status='unknown')
-c	MK 2006: Added the name of the dedispersed
-c		file. This is for 'tune' used with MMB  
-		
+c        MK 2006: Added the name of the dedispersed
+c                file. This is for 'tune' used with MMB  
+                
             write(dmval,'(f8.2)') dd(trid(j))
 
-		bb=index(dmval,' ')
+                bb=index(dmval,' ')
                do while (bb.eq.1)
                   dmval=dmval(2:8)
                   bb=index(dmval,' ')
-               enddo			
-		write(lsum,*)filename(1:index(filename,' ')-5)//
+               enddo                        
+                write(lsum,*)filename(1:index(filename,' ')-5)//
      &              '_dice_dm'//dmval(1:bb-1)//'.tim'
 
             if (mode.eq.4) then
@@ -703,7 +703,7 @@ c
 c
  
 
-	    plotit=.true.
+            plotit=.true.
             option=' '
             if (lview) then
                write(*,'('' View this one [y] ''$)')
@@ -728,7 +728,7 @@ c
 
             lmode5 = .false.
 
-	    if (plotit) then
+            if (plotit) then
  200           if(lmode5) then
                   mode = 1
                   call pgvport(0.12,0.85,0.50,0.85)

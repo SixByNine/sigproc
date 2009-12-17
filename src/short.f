@@ -10,9 +10,9 @@ c=============================================================================
       read(lun) header
       read(lun) ntim,tsamp,refdm,refac
       if (ntim.gt.mpts) then
-	write(*,*) 'WARNING - too many points in data file!'
-	write(*,*) '** reading in max possible:',mpts/1024,' kpts'
-	ntim=mpts
+        write(*,*) 'WARNING - too many points in data file!'
+        write(*,*) '** reading in max possible:',mpts/1024,' kpts'
+        ntim=mpts
       endif
       read(lun) (series(i),i=1,ntim)
       close(unit=lun)
@@ -46,9 +46,9 @@ c==============================================================================
       read(lun) header
       read(lun) ntim,tsamp,refdm,refac
       if (ntim.gt.mpts) then
-	write(*,*) 'WARNING - too many points in data file!'
-	write(*,*) '** will read in max possible:',mpts/1024,' kpts'
-	ntim=mpts
+        write(*,*) 'WARNING - too many points in data file!'
+        write(*,*) '** will read in max possible:',mpts/1024,' kpts'
+        ntim=mpts
       endif
       return
  999  stop 'Error opening input file!'

@@ -56,10 +56,10 @@ c=============================================================================
       if (rspc) tanalyse=.false.
       if (tanalyse) then                     ! (time series analysis only)
          if (acsearch) call resample(llog)   ! re-sample time series
-	 if (fftw) then
-         	call fftwdata(llog)          ! fft the data using FFTW
-	 else 
-         	call fftdata(llog)           ! fft the data using SINGLETON
+         if (fftw) then
+                 call fftwdata(llog)          ! fft the data using FFTW
+         else 
+                 call fftdata(llog)           ! fft the data using SINGLETON
          endif
       endif                                  ! (standard analysis follows)
       call dosearch(llog,dump,rspc,oldw,pmzap,

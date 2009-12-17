@@ -29,7 +29,7 @@ c
       enddo
  759  format(a,$)
  762  format(1x,i4,2x,$)
-	write(*,*)
+        write(*,*)
          stop
       endif
       if (option.eq.'-maxft') then
@@ -146,12 +146,12 @@ c
         call getarg(i,option)
         if (index(option,'-z').gt.0) then
           zapfile='birdies' ! default file
-	  if (option(3:).ne.' ') zapfile=option(3:)
+          if (option(3:).ne.' ') zapfile=option(3:)
         else if (index(option,'-mmzap').gt.0) then
            mmzap=.true.
         else if (index(option,'-m').gt.0) then
           maskfile(1)='mask' ! default file
-	  if (option(3:).ne.' ') maskfile(1)=option(3:)
+          if (option(3:).ne.' ') maskfile(1)=option(3:)
           call glun(lun)
           open(unit=lun,file=maskfile(1),status='old')
           read(lun,'(a)') option
@@ -168,7 +168,7 @@ c
           endif
           close(unit=lun)
         else if (index(option,'-b').gt.0) then
-	  fbrute=100.0 ! default value
+          fbrute=100.0 ! default value
           if (option(3:).ne.' ') read(option(3:),*) fbrute
         else if (index(option,'-i').gt.0) then
 c          read(option(3:),*) dmidx
@@ -200,12 +200,12 @@ c          endif
            pmzap=.true.
         else if (index(option,'-pulse').gt.0) then
            pulse=.true.
-	else if (index(option,'-nofft').gt.0) then
-	   nofft=.true.
-	else if (index(option,'-fftw').gt.0) then
-	   fftw=.true.
-	else if (index(option,'-head').gt.0) then
-	   prdh=.true.
+        else if (index(option,'-nofft').gt.0) then
+           nofft=.true.
+        else if (index(option,'-fftw').gt.0) then
+           fftw=.true.
+        else if (index(option,'-head').gt.0) then
+           prdh=.true.
         else if (index(option,'-nopow2').gt.0) then
            nopowtwo=.true.
            fftw=.true.
@@ -213,17 +213,17 @@ c          endif
            pzero=.true.
         else if (index(option,'-p').gt.0) then
           read(option(3:),*) pmax
-	else if (index(option,'-T').gt.0) then
+        else if (index(option,'-T').gt.0) then
           read(option(3:),*) spthresh
-	else if (index(option,'-w').gt.0) then
-	  read(option(3:),*) nsmax
-	else if (index(option,'-n').gt.0) then
-	  read(option(3:),*) ncandsmax
+        else if (index(option,'-w').gt.0) then
+          read(option(3:),*) nsmax
+        else if (index(option,'-n').gt.0) then
+          read(option(3:),*) ncandsmax
         else if (index(option,'-s').gt.0) then
           dump=.true.
-	  if (option(3:).ne.' ') dumpraw=.true.
-	  sfile=' '
-	  if (option(3:).ne.' ') sfile=option(3:)
+          if (option(3:).ne.' ') dumpraw=.true.
+          sfile=' '
+          if (option(3:).ne.' ') sfile=option(3:)
         else if (index(option,'-A').gt.0) then
           facc='append'
           app=.true.

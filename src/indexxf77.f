@@ -3,7 +3,7 @@ C from numerical recipes
       real ARRIN(*)
       integer INDX(*)
       if (n.eq.1) then
-	indx(1)=1
+        indx(1)=1
         return
       endif
       DO 11 J=1,N
@@ -43,5 +43,5 @@ C from numerical recipes
       ENDIF
       INDX(I)=INDXT
       GO TO 10
-	write(*,*) 'hello there'
+        write(*,*) 'hello there'
       END
