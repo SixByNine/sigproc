@@ -159,6 +159,7 @@ main(int argc, char *argv[])
 	block_array = (char*) malloc(blocksize);
 	fprintf(stderr,"Copying data...\n");
 	count = 0;
+	update_count = update_size+1;
 	while ( count < bytes_to_read ) { 
 		int read = fread(block_array,1,blocksize,fileptr);
 		if ( read < 1 ) {
