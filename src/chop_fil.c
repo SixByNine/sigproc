@@ -144,7 +144,7 @@ main(int argc, char *argv[])
 
 	fprintf(stderr,"Skipping data...\n");
 	count = 0;
-	update_count = update_size+1;
+	update_count = update_size;
 	while ( count < bytes_to_skip ) { 
 		fseek(fileptr,blocksize,SEEK_CUR);
 		count += blocksize;
@@ -152,14 +152,18 @@ main(int argc, char *argv[])
 		if ( update_count >= update_size ){
 			update_count=0;
 			fprintf(stderr,"\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-			fprintf(stderr,"done %6.1f s",tsamp*count/(float)bytes_per_sample);
+			fprintf(stderr,"\t% 8.1f s",tsamp*count/(float)bytes_per_sample);
 		}
 	}
+	fprintf(stderr,"\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+	fprintf(stderr,"\t% 8.1f s",tsamp*count/(float)bytes_per_sample);
 
+
+	fprintf(stderr,"\n\n");
 	block_array = (char*) malloc(blocksize);
 	fprintf(stderr,"Copying data...\n");
 	count = 0;
-	update_count = update_size+1;
+	update_count = update_size;
 	while ( count < bytes_to_read ) { 
 		int read = fread(block_array,1,blocksize,fileptr);
 		if ( read < 1 ) {
@@ -176,9 +180,13 @@ main(int argc, char *argv[])
 		if ( update_count >= update_size ){
 			update_count=0;
 			fprintf(stderr,"\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-			fprintf(stderr,"done %6.1f s",tsamp*count/(float)bytes_per_sample);
+			fprintf(stderr,"\t% 8.1f s",tsamp*count/(float)bytes_per_sample);
 		}
 	}
+	fprintf(stderr,"\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
+	fprintf(stderr,"\t% 8.1f s",tsamp*count/(float)bytes_per_sample);
+
+	fprintf(stderr,"\nDone\n");
 
 	free(block_array);
 
