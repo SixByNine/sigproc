@@ -1,6 +1,3 @@
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -12,7 +9,7 @@
 
 int read_header(FILE *inputfile);
 
-void fix_header(FILE* file, char* newname, double newra, double newdec);
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams);
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma);
 float get_random_value(float mean, float sigma);
 
@@ -21,19 +18,21 @@ void print_usage(){
 	printf("==================\n");
 	printf("\n");
 	printf("Modifies a .fil file 'in place'\n");
-	printf("Options:\n");
-	printf("--ra,-r {ra}         : modify the ra to {ra}. in form hhmmss.xxx \n");
-	printf("--dec,-d {dec}       : modify the dec to {dec}. in form ddmmss.xxx \n");
-	printf("--src-name,-n        : modify the source name.\n");
-	printf("--time-zap,-t \"s e\"  : 'zap' samples between 's' and 'e'\n");
+	printf("Header fix Options:\n");
+	printf("--ra,-r {ra}          : modify the ra to {ra}. in form hhmmss.xxx \n");
+	printf("--dec,-d {dec}        : modify the dec to {dec}. in form ddmmss.xxx \n");
+	printf("--src-name,-n         : modify the source name.\n");
+	printf("--beam,-b {i}         : modify the beam number to {i}\n");
+	printf("--nbeams,-B {i}       : modify number of beams to {i}\n");
+	printf("\nOther options:\n");
+	printf("--time-zap,-t \"s e\" : 'zap' samples between 's' and 'e'\n");
 	printf("\n");
-
 }
 
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:r:m:s:k:";
+	const char* args = "d:hn:t:r:m:s:k:B:b:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
@@ -41,6 +40,8 @@ int main (int argc, char** argv){
 	int ntimezaps,nfreqzaps;
 	double newra;
 	double newdec;
+	int newibeam=-1;
+	int newnbeams=-1;
 	float mean,sigma;
 	char newname[1024];
 	int c;
@@ -54,7 +55,7 @@ int main (int argc, char** argv){
 	nfreqzaps=0;
 	mean=0;
 	sigma=1;
-	
+
 	newra =900000000;
 	newdec=900000000;
 
@@ -79,7 +80,6 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 's';
 
-
 	long_opt[long_opt_idx].name = "ra";
 	long_opt[long_opt_idx].has_arg = required_argument;
 	long_opt[long_opt_idx].flag = NULL;
@@ -89,6 +89,16 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].has_arg = required_argument;
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'd';
+
+	long_opt[long_opt_idx].name = "beam";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'b';
+
+	long_opt[long_opt_idx].name = "nbeams";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'B';
 
 	long_opt[long_opt_idx].name = "src-name";
 	long_opt[long_opt_idx].has_arg = required_argument;
@@ -135,10 +145,16 @@ int main (int argc, char** argv){
 					case 's':
 						sigma=atof(optarg);
 						break;
-				        case 'k':
-					  sscanf(optarg, "%s",killfile);
-					  killswitch = 1;
-					        break;
+					case 'b':
+						newibeam=atof(optarg);
+						break;
+					case 'B':
+						newnbeams=atof(optarg);
+						break;
+					case 'k':
+						sscanf(optarg, "%s",killfile);
+						killswitch = 1;
+						break;
 				}
 		}
 	}
@@ -149,54 +165,54 @@ int main (int argc, char** argv){
 
 
 	if (killswitch){
-	  printf("Using file %s as sample killer...\n",killfile);
-	  FILE *killer;
-	  if ((killer = fopen(killfile, "r")) == NULL){
-	    printf("Failed to open the killfile: %s\n",killfile);
-	    exit(-1);
-	  }
-	  int a, j=0;
-	  //	  while (!feof(killer)){
-	  //	    fscanf(killer,"%i",&a);
-	  //	    j++;
-	  //	  }
-	  //	  fclose(killer);
+		printf("Using file %s as sample killer...\n",killfile);
+		FILE *killer;
+		if ((killer = fopen(killfile, "r")) == NULL){
+			printf("Failed to open the killfile: %s\n",killfile);
+			exit(-1);
+		}
+		int a, j=0;
+		// while (!feof(killer)){
+		// fscanf(killer,"%i",&a);
+		// j++;
+		// }
+		// fclose(killer);
 
-	  
-	  if ((killer = fopen(killfile, "r")) == NULL){
-	    printf("Failed to open the killfile: %s\n",killfile);
-	    exit(-1);
-	  }
-	  j=0;
-	  char byte;
-	  /* Skip the first line of the file */
-	  while (!feof(killer)){
-	    fread(&byte,1,1,killer);
-	    
-	    if( byte == '\n' )break;
-	  }
-	  int good_sample=1;
-	  while (!feof(killer)){
-	    
-	    fscanf(killer,"%i\n",&good_sample);
-	    if(!good_sample){
-	      if ( ntimezaps > arr_size){
-		arr_size*=2;
-		timezaps[0]=realloc(timezaps[0],arr_size*sizeof(int));
-		timezaps[1]=realloc(timezaps[1],arr_size*sizeof(int));
-	      }
-	      timezaps[0][ntimezaps]=j;
-	      timezaps[1][ntimezaps]=j+1;
-	      //	      printf("%d\t%d\t%d\t%d\n",ntimezaps,j,timezaps[0][0],timezaps[1][0]);
-	      ntimezaps++;
-	    }
-	    j++;
-	  }
-	  fclose(killer);
-	  printf("Zapping %d/%d time samples\n",ntimezaps,j);
+
+		if ((killer = fopen(killfile, "r")) == NULL){
+			printf("Failed to open the killfile: %s\n",killfile);
+			exit(-1);
+		}
+		j=0;
+		char byte;
+		/* Skip the first line of the file */
+		while (!feof(killer)){
+			fread(&byte,1,1,killer);
+
+			if( byte == '\n' )break;
+		}
+		int good_sample=1;
+		while (!feof(killer)){
+
+			fscanf(killer,"%i\n",&good_sample);
+			if(!good_sample){
+				if ( ntimezaps > arr_size){
+					arr_size*=2;
+					timezaps[0]=realloc(timezaps[0],arr_size*sizeof(int));
+					timezaps[1]=realloc(timezaps[1],arr_size*sizeof(int));
+				}
+				timezaps[0][ntimezaps]=j;
+				timezaps[1][ntimezaps]=j+1;
+				// printf("%d\t%d\t%d\t%d\n",ntimezaps,j,timezaps[0][0],timezaps[1][0]);
+				ntimezaps++;
+			}
+			j++;
+		}
+		fclose(killer);
+		printf("Zapping %d/%d time samples\n",ntimezaps,j);
 	}
-	
-	
+
+
 	if (optind >= argc) {
 		printf("Error: Need a fil file to work on... (use --help for options)\n");
 		exit(1);
@@ -204,11 +220,11 @@ int main (int argc, char** argv){
 
 	//printf("%s\n",argv[optind]);
 	if ((file = fopen(argv[optind],"r+")) ==NULL){
-	  printf("Failed to open file passed as CLA.\n");
-	  exit(-5);
+		printf("Failed to open file passed as CLA.\n");
+		exit(-5);
 	}
 
-	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000)fix_header(file,newname,newra,newdec);
+	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams);
 
 	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
 
@@ -216,7 +232,7 @@ int main (int argc, char** argv){
 }
 
 
-void fix_header(FILE* file, char* newname, double newra, double newdec){
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams){
 	int newlen;
 	int hdr_len;
 	char* hdr_arr;
@@ -269,26 +285,46 @@ void fix_header(FILE* file, char* newname, double newra, double newdec){
 
 		memcpy(buf,ptr,7);
 		buf[7]='\0';
-		if(newra < 900000000 &&  strcmp(buf,"src_raj")==0){
+		if(newra < 900000000 && strcmp(buf,"src_raj")==0){
 			ptr+=7;
 			a_double = *((double*)(ptr));
 			printf("old ra = '%lf'\n",a_double);
 			printf("new ra = '%lf'\n",newra);
 			*((double*)(ptr)) = newra;
 		}
-
-		if(newdec < 900000000 &&  strcmp(buf,"src_dej")==0){
+		if(newdec < 900000000 && strcmp(buf,"src_dej")==0){
 			ptr+=7;
 			a_double = *((double*)(ptr));
 			printf("old dec = '%lf'\n",a_double);
 			printf("new dec = '%lf'\n",newdec);
 			*((double*)(ptr)) = newdec;
 		}
+
+		memcpy(buf,ptr,5);
+		buf[5]='\0';
+		if(newibeam >= 0 && strcmp(buf,"ibeam")==0){
+			ptr+=5;
+			an_int = *((int*)(ptr));
+			printf("old ibeam = '%d'\n",an_int);
+			printf("new ibeam = '%d'\n",newibeam);
+			*((int*)(ptr)) = newibeam;
+		}
+
+		memcpy(buf,ptr,6);
+		buf[6]='\0';
+		if(newnbeams >= 0 && strcmp(buf,"nbeams")==0){
+			ptr+=6;
+			an_int = *((int*)(ptr));
+			printf("old nbeams = '%d'\n",an_int);
+			printf("new nbeams = '%d'\n",newnbeams);
+			*((int*)(ptr)) = newnbeams;
+		}
+
 		ptr++;
 	}
 
 	// now re-write the header
-	
+
 
 	fseek(file,0,SEEK_SET);
 	fwrite(hdr_arr,1,hdr_len,file);
@@ -371,10 +407,10 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 			fseek(file,sample_nbytes,SEEK_CUR);
 			cur_sample++;
 		}
-//		printf("Zapping: %d -> %d\n",tz_start,tz_end);
+		// printf("Zapping: %d -> %d\n",tz_start,tz_end);
 		// start zapping
 		while (cur_sample < tz_end){
-		  //		  printf("cur = %d\t%d\t%d\n",cur_sample,tz_start, tz_end);
+			// printf("cur = %d\t%d\t%d\n",cur_sample,tz_start, tz_end);
 			i=0;
 			for(c=0;c<sample_nbytes;c++){
 				i=(int)((rand()*(ARRL-1.0))/(float)RAND_MAX);
