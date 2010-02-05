@@ -9,7 +9,7 @@ c=============================================================================
          integer readsample,skipsample
         character*80 pfile
         real f0,chbw
-        logical filterbank,opened,pzero,nopowtwo,barycentric
+        logical filterbank,opened,pzero,nopowtwo
         data opened/.false./
         save
 

@@ -35,6 +35,8 @@ c     addition to specify number of folds - dbarnes 20060329
       common /transform/ tsize
       logical dumpraw
       common /rawspec/ dumpraw
+      logical barycentric
+      common /baryc/ barycentric
       logical noise
       common /test/ noise
       double precision mjdstart

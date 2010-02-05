@@ -483,6 +483,7 @@ c     &       pcand(fold,i)))/saverms
          write(lun,'(a)')   'PROGRAM = SEEK'
          write(lun,'(a,a)') 'VERSION = ', version(length(version)-2:)
          write(lun,'(a,a)') 'HARM_FOLDS = ', hsums(1:lhsums)
+         write(lun,'(a,l1)') 'BARYCENTRIC = ', barycentric
          if (recon) then
             write(lun,'(a,a)') 'COLS = SNR_SPEC SNR_RECON PERIOD'
          else
