@@ -45,23 +45,27 @@ class GPulseState{
  public:
     vector<Gpulse> *DMtrials;
     int NDMtrials;
-    int finishedcount;
     GPulseState(int ndms);
-    void searchforgiants(int itrial, int numbersamples, float * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac);
-    void searchforgiants(int itrial, int numbersamples, unsigned short int * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac);
-    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel);
-    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, int beamID);
-    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, int beamID, char* resultsfilename);
+    void searchforgiants(int itrial, int numbersamples, int offset, float * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac);
+    void searchforgiants(int itrial, int numbersamples, int offset, unsigned short int * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac);
+    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, char* filetimestamp);
+    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, char* filetimestamp, int beamID);
+    int* givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, char* filetimestamp, int beamID, char* resultsfilename);
+    void selfdestruct();
 };
-void normalise(float *data, int arraysize);          //normalize data
-double normalise(int n,float * d, double * dataaverage);//normalize and return RMS; provide dataaverage
-double getrms(int n,float * d, double * dataaverage);//get RMS of data
+void normalise(float *data, int n);                  //normalize data
+double normalise(int n,float * d, double * dataaverage);//normalize and report SIGMA, MEAN
+double getrms(int n,float * d, double * dataaverage);//report SIGMA
+double getrms(int n, unsigned short int * d, double * dataaverage);//report SIGMA
+double submeanrms(int n,float * d, double * dataaverage);//subtract mean and report SIGMA
 void timeavg(int n, float * d);                      //scrunch data by factor of 2
 double timeavg(int n, float * d, double *dataaverage);//scrunch data by factor of 2,ret.RMS and subtract mean
 float getmax(float *data, int arraysize);            //get max of data
 float getmax(float *data, int arraysize, int *index);//get max of data and provide array index of maximum
 float getmin(float *data, int arraysize);            //get min of data
 float* int2float(int *array, int arraysize);         //convert int array to float array
+void removebaseline(unsigned short int *indata, float* outdata, int ndat, int runmeansize, float thresh);
+double getmowedsigma(int n, float * d, double unmowedsigma, double mean);
 vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands);
 vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands, float irrel);
 vector<Gpulse>* beamassoc_giants(vector<Gpulse> *beams, int nbeams, int *nmultibeamcands);
