@@ -4,6 +4,8 @@
 #include<iostream>
 using namespace std;
 
+// This is a comment
+
 // Gpulse CLASS "METHODS"
 Gpulse::Gpulse() {
 }
