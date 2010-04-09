@@ -431,7 +431,7 @@ float get_random_value(float mu, float sigma){
 	float rnd1,rnd2,ret;
 	rnd1 = ((float)rand())/(float)RAND_MAX;
 	rnd2 = ((float)rand())/(float)RAND_MAX;
-	if(rnd1==0.0) rnd1 = ((float)rand())/(float)RAND_MAX;
+	while(rnd1==0.0) rnd1 = ((float)rand())/(float)RAND_MAX;
 	ret= ((sigma * sqrt(- (2.0 * log(rnd1)))) * cos((2.0 * 3.14159265) * rnd2)) + mu;
 	return ret;
 }

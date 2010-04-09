@@ -81,7 +81,7 @@ main (int argc, char *argv[])
     if ( (nc*naddc) != nchans ) 
       error_message("nchans must be integer multiple of decimation factor");
     if (obits == 0) obits=nbits;
-    if (obits==1) error_message("output of 1-bit data will result in vastly reduced S/N!\nselect a higher output bit size with the -n option");
+    if (obits==1) fprintf(stderr,"WARNING output of 1-bit data will result in vastly reduced S/N!\nselect a higher output bit size with the -n option\n");
     /* all ok - broadcast the new header */
     if (!headerless) decimate_header();
   } else {

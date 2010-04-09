@@ -6,10 +6,10 @@
 void decimate_data(FILE *input, FILE *output) /*includefile*/
 { 
   char string[80];
-  float *fblock,min,max,realtime,fsaved[2];
+  float *fblock,min,max,mid,realtime,fsaved[2];
   unsigned short *sblock;
   unsigned char  *cblock;
-  int nsaved=0,ns,nsblk,opened=0,nout;
+  int nsaved=0,ns,nsblk,opened=0,nout,i;
 
   nsblk=nchans*nifs*naddt;
   fblock=(float *) malloc(nsblk*sizeof(float));
@@ -17,6 +17,11 @@ void decimate_data(FILE *input, FILE *output) /*includefile*/
   cblock=(unsigned char *) malloc(nsblk*sizeof(unsigned short));
   realtime=min=0.0;
   max=(float) pow(2.0,(double)obits) -1.0;
+
+  mid=((float) pow(2.0,(double)nbits) -1.0)/2.0f;
+  if(naddc > 1){
+	  mid*=naddc;
+  }
 
   /* main decimation loop */
   while ((ns=read_block(input,nbits,fblock,nsblk))>0) {
@@ -60,6 +65,17 @@ void decimate_data(FILE *input, FILE *output) /*includefile*/
     case 2:
       float2two(fblock,nout,min,max,cblock);
       fwrite(cblock,sizeof(unsigned char),nout/4,output);
+      break;
+    case 1:
+      for (i=0; i < nout; i++){
+	      if(fblock[i] - mid > 0){
+		      fblock[i]=1;
+	      } else {
+		      fblock[i]=0;
+	      }
+      }
+      float2one(fblock,nout,0,1,cblock);
+      fwrite(cblock,sizeof(unsigned char),nout/8,output);
       break;
     }
     realtime+=(float) tsamp * (float) ns/(float) nchans/(float) nifs;

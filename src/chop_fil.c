@@ -24,7 +24,7 @@ main(int argc, char *argv[])
 	char sra[6],sde[6],decsign;
 	int raw,uth,utm,uts;
 	long long numsamps,datasize,headersize;
-	float readsec,skipsec;
+	double readsec,skipsec;
 
 	readsec=1;
 	skipsec=0;
@@ -115,9 +115,9 @@ main(int argc, char *argv[])
 	char* block_array;
 	unsigned long long int count;
 	unsigned long long int update_count;
-	unsigned long long int bytes_per_sample=nchans*nbits/8;
-	unsigned long long int bytes_to_read=bytes_per_sample * (readsec / tsamp);
-	unsigned long long int bytes_to_skip=bytes_per_sample * (skipsec / tsamp);
+	unsigned long long int bytes_per_sample=(unsigned long long int)(nchans*nbits)/8;
+	unsigned long long int bytes_to_read=bytes_per_sample * (unsigned long long int)(readsec / tsamp +0.5);
+	unsigned long long int bytes_to_skip=bytes_per_sample * (unsigned long long int)(skipsec / tsamp + 0.5);
 	unsigned long long int blocksize = bytes_per_sample;
 	unsigned long long int numblocks = bytes_to_read / blocksize;
 	unsigned long long int update_size = (unsigned long long int) (10.0 * (bytes_per_sample/tsamp));
