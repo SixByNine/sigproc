@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([sixproc],[5.0.1],[mkeith@pulsarastronomy.net])
+AC_INIT([sixproc],[5.0.2],[mkeith@pulsarastronomy.net])
 
 if test -n "${CXXFLAGS}"; then
 	user_set_cxxflags=yes
