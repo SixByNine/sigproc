@@ -45,6 +45,32 @@ float* filint2float(int *array, int arraysize){
     return(floatarray);
 }
 
+
+bool getkillfile(int * killmask,int nchans,char *killfile){
+    FILE * kptr;
+    char line[100];
+    kptr = fopen(killfile,"r");
+    if (kptr==NULL){
+	fprintf(stderr,"GETKILLFILE: Error opening file %s\nWill NOT excise RFI channels.\n",killfile);
+	return(false);
+    }
+    for (int i=0; i<nchans;i++) {
+	if (fgets(line,20,kptr)!=NULL){  // Read in whole line
+	    int nscanned = sscanf(line,"%d",&killfile[i]);
+	    if (nscanned==0) {
+		fprintf(stderr,"GETKILLFILE: Could not scan %s as 1 or 0\nWill NOT excise RFI channels.\n",line);
+		return(false);
+	    }
+	} else{
+	    fprintf(stderr,"GETKILLFILE: Error reading %dth value from %s\nWill NOT excise RFI channels.\n",i,killfile);
+	    return(false);
+	}
+    }
+    fclose(kptr);
+    return(true);
+}
+
+
 void killchan(float *data, int ntime, int chan, float fillvalue, int filnchans){
   long long int bin=0;
   for (int t=0;t<ntime;t++){
@@ -56,15 +82,16 @@ void killchan(float *data, int ntime, int chan, float fillvalue, int filnchans){
 void filavg(int *ntime, int numchans, float *data){
     int averagedbin;
     float average;
-    for (int t=0;t<*ntime;t+=2){
+    int tempntime = *ntime;
+    if (tempntime%2!=0) tempntime--;
+    for (int t=0;t<tempntime;t+=2){
         for (int ch=0;ch<numchans;ch++){
           average = (data[t*numchans+ch] + data[(t+1)*numchans+ch])/2;
           averagedbin = ((t/2)*numchans+ch);
           data[averagedbin] = average;
         }
     }
-    if (*ntime%2!=0) *ntime = (*ntime-1)/2; //ignores last odd channel
-    else *ntime = (*ntime)/2;
+    *ntime = (tempntime)/2;
 }
 
 void filchanavg(int ntime, int *numchans, float *data){

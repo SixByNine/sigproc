@@ -49,15 +49,24 @@ SWIN_LIB_CFITSIO
 SWIN_LIB_PGPLOT
 MJK_LIB_PSRXML
 
+AX_OPENMP([have_openmp=yes],[have_openmp=no])
+if test X$have_openmp == Xyes; then
+	CFLAGS="$CFLAGS $OPENMP_CFLAGS -DHAVE_OPENMP"
+	CXXFLAGS="$CXXFLAGS $OPENMP_CFLAGS -DHAVE_OPENMP"
+fi
+
+
 CHECK_ZLIB
 MJK_LIB_FFTW
 
 if test X$have_fftw != Xyes; then
 	AC_WARN("No FFTW3 found... you will have to use the slower 'singleton' FFT. Specify location with --with-fftw-dir")
 fi
+if test X$have_openmp == Xno; then
+	AC_MSG_WARN([**OpenMP not detected, will compile only single threaded**])
+fi
 
 
-#AM_CONDITIONAL(HAVE_CFITSIO,[test $have_cfitsio = yes])
 
 AC_SUBST(XML_CPPFLAGS)
 AC_SUBST(PSRXML_LIBS)

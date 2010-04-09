@@ -1,7 +1,6 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#include <stdlib.h>
 #include "find_baseline.h"
 #include "cpgplot.h"
 #include "dialog.h"
@@ -10,10 +9,9 @@
 #include "libplotfil.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <vector>
-
-using namespace std;
 
 extern "C" {
   int newoldsumhrm_(float *, float *, int *, int *, float *,

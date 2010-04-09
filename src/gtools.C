@@ -1,6 +1,8 @@
-//this is the LATEST version of gtools
 #include "gtools.h"
-#include <stdlib.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<iostream>
+using namespace std;
 
 // Gpulse CLASS "METHODS"
 Gpulse::Gpulse() {
@@ -51,107 +53,109 @@ void Gpulse::put_pulse(float a, float s, int b, int l, int w, int t, float d, in
 //**************************************************
 //**************************************************
 
-//state stuff
+//State: to hold results of multiple DM trials
 GPulseState::GPulseState(int ndms) {
-    DMtrials = new vector<Gpulse>[ndms]; //!!!!!!!I THINK THIS IS WHERE THE MEMORY LEAK IS.
+    DMtrials = new vector<Gpulse>[ndms]; //!!!!!!! There maybe used to be a memory leak here but i think i fixed it
     NDMtrials = ndms;
 }
 
-//NOTE: searchforgiants works fine; it preserves previous runs of dmtrials.
-void GPulseState::searchforgiants(int itrial, int numbersamples, float * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac) {
+//Searchforgiants: Runs findgiants search for a trial DM of a GPulseState's DM range.
+//                 Also corrects for sampling index offsets caused by gulping
+void GPulseState::searchforgiants(int itrial, int numbersamples, int offset,  float * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac) {
     DMtrials[itrial] = findgiants(numbersamples, data, nsigma, bintol, usertscrfac, dm,starttscrfac);
-//    printf("in searchforgiants the dm before %f, found second giant at SNR %f\n",dm, DMtrials[itrial].begin()->SNR);
+    if (offset>0){
+	for (int i=0;i<DMtrials[itrial].size();i++){
+	    DMtrials[itrial].at(i).start += offset;
+	    DMtrials[itrial].at(i).loc += offset;
+	}
+    }
 }
-
-void GPulseState::searchforgiants(int itrial, int numbersamples, unsigned short int * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac) {
+void GPulseState::searchforgiants(int itrial, int numbersamples, int offset, unsigned short int * data, float nsigma, float bintol, int usertscrfac, float dm,int starttscrfac) {
     DMtrials[itrial] = findgiants(numbersamples, data, nsigma, bintol, usertscrfac, dm,starttscrfac);
-//    printf("in searchforgiants the dm before %f, found second giant at SNR %f\n",dm, DMtrials[itrial].begin()->SNR);
-//    fprintf(stderr,"At DM %f found %d candidates\n",dm,DMtrials[itrial].size());
+    if (offset>0){
+	for (int i=0;i<DMtrials[itrial].size();i++){
+	    DMtrials[itrial].at(i).start += offset;
+	    DMtrials[itrial].at(i).loc += offset;
+	}
+    }
 }
 
-
-int* GPulseState::givetimes(int* ndetected, float sampletime, float flo,float fhi,float irrel) {
-    return(givetimes(ndetected,sampletime,flo,fhi,irrel,-1));
+void GPulseState::selfdestruct(){
+    for (int i=0;i<NDMtrials;i++){
+	DMtrials[i].erase(DMtrials[i].begin(),DMtrials[i].end());
+    }
 }
 
-int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, int beamID){
-    return(givetimes(ndetected, sampletime, flo, fhi, irrel,beamID,"GResults.txt"));
+//Givetimes: Does multi-DM coincidence matching, returns candidate pulse sample stamps.
+//Results are written to GResults.txt unless otherwise specified. Results can be beam-tracked if desired.
+//The BEAM ID should ONLY be specified if wanting to do A MULTIBEAM SEARCH (otherwise beamID=-1)
+int* GPulseState::givetimes(int* ndetected, float sampletime, float flo,float fhi,float irrel,char* filetimestamp){
+    return(givetimes(ndetected,sampletime,flo,fhi,irrel,filetimestamp,-1,"GResults.txt"));
 }
-
-
-
-
-
-
-
-int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, int beamID, char* resultsfilename) {
-    //look for giants and return array of data to save. or specifications
-    //about data to save
-    // The BEAM ID should ONLY be specified if wanting to do A MULTIBEAM SEARCH.
-    //---------------------------------------------
+int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, char* filetimestamp, int beamID){
+    return(givetimes(ndetected, sampletime, flo, fhi, irrel,filetimestamp,beamID,"GResults.txt"));
+}
+int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, char* filetimestamp, int beamID, char* resultsfilename) {
     int nsinglebeamcands, delayinsamples, totdelay;
     float delayinms;
     vector<Gpulse> suspectvectorstorage;
-    vector<Gpulse> SPvectorstorage; //NEWFILE
+    vector<Gpulse> SPvectorstorage;
     Gpulse gpulsestorage;
     FILE* resultsfile = fopen(resultsfilename,"a");
-    FILE* SPfile;  //NEWFILE
-    char SPfilename[200]; //NEWFILE
+    FILE* SPfile;
+    char SPfilename[200];
     
-    for (int i=0; i<NDMtrials-1; i++) {
-	suspectvectorstorage.insert(suspectvectorstorage.end(),
-				    DMtrials[i].begin(), DMtrials[i].end());
-    }
+    for (int i=0; i<NDMtrials; i++) {
+	suspectvectorstorage.insert(suspectvectorstorage.end(),DMtrials[i].begin(), DMtrials[i].end());
+     }
 
     vector<Gpulse>* suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,irrel);
+
 //	fprintf(stderr,"sampletime: %f flo:%f fhi:%f\n",sampletime,flo,fhi);
     fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
     fprintf(stderr,"N candidates in this block after associating: %d\n\n",nsinglebeamcands);
     fprintf(resultsfile,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
-    fprintf(resultsfile,"N candidates in this block after associating: %d\n\n",nsinglebeamcands);
-    int* timestamps = new int[nsinglebeamcands*2];
+    fprintf(resultsfile,"N candidates in this block after associating: %d\n#\n",nsinglebeamcands);
+    int* detectiontimestamps = new int[nsinglebeamcands*2];
 //    if (beamID<0){ BEAMID
-	for (int i=0; i<(nsinglebeamcands*2); i+=2) {
-	    gpulsestorage = suspectarraystorage[i/2].at(0);
-	    SPvectorstorage = suspectarraystorage[i/2]; //NEWFILE
-	    fprintf(stderr,"there are %d elements in SPvecstor\n",SPvectorstorage.size()); //NEWFILE
-	    if (flo<fhi)
-		delayinms = gpulsestorage.dm * 4.15 * (pow(flo/1000, -2) - pow(fhi/1000, -2));
-	    if (fhi<flo)
-		delayinms = gpulsestorage.dm * 4.15 * (pow(fhi/1000, -2) - pow(flo/1000, -2));
-	    delayinsamples = (int)(delayinms/(sampletime*1000))+1;
-	    fprintf(stderr,"Candidate %4d: DM %5.2f SNR %5.2f SCR %d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac);//2009-04-30-02:57:52.fil //NEWFILE
-
-//	    SPfilename contains a .pulse file for EACH CANDIDATE. //NEWFILE
-//      !!!NOTE: THE i/2 IN THIS NEXT LINE SHOULD LATER BE CHANGED TO THE UT TIMESTAMP OF THE OBSERVATION!!! //NEWFILE
-	    sprintf(SPfilename,"%f_%f_%d_%d_%d_%d_%f_%d_%d.pulse",gpulsestorage.amp,gpulsestorage.SNR,gpulsestorage.start,gpulsestorage.loc,gpulsestorage.width,gpulsestorage.tscrfac,gpulsestorage.dm,i/2,beamID); //NEWFILE
-	    SPfile = fopen(SPfilename,"w"); //NEWFILE
-	    for (int j=1;j<SPvectorstorage.size();j++){  //NEWFILE
-//                                   filename  amp   snr  start peak wid tscr dm   beam //NEWFILE
-//		fprintf(stderr,"filenamedummy %8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID); //NEWFILE
-		fprintf(SPfile,"filenamedummy %8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID); //NEWFILE
-	    } //NEWFILE
-	    fclose(SPfile); //NEWFILE
-
-//          resultsfile is a SUMMARY FILE for all the detected candidates. //NEWFILE
-	    fprintf(resultsfile,"Candidate %4d: DM %5.2f SNR %5.2f SCR %4d STARTBIN %13d PEAK %13d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac,gpulsestorage.start,gpulsestorage.loc);
-	    totdelay = delayinsamples+gpulsestorage.width;
-	    if (gpulsestorage.start-(totdelay)<0)
-		timestamps[i] = 0;
-	    else
-		timestamps[i] = gpulsestorage.start-(totdelay);
-	    timestamps[i+1] = 3*(totdelay);
-	}
-	*ndetected = nsinglebeamcands;
-	suspectvectorstorage.clear();
-	fclose(resultsfile);
+    for (int i=0; i<(nsinglebeamcands*2); i+=2){
+	gpulsestorage = suspectarraystorage[i/2].at(0);
+	SPvectorstorage = suspectarraystorage[i/2];
+	if (flo<fhi)
+	    delayinms = gpulsestorage.dm * 4.15 * (pow(flo/1000, -2) - pow(fhi/1000, -2));
+	if (fhi<flo)
+	    delayinms = gpulsestorage.dm * 4.15 * (pow(fhi/1000, -2) - pow(flo/1000, -2));
+	delayinsamples = (int)(delayinms/(sampletime*1000))+1;
+	fprintf(stderr,"Candidate %4d: DM %5.2f SNR %5.2f SCR %d",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac);//2009-04-30-02:57:52.fil
+	fprintf(stderr,";  there were %d detections of this candidate.\n",SPvectorstorage.size());
 	
-	return (timestamps);
-//    } else { BEAMID
-	//do something BEAMID
-//    } BEAMID
+//	    SPfilename contains a .pulse file for EACH CANDIDATE.
+//      !!!NOTE: THE i/2 IN THIS NEXT LINE SHOULD LATER BE CHANGED TO THE UT TIMESTAMP OF THE OBSERVATION!!!
+	sprintf(SPfilename,"%f_%f_%d_%d_%d_%d_%07.2f_%s_%d.pulse",gpulsestorage.amp,gpulsestorage.SNR,gpulsestorage.start,gpulsestorage.loc,gpulsestorage.width,gpulsestorage.tscrfac,gpulsestorage.dm,filetimestamp,beamID);
+	SPfile = fopen(SPfilename,"w");
+	for (int j=1;j<SPvectorstorage.size();j++){ 
+//                                   filename  amp   snr  start peak wid tscr dm   beam
+//		fprintf(stderr,"filenamedummy %8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID);
+	    fprintf(SPfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",filetimestamp,SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID);
+	}
+	fclose(SPfile);
+//          resultsfile is a SUMMARY FILE for all the detected candidates.
+	fprintf(resultsfile,"Candidate %4d: DM %5.2f SNR %5.2f SCR %4d STARTBIN %13d PEAK %13d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac,gpulsestorage.start,gpulsestorage.loc);
+	totdelay = delayinsamples+gpulsestorage.width;
+	if (gpulsestorage.start-(totdelay)<0)
+	    detectiontimestamps[i] = 0;
+	else
+	    detectiontimestamps[i] = gpulsestorage.start-(totdelay);
+	detectiontimestamps[i+1] = 3*(totdelay);
+    }
+    *ndetected = nsinglebeamcands;
+    suspectvectorstorage.erase(suspectvectorstorage.begin(),suspectvectorstorage.end());
     fclose(resultsfile);
-    return(0);
+    
+    return (detectiontimestamps);
+//    } else { BEAMID
+    //do something BEAMID
+//    } BEAMID
 }
 
 /* WHAT ABOUT MULTIBEAM?!?!?
@@ -168,8 +172,108 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
  }
  */
 
+
+
+
+//**************************************************
+//**************************************************
+//***             GSEARCHING LOOPS               ***
+//**************************************************
+//**************************************************
+
+
 //*******************************************
-//       TIMESERIES SEARCH ALGORITHM
+// WRAPPERS TO SET DATA TYPES, TIME SCRUNCH,
+//  & NORMALIZATION FOR TIMESERIES SEARCH
+//*******************************************
+// for 32-bit (float) data
+vector<Gpulse> findgiants(int npts, float * data, float nsigma, float bintol, int usertscrfac, float dm, int starttscrfac) {
+	vector<Gpulse> mybigvector, giant;
+	double mean=0;
+	double sigma=0;
+	int newnpts;
+	for (int tscrfac=starttscrfac; tscrfac<=usertscrfac; tscrfac*=2) {
+		newnpts = npts*starttscrfac/tscrfac;
+
+                // First pass: subtract mean and get stdev
+		if (tscrfac==starttscrfac){
+		    sigma = submeanrms(newnpts, data, &mean);
+		    sigma = getmowedsigma(newnpts,data,sigma,0); //USELESS IF DATA NOT BASELINED FIRST.
+		} else {
+		    sigma = timeavg(2*newnpts, data, &mean);
+		    sigma = getmowedsigma(newnpts,data,sigma,0);
+		}
+//		cout<<"sigma is "<<sigma<<" at tscrfac "<<tscrfac<<"\n";
+		giant = giantsearch(newnpts, data, nsigma*sigma, sigma, bintol/tscrfac, tscrfac, dm);
+		mybigvector.insert(mybigvector.end(), giant.begin(), giant.end());
+	}
+	return (mybigvector);
+}
+
+//shortcut (start scr factor@1)
+vector<Gpulse> findgiants(int npts, float * data, float nsigma, float bintol, int usertscrfac, float dm) {
+	return findgiants(npts, data, nsigma, bintol, usertscrfac, dm, 1);
+}
+
+// for unsigned short int data (e.g. HITRUN survey dedisperser)
+vector<Gpulse> findgiants(int npts, unsigned short int * data, float nsigma, float bintol,
+			  int usertscrfac, float dm,int starttscrfac) {
+	vector<Gpulse> mybigvector;
+	float *convertedarray;
+	convertedarray = (float *) malloc(npts*sizeof(float));
+	for (int j=0; j<npts; j++) {
+		convertedarray[j]=(float)data[j];
+	}
+	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,dm);
+	free(convertedarray);
+	return (mybigvector);
+}
+
+// for double (64-bit) data 
+vector<Gpulse> findgiants(int npts, double * data, float nsigma, float bintol,
+		int usertscrfac, float dm) {
+	vector<Gpulse> mybigvector;
+	float *convertedarray;
+	convertedarray = (float *) malloc(npts*sizeof(float));
+	for (int j=0; j<npts; j++) {
+		convertedarray[j]=(float)data[j];
+	}
+	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,dm);
+	free(convertedarray);
+	return (mybigvector);
+}
+
+// for int data 
+vector<Gpulse> findgiants(int npts, int * data, float nsigma, float bintol,
+		int usertscrfac, float dm) {
+	vector<Gpulse> mybigvector;
+	float *convertedarray;
+	convertedarray = (float *) malloc(npts*sizeof(float));
+	for (int j=0; j<npts; j++) {
+		convertedarray[j]=(float)data[j];
+	}
+	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,dm);
+	free(convertedarray);
+	return (mybigvector);
+}
+
+// for 8-bit (byte) data
+vector<Gpulse> findgiants(int npts, unsigned char * data, float nsigma,
+		float bintol, int usertscrfac, float dm) {
+	vector<Gpulse> mybigvector;
+	float *convertedarray;
+	convertedarray = (float *) malloc(npts*sizeof(float));
+	for (int j=0; j<npts; j++) {
+		convertedarray[j]=(float)data[j];
+	}
+	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,dm);
+	free(convertedarray);
+	return (mybigvector);
+}
+
+
+//*******************************************
+//        ACTUAL TIMESERIES SEARCH
 //*******************************************
 vector<Gpulse> giantsearch(int n, float * data, float thresh, double RMS, float bintol, int tscrfac, float dm) {
 	int i;
@@ -218,125 +322,34 @@ vector<Gpulse> giantsearch(int n, float * data, float thresh, double RMS, float 
 	return (giants);
 }
 
+
+
 //**************************************************
 //**************************************************
-//***             GSEARCHING LOOPS               ***
+//***          OTHER USEFUL FUNCTIONS            ***
 //**************************************************
 //**************************************************
 
-// for 32-bit (float) data
-vector<Gpulse> findgiants(int npts, float * data, float nsigma, float bintol,
-		int usertscrfac, float dm, int starttscrfac) {
-	vector<Gpulse> mybigvector, giant;
-	double mean=0;
-	double sigma=0;
-	for (int tscrfac=starttscrfac; tscrfac<=usertscrfac; tscrfac*=2) {
-		int newnpts = npts*starttscrfac/tscrfac;
-
-		if (tscrfac==starttscrfac)
-			sigma = getrms(newnpts, data, &mean);
-		else
-			sigma = timeavg(2*newnpts, data, &mean);
-		//	printf("sigma is %g\n",sigma);
-		giant = giantsearch(newnpts, data, nsigma*sigma, sigma,	bintol/tscrfac, tscrfac, dm); //	    if (giant.size()<1) printf("NO GIANTS FOUND IN %s\n",filename[0]); //	    printf("Giant pulse candidates in file %s:\n------filen------\t---amp---\t---SNR---\t--peak bin--\t---width---\n",filename[i]);
-		mybigvector.insert(mybigvector.end(), giant.begin(), giant.end());
+//**************************************************
+//             NORMALIZATION ROUTINES
+//**************************************************
+// straight normalization
+void normalise(float *data, int n) {
+	double sum=0.0, sumsq=0.0;
+	int i=0;
+	while (i<n) {
+		sum += data[i];
+		sumsq += (data[i] * data[i]);
+		i++;
 	}
-	return (mybigvector);
+	double mean=sum/(double)n;
+	double meansquares=sumsq/(double)n;
+	double sigma= sqrt(meansquares - (mean * mean));
+	for (i=0; i<n; i++)
+		data[i]=(data[i]-mean)/sigma;
 }
 
-vector<Gpulse> findgiants(int npts, float * data, float nsigma, float bintol,
-		int usertscrfac, float dm) {
-	return findgiants(npts, data, nsigma, bintol, usertscrfac, dm, 1);
-}
-
-// for unsigned short int data, as in the HITRUN survey dedisperser
-vector<Gpulse> findgiants(int npts, unsigned short int * data, float nsigma, float bintol,
-			  int usertscrfac, float dm,int starttscrfac) {
-	vector<Gpulse> mybigvector;
-	float *convertedarray;
-	convertedarray = (float *) malloc(npts*sizeof(float));
-	for (int j=0; j<npts; j++) {
-		convertedarray[j]=(float)data[j];
-	}
-	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,
-			dm);
-	free(convertedarray);
-	return (mybigvector);
-}
-
-// for double (64-bit) data 
-vector<Gpulse> findgiants(int npts, double * data, float nsigma, float bintol,
-		int usertscrfac, float dm) {
-	vector<Gpulse> mybigvector;
-	float *convertedarray;
-	convertedarray = (float *) malloc(npts*sizeof(float));
-	for (int j=0; j<npts; j++) {
-		convertedarray[j]=(float)data[j];
-	}
-	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,
-			dm);
-	free(convertedarray);
-	return (mybigvector);
-}
-
-// for int data 
-vector<Gpulse> findgiants(int npts, int * data, float nsigma, float bintol,
-		int usertscrfac, float dm) {
-	vector<Gpulse> mybigvector;
-	float *convertedarray;
-	convertedarray = (float *) malloc(npts*sizeof(float));
-	for (int j=0; j<npts; j++) {
-		convertedarray[j]=(float)data[j];
-	}
-	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,
-			dm);
-	free(convertedarray);
-	return (mybigvector);
-}
-
-// for 8-bit (byte) data
-vector<Gpulse> findgiants(int npts, unsigned char * data, float nsigma,
-		float bintol, int usertscrfac, float dm) {
-	vector<Gpulse> mybigvector;
-	float *convertedarray;
-	convertedarray = (float *) malloc(npts*sizeof(float));
-	for (int j=0; j<npts; j++) {
-		convertedarray[j]=(float)data[j];
-	}
-	mybigvector = findgiants(npts, convertedarray, nsigma, bintol, usertscrfac,
-			dm);
-	free(convertedarray);
-	return (mybigvector);
-}
-
-//**************************************************
-//**************************************************
-//***             USEFUL FUNCTIONS               ***
-//**************************************************
-//**************************************************
-
-//**************************************************
-//  Normalizes an array d of n elements by the RMS
-//**************************************************
-void normalise(float *data, int arraysize) {
-    double sum=0.0, sumsquares=0.0;
-    int i=0;
-    while (i<arraysize) {
-	sum += data[i];
-	sumsquares += (data[i] * data[i]);
-	i++;
-    }
-    double mean=sum/(double)arraysize;
-    double meansquares=sumsquares/(double)arraysize;
-    double sigma= sqrt(meansquares - (mean * mean));
-    for (i=0; i<arraysize; i++)
-	data[i]=(data[i]-mean)/sigma;//    cout<<"normalization:\n"<<"mean == "<<mean<<"\nsigma = "<<sigma<<"\n";
-}
-
-//**************************************************
-//  Normalizes an array d of n elements by the RMS
-//      and gives SIGMA and DATA AVERAGE back
-//**************************************************
+//  normalization + report of SIGMA and MEAN
 double normalise(int n, float * d, double * dataaverage) {
 	double sum=0.0;
 	double sumsq=0.0;
@@ -355,14 +368,17 @@ double normalise(int n, float * d, double * dataaverage) {
 		return (sigma);
 	}
 	for (int i=0; i<n; i++)
-		d[i]=(d[i]-mean)/sigma; //    fprintf(stderr,"IN NORMALIZE FUNCTION:\n\tRMS of data is: %g\n\tMean is: %g\n",sigma,mean);
+		d[i]=(d[i]-mean)/sigma;
 	return (sigma);
 }
 
+
+
 //**************************************************
-// subtract mean from data and return 1sigma value
+// subtract mean from data, return 1sigma value
 //**************************************************
-double getrms(int n, float * d, double * dataaverage) {
+
+double submeanrms(int n, float * d, double * dataaverage) {
     double sum=0.0;
     double sumsq=0.0;
     for (int i=0; i<n; i++) {
@@ -372,23 +388,81 @@ double getrms(int n, float * d, double * dataaverage) {
     double mean=sum/(double)n;
     *dataaverage = mean;
 
-    double meansq=sumsq/(double)n;
-    double sigma=sqrt(meansq-mean*mean); //"sigma" is RMS here
-    if (sigma==0) {
-	fprintf(stderr, "getrms::RMS of data is zero\n");
+    double rmssquared=sumsq/(double)n;
+    double sigma=sqrt(rmssquared-mean*mean);
+    if (rmssquared==0) {
+	fprintf(stderr, "submeanrms::RMS of data is zero\n");
 	return (sigma);
     }
     int i;
 #pragma omp parallel for private(i)
     for (i=0; i<n; i++)
 	d[i]=(d[i]-mean);
-    //    fprintf(stderr,"IN GETRMS FUNCTION:\n\tRMS of data is: %g\n\tMean is: %g\n",sigma,mean);
     return (sigma);
 }
 
+double getrms(int n, unsigned short int * d, double * dataaverage) {
+    double sum=0.0;
+    double sumsq=0.0;
+    for (int i=0; i<n; i++) {
+	sum+=(float)d[i];
+	sumsq+=(float)d[i]*(float)d[i];
+    }
+    double mean = sum/(double)n;
+    *dataaverage = mean;
+
+    double rmssquared=sumsq/(double)n;
+    double sigma=sqrt(rmssquared-mean*mean);
+    if (rmssquared==0) {
+	fprintf(stderr, "getrms::RMS of data is zero\n");
+    }
+    return (sigma);
+}
+
+double getrms(int n, float * d, double * dataaverage) {
+    double sum=0.0;
+    double sumsq=0.0;
+    for (int i=0; i<n; i++) {
+	sum+=(float)d[i];
+	sumsq+=(float)d[i]*(float)d[i];
+    }
+    double mean = sum/(double)n;
+    *dataaverage = mean;
+
+    double rmssquared=sumsq/(double)n;
+    double sigma=sqrt(rmssquared-mean*mean);
+    if (rmssquared==0) {
+	fprintf(stderr, "getrms::RMS of data is zero\n");
+    }
+    return (sigma);
+}
+
+// Recalculate sigma without SNR>6 samples.
+double getmowedsigma(int n, float * d, double unmowedsigma, double mean) {
+    double sum=0.0;
+    double sumsq=0.0;
+    double sigma;
+    for (int i=0; i<n; i++) {
+	if (d[i]<(3*unmowedsigma)){
+	    sum+=d[i];
+	    sumsq+=d[i]*d[i];
+	} else {
+	    sum += mean;
+	    sumsq+=mean*mean;
+	}
+    }
+    sigma=sqrt((sumsq/(double)n) - (mean*mean));
+    if (sigma==0) {
+	fprintf(stderr, "getmowedsigma::RMS of data is zero\n");
+    }
+    return(sigma);
+}
+
 //**************************************************
-// Time-avg data by a factor of two & return RMS
+//            TIME-SCRUNCHING ROUTINES
 //**************************************************
+
+// Time-avg by two & return SIGMA
 double timeavg(int n, float * d, double *dataaverage) {
 	int asize;
 	float avg;
@@ -405,22 +479,18 @@ double timeavg(int n, float * d, double *dataaverage) {
 		asize = (n-1)/2;
 		d[asize] = d[n-1];
 	}
-	//    printf("asize is %d\n",asize);
 	double mean=sum/(double)asize;
 	*dataaverage = mean;
-	double meansq=sumsq/(double)asize;
-	double sigma=sqrt(meansq-mean*mean);
-	if (sigma==0) {
+	double rmssquared=sumsq/(double)asize;
+	double sigma=sqrt(rmssquared-mean*mean);
+	if (rmssquared==0) {
 		fprintf(stderr, "timeavg::RMS of data is zero\n");
 		return (sigma);
 	}
-	//    fprintf(stderr,"IN TIMEAVG FUNCTION:\n\tRMS of data is: %g\n\tMean is: %g\n",sigma,mean);
 	return (sigma);
 }
 
-//**************************************************
-//    Time-average the data by a factor of two.
-//**************************************************
+// Time-avg by factor two, no sigma-return
 void timeavg(int n, float * d) {
 	int asize;
 	float avg;
@@ -428,7 +498,6 @@ void timeavg(int n, float * d) {
 		avg = (d[i] + d[i+1]) / 2;
 		asize = i/2;
 		d[asize] = avg;
-		//	if (noff < 10){//	    fprintf (stderr,"averaged %g and %g and put %g into d[%d]\n",d[noff],d[noff+1],avg,asize);//	}//	scanf("%d",avg);
 	}
 	if (n-1%2==0) {
 		asize = n/2;
@@ -436,6 +505,11 @@ void timeavg(int n, float * d) {
 	}
 }
 
+
+
+//**************************************************
+//      MIN/MAX  +  TYPE CONVERSION ROUTINES
+//**************************************************
 float getmax(float *data, int arraysize) {
 	float max=0;
 	int i;
@@ -478,10 +552,30 @@ float* int2float(int *array, int arraysize) {
 	return (floatarray);
 }
 
+
+
+
 //**************************************************
-//      first-pass RFI excision; assoc_giants
+//**************************************************
+//***  BASELINE REMOVAL & ADVANCED RFI EXCISION  ***
+//**************************************************
 //**************************************************
 
+//TEST:
+//21.668367 398160 8 rmsmow on baseline on
+//19.413151 398160 8 rmsmow on baseline off
+//19.038822 398160 8 rmsmow off baseline on
+//17.576635 398160 8 neither
+
+
+//SAME TEST WITH 3SIGMA getmowedsigma:
+//23.854885 398160 8 rmsmow on baseline on
+//21.628765 398160 8 rmsmow on baseline off
+
+
+//**************************************************
+//      FIRST-PASS RFI EXCISION: assoc_giants
+//**************************************************
 vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands) {
 	vector<Gpulse> *cands;
 	cands = assoc_giants(uapulses, nsinglebeamcands, 5.0); //DEFAULT IRREL DM = 5.0
@@ -493,6 +587,7 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,floa
 	int npulses = uapulses.size(),suslo,sushi,ninonecand,maxsnrindex=1;
 	vector<Gpulse> *candidates;
 	vector<Gpulse> onecand, RFIpulses;
+	bool doRFItrack=false;
 	Gpulse placeholder;
 	bool newpulse;
 	float maxsnr;
@@ -559,10 +654,13 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,floa
 			}
 		    }
 		}
-//		printf("finished loop. Max SNR at index %d was %f\n",maxsnrindex,onecand[maxsnrindex].SNR);
-		if (onecand.size()<=3 || onecand[maxsnrindex].dm<irrel) {
-// 		    printf("The burst is RFI. %d %d %f %f\n\n",onecand.size(),maxsnrindex,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
-		    RFIpulses.insert(RFIpulses.end(), onecand.begin()+1, onecand.end());
+
+//		if (onecand.size()<=3 || onecand[maxsnrindex].dm<irrel) {
+		if (onecand.size()<=2 || onecand[maxsnrindex].dm<irrel) {
+		    printf("The burst is RFI. Npulses:%d DM:%f SNR:%f Loc'n:%d Wid:%d Scr:%d\n\n",onecand.size(),onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR,onecand[maxsnrindex].loc,onecand[0].width,onecand[maxsnrindex].tscrfac);//!!!!!!!!!!!l8rfix
+		    if (doRFItrack){
+			RFIpulses.insert(RFIpulses.end(), onecand.begin()+1, onecand.end());
+		    }
 		} else {
 		    onecand[0].put_pulse(onecand[maxsnrindex].amp,
 					 onecand[maxsnrindex].SNR, scanrangelo,
@@ -572,11 +670,93 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,floa
 //		    printf("!!GOOD!! %4d %10d %5.2f %5.3f\n",onecand.size(),onecand[0].start,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
 		    ncandidates++;
 		}
-		onecand.clear();
+		onecand.erase(onecand.begin(),onecand.end());
 	}
+
 	*nsinglebeamcands = ncandidates;
 	return (candidates);
 }
+
+
+
+
+
+
+//**************************************************
+//      REMOVE BASELINE FROM DATA BEFORE SEARCH
+//**************************************************
+// This task to be run BEFORE call to searchforgiants or findgiants.
+// Adapted from Matthew's find_baseline.C
+void removebaseline(unsigned short int *indata, float* outdata, int ndat, int runmeansize, float thresh){
+//NOTE    runmeansize is the size of the smoothing filter in number of samples (i.e. tsmooth/tsamp)
+
+    float * tdata = new float[runmeansize];
+    if (tdata == NULL) {
+	fprintf(stderr,
+		"find_baseline error: Error allocating %d floats for tdata\n",runmeansize);
+	exit(-3);
+    }
+//    float * outdata = new float[ndat];
+//    if (outdata == NULL) {
+//	fprintf(stderr,
+//		"find_baseline error: Error allocating %d floats for outdata\n",ndat);
+//	exit(-3);
+//    }
+
+
+    // Copy runmeansize indata's into tdata
+    // and indata into outdata to preserve indata
+    // Also take STDev & mean of all the data
+    double sum=0.0;
+    double sumsq=0.0;
+    for (int i=0;i<ndat;i++){
+	if (i<runmeansize)
+	    tdata[i]=(float)indata[i];
+	outdata[i]=(float)indata[i];
+	sum+=outdata[i];
+	sumsq+=outdata[i]*outdata[i];
+    }
+    float mean_f = (float)(sum/(double)ndat);
+    float rms_f=sqrt((sumsq/(double)ndat)-mean_f*mean_f);
+
+
+    if (rms_f==0.0){
+	fprintf(stderr,"find_baseline error: rms of data is zero\n");
+	exit(-4);
+    }
+    float inverse_rms_f = 1.0/rms_f;
+    
+    // Subtract mean to half of smoothing time
+    for (int j=0;j<(runmeansize/2);j++) outdata[j]=(outdata[j]-mean_f)*inverse_rms_f;
+    //------dorunning mean (eliminating high points)
+//  fprintf(stderr,"down here\n");
+    
+    int na=runmeansize/2;
+    int nb=ndat-(runmeansize/2);
+    int ja=0;
+    float mean = mean_f;
+    float div = 1.0 / runmeansize;
+    float thresh_r = thresh * rms_f;
+    
+    for (int j=na;j<nb;j++){
+	outdata[j]=outdata[j]-mean;            // Subtract mean
+	if (ja == runmeansize-1) ja = 0;
+	float al=tdata[ja];
+	float an=outdata[j+na];
+	if (fabs(an-mean) > thresh_r) an=mean; 
+	tdata[ja]=an;
+	mean=mean+(an-al)*div;
+	outdata[j]=outdata[j]*inverse_rms_f;
+	ja++;
+    }
+    // do end bit
+    for (int j=nb;j<ndat;j++)outdata[j]=(outdata[j]-mean)*inverse_rms_f;
+    
+    delete tdata;
+}
+
+
+
 
 //**************************************************
 //     second-pass RFI excision; beamassocgiants
