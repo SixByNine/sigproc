@@ -1,5 +1,6 @@
-#include <stdlib.h>
+//this is the LATEST version of gtools
 #include "gtools.h"
+#include <stdlib.h>
 
 // Gpulse CLASS "METHODS"
 Gpulse::Gpulse() {
@@ -77,6 +78,12 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     return(givetimes(ndetected, sampletime, flo, fhi, irrel,beamID,"GResults.txt"));
 }
 
+
+
+
+
+
+
 int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float fhi, float irrel, int beamID, char* resultsfilename) {
     //look for giants and return array of data to save. or specifications
     //about data to save
@@ -85,13 +92,17 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     int nsinglebeamcands, delayinsamples, totdelay;
     float delayinms;
     vector<Gpulse> suspectvectorstorage;
+    vector<Gpulse> SPvectorstorage; //NEWFILE
     Gpulse gpulsestorage;
     FILE* resultsfile = fopen(resultsfilename,"a");
+    FILE* SPfile;  //NEWFILE
+    char SPfilename[200]; //NEWFILE
     
     for (int i=0; i<NDMtrials-1; i++) {
 	suspectvectorstorage.insert(suspectvectorstorage.end(),
 				    DMtrials[i].begin(), DMtrials[i].end());
     }
+
     vector<Gpulse>* suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,irrel);
 //	fprintf(stderr,"sampletime: %f flo:%f fhi:%f\n",sampletime,flo,fhi);
     fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
@@ -99,15 +110,30 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     fprintf(resultsfile,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
     fprintf(resultsfile,"N candidates in this block after associating: %d\n\n",nsinglebeamcands);
     int* timestamps = new int[nsinglebeamcands*2];
-    if (beamID<0){
+//    if (beamID<0){ BEAMID
 	for (int i=0; i<(nsinglebeamcands*2); i+=2) {
 	    gpulsestorage = suspectarraystorage[i/2].at(0);
+	    SPvectorstorage = suspectarraystorage[i/2]; //NEWFILE
+	    fprintf(stderr,"there are %d elements in SPvecstor\n",SPvectorstorage.size()); //NEWFILE
 	    if (flo<fhi)
 		delayinms = gpulsestorage.dm * 4.15 * (pow(flo/1000, -2) - pow(fhi/1000, -2));
 	    if (fhi<flo)
 		delayinms = gpulsestorage.dm * 4.15 * (pow(fhi/1000, -2) - pow(flo/1000, -2));
 	    delayinsamples = (int)(delayinms/(sampletime*1000))+1;
-	    fprintf(stderr,"Candidate %4d: DM %5.2f SNR %5.2f SCR %d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac);
+	    fprintf(stderr,"Candidate %4d: DM %5.2f SNR %5.2f SCR %d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac);//2009-04-30-02:57:52.fil //NEWFILE
+
+//	    SPfilename contains a .pulse file for EACH CANDIDATE. //NEWFILE
+//      !!!NOTE: THE i/2 IN THIS NEXT LINE SHOULD LATER BE CHANGED TO THE UT TIMESTAMP OF THE OBSERVATION!!! //NEWFILE
+	    sprintf(SPfilename,"%f_%f_%d_%d_%d_%d_%f_%d_%d.pulse",gpulsestorage.amp,gpulsestorage.SNR,gpulsestorage.start,gpulsestorage.loc,gpulsestorage.width,gpulsestorage.tscrfac,gpulsestorage.dm,i/2,beamID); //NEWFILE
+	    SPfile = fopen(SPfilename,"w"); //NEWFILE
+	    for (int j=1;j<SPvectorstorage.size();j++){  //NEWFILE
+//                                   filename  amp   snr  start peak wid tscr dm   beam //NEWFILE
+//		fprintf(stderr,"filenamedummy %8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID); //NEWFILE
+		fprintf(SPfile,"filenamedummy %8.5f %8.5f %12d %12d %12d %6d %8.2f %d\n",SPvectorstorage.at(j).amp,SPvectorstorage.at(j).SNR,SPvectorstorage.at(j).start,SPvectorstorage.at(j).loc,SPvectorstorage.at(j).width,SPvectorstorage.at(j).tscrfac,SPvectorstorage.at(j).dm,beamID); //NEWFILE
+	    } //NEWFILE
+	    fclose(SPfile); //NEWFILE
+
+//          resultsfile is a SUMMARY FILE for all the detected candidates. //NEWFILE
 	    fprintf(resultsfile,"Candidate %4d: DM %5.2f SNR %5.2f SCR %4d STARTBIN %13d PEAK %13d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac,gpulsestorage.start,gpulsestorage.loc);
 	    totdelay = delayinsamples+gpulsestorage.width;
 	    if (gpulsestorage.start-(totdelay)<0)
@@ -121,9 +147,9 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	fclose(resultsfile);
 	
 	return (timestamps);
-    } else {
-	//do something
-    }
+//    } else { BEAMID
+	//do something BEAMID
+//    } BEAMID
     fclose(resultsfile);
     return(0);
 }
@@ -289,23 +315,22 @@ vector<Gpulse> findgiants(int npts, unsigned char * data, float nsigma,
 //**************************************************
 //**************************************************
 
-
 //**************************************************
 //  Normalizes an array d of n elements by the RMS
 //**************************************************
 void normalise(float *data, int arraysize) {
-	double sum=0.0, sumsquares=0.0;
-	int i=0;
-	while (i<arraysize) {
-		sum += data[i];
-		sumsquares += (data[i] * data[i]);
-		i++;
-	}
-	double mean=sum/(double)arraysize;
-	double meansquares=sumsquares/(double)arraysize;
-	double sigma= sqrt(meansquares - (mean * mean));
-	for (i=0; i<arraysize; i++)
-		data[i]=(data[i]-mean)/sigma;//    cout<<"normalization:\n"<<"mean == "<<mean<<"\nsigma = "<<sigma<<"\n";
+    double sum=0.0, sumsquares=0.0;
+    int i=0;
+    while (i<arraysize) {
+	sum += data[i];
+	sumsquares += (data[i] * data[i]);
+	i++;
+    }
+    double mean=sum/(double)arraysize;
+    double meansquares=sumsquares/(double)arraysize;
+    double sigma= sqrt(meansquares - (mean * mean));
+    for (i=0; i<arraysize; i++)
+	data[i]=(data[i]-mean)/sigma;//    cout<<"normalization:\n"<<"mean == "<<mean<<"\nsigma = "<<sigma<<"\n";
 }
 
 //**************************************************
@@ -338,26 +363,27 @@ double normalise(int n, float * d, double * dataaverage) {
 // subtract mean from data and return 1sigma value
 //**************************************************
 double getrms(int n, float * d, double * dataaverage) {
-	double sum=0.0;
-	double sumsq=0.0;
-	for (int i=0; i<n; i++) {
-		sum+=d[i];
-		sumsq+=d[i]*d[i];
-	}
-	double mean=sum/(double)n;
-	*dataaverage = mean;
-	double meansq=sumsq/(double)n;
-	double sigma=sqrt(meansq-mean*mean);
-	if (sigma==0) {
-		fprintf(stderr, "getrms::RMS of data is zero\n");
-		return (sigma);
-	}
-	int i;
-#pragma omp parallel for private(i)
-	for (i=0; i<n; i++)
-		d[i]=(d[i]-mean);
-	//    fprintf(stderr,"IN GETRMS FUNCTION:\n\tRMS of data is: %g\n\tMean is: %g\n",sigma,mean);
+    double sum=0.0;
+    double sumsq=0.0;
+    for (int i=0; i<n; i++) {
+	sum+=d[i];
+	sumsq+=d[i]*d[i];
+    }
+    double mean=sum/(double)n;
+    *dataaverage = mean;
+
+    double meansq=sumsq/(double)n;
+    double sigma=sqrt(meansq-mean*mean); //"sigma" is RMS here
+    if (sigma==0) {
+	fprintf(stderr, "getrms::RMS of data is zero\n");
 	return (sigma);
+    }
+    int i;
+#pragma omp parallel for private(i)
+    for (i=0; i<n; i++)
+	d[i]=(d[i]-mean);
+    //    fprintf(stderr,"IN GETRMS FUNCTION:\n\tRMS of data is: %g\n\tMean is: %g\n",sigma,mean);
+    return (sigma);
 }
 
 //**************************************************

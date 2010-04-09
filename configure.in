@@ -57,12 +57,15 @@ if test X$have_fftw != Xyes; then
 fi
 
 
+#AM_CONDITIONAL(HAVE_CFITSIO,[test $have_cfitsio = yes])
 
 AC_SUBST(XML_CPPFLAGS)
 AC_SUBST(PSRXML_LIBS)
 AC_SUBST(PSRXML_CFLAGS)
 
 AM_INIT_AUTOMAKE([foreign subdir-objects])
+
+
 
 AM_CONFIG_HEADER([config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])

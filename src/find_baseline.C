@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//actually this returns the standard deviation and reports the mean
 float find_rms(float * dat, int ndat, float * ave){
   double s=0.0;
   double ss=0.0;

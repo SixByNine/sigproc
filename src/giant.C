@@ -1,15 +1,19 @@
+#ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
+#include <stdlib.h>
 #include "find_baseline.h"
 #include "cpgplot.h"
 #include "dialog.h"
-#include "string.h"
+#include <string.h>
 #include "gtools.h"
 #include "libplotfil.h"
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
 #include <vector>
+
+using namespace std;
 
 extern "C" {
   int newoldsumhrm_(float *, float *, int *, int *, float *,
@@ -25,12 +29,14 @@ extern "C" {
 #include "dedisperse.h"
 };
 
+void helpmenu();
+void buttonexplain();
 float * Creadspec(char * filename, int * npf, double * rate);
 void find_formspec(int n, float * d);
 void find_fft(int * n, float * d);
 void normalise(int n, float * d);
 void normalise(int n, float * d, float threshold);
-void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int maxnscrunch);
+void mowlawn(int n, float * d, int *mown, int *nrejects, float threshold, int maxnscrunch); //ZAPPER
 void getminmax(int n, float * d, float * min, float * max);
 void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax);
 void bscrunch(int npoints, float * d);
@@ -39,12 +45,8 @@ void plotminmaxeff(int npoints, int nplot, float * data, float tstart, float del
 void min_means_min(float * min, float * max);
 int load_dunc_data(FILE * fptr,int nstart,int nwanted);
 int load_killdata(int * killdata,int kchans,char * killfile);
-//void automow(int n, float * d, int * mown, int * nrejects, float threshold);
 
-void pch_seek_normalise_agl_mean(float* amplitudes, int ndat, int nrun);
-void pch_seek_normalise_median_smoothed(float* amplitudes, int ndat, int nrun);
-
-void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float inpDM, int pgpID, bool dokill, char *killfile);
+void setplotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float inpDM, int pgpID, bool dokill, char *killfile,bool askdevice);
 void formpdf(float * pdfs, int pdfmax, int ngulp, float * time_series);
 void  zap_improbables(float pdfs[][100], float ** time_series, int nbeam,
 		     int ngulp, int maxsigma, float thresh, int nbeammax);
@@ -69,8 +71,8 @@ void  zap_improbables(float pdfs[][100], float ** time_series, int nbeam,
    char inpfile[80];
 
 /* sigproc global variables describing the operating mode */
-/*int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, 
-  baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off;*/
+//int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, 
+//  baseline, clipping, sumifs, profnum1, profnum2, nobits, wapp_inv, wapp_off;
 //double refrf,userdm,fcorrect;
 //float clipvalue,jyf1,jyf2;
 
@@ -79,17 +81,17 @@ int main (int argc, char *argv[])
   int ntimglobal=0;  // number of time samples in original
   int ngulp_original=0;       // number of time samples to look at at once
   int nskipstart=0;       // number skipped at start
-  int nrejects;
-  int zapswitch=0;
+  int nrejects; //ZAPPER
+  int zapswitch = 0; //ZAPPER  
   double tsamp_orig=0;
 
   //gsearch setup & defaults
-  float Gsigmacut=7.0;
+  float Gsigmacut=6.0;
   float delta, tstart;
   vector<Gpulse> * Giant = new vector<Gpulse>[MAXFILES];
   bool Gsearched=false;
 
-  int i,j,ntim,headersize[MAXFILES],noff=0,gulp,toppeak;
+  int i,ntim,headersize[MAXFILES],noff=0,gulp;
   float *time_series[MAXFILES],sum=0.0,sumsq=0.0,mean,meansq,sigma;
   int MAXMARKERS = 1024;
   int nfiles = 0;
@@ -103,12 +105,14 @@ int main (int argc, char *argv[])
   bool ssigned=true;
   int topfold=-1;
   int topgiant=-1;
-  int norm_method=0;
-
+  int toppeak=-1; //?!? sarah added this 
+  bool askdevice=false;
+  char devicename[200];
 
   if (argc<2 || help_required(argv[1])) {
-    fprintf(stderr,"Usage: giant filenames\n\t(e.g.>>  giant *.tim)\n\n\t-s  N\tskip N samples\n\t-n  N\tread N samples\n\t-S read spectra instead of amplitudes\n\t-i interpret signed chars as unsigned\n\t-z make a zap list of bad time samples\n");
-    exit(0);
+      helpmenu();
+//    fprintf(stderr,"Usage: giant filenames\n\t(e.g.>>  giant *.tim)\n\n\t-s  N\tskip N samples\n\t-n  N\tread N samples\n\t-S read spectra instead of amplitudes\n-i interpret signed chars as unsigned\n\t-z make a zap list of bad time samples\n");
+      exit(0);
   }
   print_version(argv[0],argv[1]);
   i=1;
@@ -124,9 +128,8 @@ int main (int argc, char *argv[])
     if (strings_equal(argv[i],"-n"))       sscanf(argv[++i],"%d",&ngulp_original);
     if (strings_equal(argv[i],"-c"))       sscanf(argv[++i],"%f",&Gsigmacut);
     if (strings_equal(argv[i],"-z"))       zapswitch=1;
+    if (strings_equal(argv[i],"-g"))       {askdevice=true;sscanf(argv[++i],"%s",&devicename);}
     if (strings_equal(argv[i],"-k"))       {killfile=(char*)malloc(strlen(argv[++i])+1); strcpy(killfile,argv[i]);dokill=true;}
-    if (strings_equal(argv[i],"-norm-agl")) norm_method=1;
-    if (strings_equal(argv[i],"-norm-mjk")) norm_method=2;
     if (nfiles>MAXFILES) error_message("too many open files");
     i++;
   }
@@ -176,8 +179,13 @@ int main (int argc, char *argv[])
   puti(ntimglobal_smallest);
   if (ngulp_original==0) ngulp_original=ntimglobal_smallest;
 
-  // sbates 2009 ; switch to make a .killtchan file for time samples > 3.5 sigma
 
+// ****** SAM'S ZAP SWITCH ******
+// Sam Bates 2009
+// Integrated into new giant by SBS
+// Switch to make a .killtchan file for time samples > 3.5 sigma
+// SARAHZAP tag means addition was added later by Sarah
+// ******************************
   int ngulp=ngulp_original;
 //  int nrejects_max=ngulp_original/100;
   int * mown = new int[ngulp_original];
@@ -190,23 +198,33 @@ int main (int argc, char *argv[])
     for (i=0; i<nfiles; i++){
       NActuallyRead = fread(buffer,nbits/8,ngulp,inputfile[i]);
       if (nbits==32){
-	  memcpy(time_series[i],buffer,sizeof(float)*ngulp);
+	memcpy(time_series[i],buffer,sizeof(float)*ngulp);
       } else {
-	    for (int j=0;j<NActuallyRead;j++){
-	      if (ssigned) time_series[i][j]=(float)buffer[j];
-	      if (!ssigned) time_series[i][j]=(float)((unsigned char)buffer[j]);
-	    }
+	for (int j=0;j<NActuallyRead;j++){
+	  if (ssigned) time_series[i][j]=(float)buffer[j];
+	  if (!ssigned) time_series[i][j]=(float)((unsigned char)buffer[j]);
+	}
       }
-	    puti(ngulp);
-	    //      find_baseline(time_series[i],ngulp,tsamp,2.0,3.0);
-	    mowlawn(ngulp,time_series[i], mown, &nrejects,3.5,5);
+      puti(ngulp);
+
+      find_baseline(time_series[i],ngulp,tsamp,2.0,3.0); //SARAHZAP
+      mowlawn(ngulp,time_series[i], mown, &nrejects,3.5,5);
     }
     printf("%f\n",dummy);
     printf("Bad time samples found...\n");
     exit(0);
-    }
+  }
 
-  int pgpID = cpgbeg(0,"/xs",1,1);
+
+  int pgpID;
+  if (askdevice){
+      pgpID = cpgbeg(0,devicename,1,1);
+  } else {
+      pgpID = cpgbeg(0,"/xs",1,1);
+  }
+  cpgsch(0.5);
+  cpgtext(0.6,0.0,"Press 'h' over the main window for help and full options list.");
+  cpgsch(1.0);
   /* create the dialog */
   dialog * d = new dialog();
 
@@ -224,11 +242,11 @@ int main (int argc, char *argv[])
   int BASELINE     = d->addbutton(0.02,0.50,"Baseline");
   int ZAPCOMMON    = d->addbutton(0.02,0.45,"Zap Common");
   int SUBTRACTMEAN = d->addbutton(0.02,0.40,"ZAP Mean");
-  int BSCRUNCH     = d->addbutton(0.02,0.35, "Bscrunch");
+  int BSCRUNCH     = d->addbutton(0.02,0.35,"Bscrunch");
   int NORMALISE    = d->addbutton(0.02,0.30,"Normalise"); 
   int HISTOGRAM    = d->addbutton(0.02,0.25,"Histogram"); 
   int GSEARCH      = d->addbutton(0.02,0.20,"Find Giants");
-  int MOWLAWN      = d->addbutton(0.08,0.70, "LAWN");
+  int MOWLAWN      = d->addbutton(0.08,0.70,"LAWN");
   int SEEFIL       = d->addbutton(0.02,0.15,"View Band");
   int FWRITE       = d->addbutton(0.02,0.05,"Write File");
  
@@ -254,18 +272,17 @@ int main (int argc, char *argv[])
   int * markers= new int[MAXMARKERS];
   int nfileptr=nskipstart;
   int nplot=ngulp_original;
-  //  int nstart=0;  
-  //int ngulp=ngulp_original;
-  //  int nrejects_max=ngulp_original/100;
+  nstart=0;  //COMMENTED IN ZAPPER VERSION: MAY CAUSE CONFLICTS IN THIS VER.
+  ngulp=ngulp_original;  //COMMENTED IN ZAPPER VERSION: MAY CAUSE CONFLICTS IN THIS VER.
   float trialperiod;
   int doperiod=-1;
   float xperiod;
 
-  //  int * mown = new int[nrejects_max];
-
   bool zoneplot=false;
   int ngates=0;
   float xgate=0.0;
+
+
 
   button=NEXT;
   if (spectra) button = PLOT;
@@ -273,6 +290,10 @@ int main (int argc, char *argv[])
     // Plot the zone
     // Entire file is white
     if (button!=NEXT)button=d->manage(&x,&y,&ans,&plotno);
+    if (ans=='h'){
+	buttonexplain();
+	continue;
+    }
 //    printf("manage x %f y %f plotno %d\n",x,y,plotno);
     if (button==BASELINE) {
 	for (i=0; i<nfiles; i++){
@@ -318,10 +339,6 @@ int main (int argc, char *argv[])
 	// Zap DC spike
 	  time_series[i][0]=0.0;
 	  time_series[i][1]=0.0;
-
-		  for(int x = 0; x < 4; x++){
-			  time_series[i][x]=0;
-		  }
 	}
 	spectra = 1;
 	nplot = ngulp;
@@ -380,23 +397,7 @@ int main (int argc, char *argv[])
     }
     if (button==NORMALISE) {
 	for (i=0; i<nfiles; i++){
-		switch(norm_method){
-		case 0:
-		  normalise(ngulp,time_series[i],3.0);
-		  break;
-		case 1:
-		  for(int x = 0; x < 4; x++){
-			  time_series[i][x]=0;
-		  }
-		  pch_seek_normalise_agl_mean(time_series[i],ngulp,128);
-		  break;
-		case 2:
-		  for(int x = 0; x < 4; x++){
-			  time_series[i][x]=0;
-		  }
-		  pch_seek_normalise_median_smoothed(time_series[i],ngulp,16);
-		  break;
-		  }
+	  normalise(ngulp,time_series[i],3.0);
 	}
 	button = PLOT;
 	Gsearched=false;
@@ -534,6 +535,15 @@ int main (int argc, char *argv[])
       }
     }
     if (plotno>0){
+/*      if (ans=='p'){  // hit p on a plot to type in a period
+	d->plotregions[plotno].reset();
+	//plot the thing;
+	fprintf(stderr,"Please enter a period in seconds: ");
+	cin>>trialperiod;
+	xperiod = x;
+	doperiod=plotno;
+	button=PLOT;
+	}*/
       if (ans=='p'){  // hit p on a plot to type in a period
 	d->plotregions[plotno].reset();
 	//plot the thing;
@@ -545,14 +555,14 @@ int main (int argc, char *argv[])
       }
       if (ans==','){  // subtract 0.000001 seconds from period
 	d->plotregions[plotno].reset();
-	trialperiod-=0.000001;
+	trialperiod-=0.000005;
 	fprintf(stderr,"Trial period is now %f\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='.'){  // add 0.000001 seconds to period
 	d->plotregions[plotno].reset();
-	trialperiod+=0.000001;
+	trialperiod+=0.000005;
 	fprintf(stderr,"Trial period is now %f\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
@@ -633,6 +643,7 @@ int main (int argc, char *argv[])
       float topSNR=0.0;
       for (i=0;i<nfiles;i++){
 	Giant[i] = giantsearch(nplot, &time_series[i][nstart], Gsigmacut, 1.0, 30, 1, refdm);
+//	  Giant[i] = findgiants(nplot, &time_series[i][nstart], Gsigmacut, 30, 1, refdm, 1); // Alt interpretation that doesn't work.
 	for (int j=0;j<Giant[i].size();j++){
 	  if (spectra) {
 	    printf("%s %f\t SNR: %8.2f\t%8.3f Hz\t\t%i\t%d \n",filename[i],Giant[i][j].amp,Giant[i][j].SNR,(float)(Giant[i][j].loc)/nplot/2.0/tsamp,Giant[i][j].width,Giant[i][j].loc);
@@ -645,17 +656,19 @@ int main (int argc, char *argv[])
 	    Giant[i][j].start+=nstart;
 	    Giant[i][j].loc+=nstart;
 	}
-//	if (!spectra)printf("%i GIANT CANDIDATES FOUND in %s\n\n",Giant[i].size(),filename[i]);
-//	if (spectra) printf("%d peaks in fold %d\n",Giant[i].size(), (int)pow(2,i-1));
+	if (!spectra)printf("%i GIANT CANDIDATES FOUND in %s\n\n",Giant[i].size(),filename[i]);
+	if (spectra) printf("%d peaks in fold %d\n",Giant[i].size(), (int)pow(2,i-1));
       }
-//     printf("Top Pulsar is in fold %d SNR %f Freq %f Period %f ms\n",
-//	     topfold, Giant[topfold][toppeak].SNR,(float)(Giant[i][j].loc)/nplot/2.0/tsamp,1.0/((float)(Giant[i][j].loc)/nplot/2.0/tsamp*1000.0) );
+//?!?sarah commented these lines: what are they trying to do? Is this if you gsearch the FT'd data?
+//?!?      printf("Top Pulsar is in fold %d SNR %f Freq %f Period %f ms\n",
+//?!?	     topfold, Giant[topfold][toppeak].SNR,(float)(Giant[i][j].loc)/nplot/2.0/tsamp,1.0/((float)(Giant[i][j].loc)/nplot/2.0/tsamp*1000.0) );
       button = plotno = -1;
       button=PLOT;
       Gsearched=true;
     }
-    if (button==MOWLAWN){
 
+ // ZAPPER SECTION
+    if (button==MOWLAWN){
       for (i=0; i<nfiles; i++){
 	 mowlawn(ngulp,time_series[i], mown, &nrejects,3.5,5);
       }
@@ -667,146 +680,14 @@ int main (int argc, char *argv[])
       button = PLOT;
       Gsearched=false;
       plotno = -1;
-      /*
-      // try to read in the fil file
-      char fbankfile[100];
-      FILE *infile;
-      int sizeofheader, filesizing, Sread, Sskip, Sdec, nsamps,k;
-      int *rawarchive, *archive;
-      float *floatarchive, fchlast;
-      long long int nsampsinfile;
-      bool isokay;
-      
-
-      sprintf(fbankfile,"%s.fil",filename[0]);
-      if (file_exists(fbankfile)) {
-	printf("file %s found\n",fbankfile);
-	infile = fopen (fbankfile, "rb");
-	if (infile==NULL) {fputs ("File error\n",stderr); exit (1);}
-	
-	sizeofheader = read_header(infile);
-	if (data_type == 1){ //i.e., a normal sigproc binary profile.
-	  nsampsinfile=nsamples(fbankfile,sizeofheader,nbits,nifs,nchans);
-	  // printf("nsamps = %i, headsize = %i\n",nsampsinfile,sizeofheader);
-	  Sskip = nstart*scrunch;
-	  Sread = scrunch*nplot;
-	  Sdec = scrunch;
-	  if (Sread) nsampsinfile = Sread;
-
-	  // allocate memory for the raw data
-	  rawarchive = (int*) malloc(nifs*nchans*nsampsinfile*nbits/8);
-	  if (rawarchive == NULL) {fputs ("Memory error",stderr); exit(2);}
-	  
-	    long long int nfseek = Sskip*nchans*nifs*nbits/8;
-	    if (fseek(infile,nfseek,SEEK_CUR)) {fprintf(stderr,"\n\nFSEEK FAILED trying to skip %lld bytes\n\n",nfseek);exit(0);}
-
-
-	  // read the data form inputfile to rawarchive memory
-	  filesizing = fread(rawarchive,1,nifs*nchans*nsampsinfile*nbits/8,infile);
-	  if(filesizing!=nsampsinfile*nchans*nbits*nifs/8) {fputs("Read error",stderr); exit(3);}
-	  fclose(infile);
-	  
-	  //printf("filesizing = %i\n",filesizing);
-	  archive = (int*) malloc(filesizing*sizeof(int)*8);
-	  if (archive == NULL) {fprintf (stderr,"\nCould not malloc %f bytes for wise data.\n",filesizing*sizeof(int)*8); exit(2);}
-	  
-	  //---CONVERT BITWISE DATA---
-	    filesizing = 0;
-	    for (i=0;i<nsampsinfile*nchans*nifs*nbits/(sizeof(int)*8);i++){
-		int abyte = rawarchive[i];
-		for (j=0;j<(sizeof(int)*8/nbits);j++){
-		  int andvalue = (int) pow(2,nbits)-1;
-		  int bitshift = (int)nbits;
-		  archive[filesizing++]= andvalue & abyte;
-		  abyte = abyte >> bitshift;
-		}
-	    }
-	  floatarchive = (float*) malloc(filesizing*sizeof(float));
-	  floatarchive = filint2float(archive,filesizing);
-	  for (i=0; i< filesizing; i++){
-	    //printf("float = %f\n",floatarchive[i]);
-	  }
-	  //  printf("length = %i\n",i);
-	}
-	else {
-	  fprintf(stderr,"File %s not found!\n",fbankfile);
-	  isokay = false;
-	  return -2;
-	}
-	fchlast = fch1 + (foff*nchans);
-      }
-      
-      printf("mean being put in is; %f\n",mean);
-      // try to change the frequency channels to the mean at all bad time samples (from mowlawn)
-      for (i=0; i< Sread;i++){
-      	for (j=0; j<nrejects; j++){
-      	  if (i+Sskip == mown[j]){
-      	    for (k=0; k<nchans; k++){
-      	      floatarchive[i*nchans+k] = mean; // some mean value - will want to do something clever with a gaussian dist.
-      	    }
-      	  }
-      	}
-      }
-      //      for (i=0; i<nrejects;i++)
-      //	{
-      //	  for (j=0; j<nchans; j++)
-      //	    {
-      //	      floatarchive[mown[i]*nchans+j] = mean;   
-      //	    }
-      //	}
-      nsamps = nsampsinfile;
-      nsamps/=Sdec;
-      Sskip/=Sdec;
-      tsamp*=Sdec;
-      
-      //try and plot this thing
-      //      nsamps = nsampsinfile;
-      //if (isokay){
-	//	for (int sdecnow=2;sdecnow<=Sdec;sdecnow*=2){
-	//  filavg(&nFBsamps,nchans,floatarchive);
-	//}
-	float timeseriesindex[nsamps];
-	for (i=0; i<nsamps; i++){
-	  timeseriesindex[i]=(Sskip + float(i))*tsamp;
-	}
-      
-    cpgopen("?");
-    //!!!    fprintf(stderr,"***Click filterbank window to return to Giant plot\n");
-    int colortable=7;
-    float snrmax, snrmin;
-    setcolortable(colortable);
-    if (isokay){
-	snrmax = filgetmax(floatarchive,nsampsinfile);
-	snrmin = filgetmin(floatarchive,nsampsinfile);
-	cpgsvp(0.1,0.9,0.1,0.9);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff, 0.0};
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	cpgimag(floatarchive,nchans,nsampsinfile,1,nchans,1,nsampsinfile,snrmin,snrmax,tr);
-    }
-    cpgslw(3);
-    cpgsci(0);
-    cpgclos();
- 
-    button = -1;
-      //Gsearched=false;
-    plotno = -1;
-    */
+      // ZAPPER: LOTS OF COMMENTED OMITTED HERE.
     }
 
-    if (button==SEEFIL){
-      //      for (i=0;i<nfiles;i++){
+//    if (button==ZAPPEAK){ //?!?what does zappeak do? This is where "see band" went missing, matthew....
+    if (button==SEEFIL){ //?!?I re-added this line...
       char fbankfile[100];
-      sprintf(fbankfile,"%s.fil",filename[0]);
-      //      fprintf(stderr,"plotfil %s %d %d %d %d %f\n",fbankfile,nstart,nplot*scrunch,scrunch,refdm);
-      plotfil(fbankfile,nstart*scrunch,scrunch*nplot,scrunch,(float)dmoffirstfile,pgpID,dokill,killfile);
-      button = plotno = -1;
-      button=PLOT;
-      zoneplot=true;
-      Gsearched=true;
-    }
-    if (button==ZAPPEAK){
-      char fbankfile[100];
+      sprintf(fbankfile,"%s.fil",filename[0]);//?!?I re-added this line...
+      setplotfil(fbankfile,nstart*scrunch,scrunch*nplot,scrunch,(float)dmoffirstfile,pgpID,dokill,killfile,askdevice);//?!?I re-added this line...
       button = plotno = -1;
       button=PLOT;
     }
@@ -887,8 +768,8 @@ int main (int argc, char *argv[])
 
 }
 
-
 void normalise(int n, float * d){
+
   printf("Normalising %d samples\n",n);
     double sum=0.0;
     double sumsq=0.0;
@@ -933,8 +814,8 @@ void normalise(int n, float * d, float threshold){
       }
       noff++;
     }
-    mean=sum/(double)nsum; // shouldn't this be nsum?!?!?!?!
-    meansq=sumsq/(double)nsum; // and this one!!!???
+    mean=sum/(double)noff;
+    meansq=sumsq/(double)noff;
     sigma=sqrt(meansq-mean*mean);
     for (int i=0;i<n;i++) d[i]=(d[i]-mean)/sigma;
     printf("new mean, %f new sigma! %f\n",mean,sigma);
@@ -981,7 +862,6 @@ int quicksort_inplace_partition(int* array, int top, int bottom){
 	return botidx;
 }
 
-
 void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int max_nscrunch){
     printf("Mowing lawn %d samples\n",n);
     double sum=0.0;
@@ -994,7 +874,7 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
     int nscrunch=1;
     int current_n=n;
 
-     *nrejects=0;
+    *nrejects=0;
     while(nscrunch < max_nscrunch){
 
      // Compute Mean and Sigma of timeseries
@@ -1016,7 +896,6 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
        meankeep = mean;
        sigmakeep = sigma;
      }
-
 
      // Now recompute sigma without spikes > threshold
      sum = 0.0;
@@ -1058,14 +937,10 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
        }*/
      }
 
-
-
      bscrunch(current_n,d);
      nscrunch*=2;
      current_n /=2;
-
     }
-
 
     FILE *chantkill;
     if ((chantkill = fopen("tchan.kill","w")) == NULL){
@@ -1093,12 +968,10 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
 	while(currzap < *nrejects && mown[currzap]<=i)currzap++;
       }
     }
-    
-
 
     fclose(chantkill);
-
 }
+
 
 
 void getminmax(int n, float * d, float * min, float * max){
@@ -1165,7 +1038,7 @@ void plotminmax(int npoints, float * data, float tstart, float delta){
     ymx = max+diff*0.05;
 //    printf("plotminmax xmin xmax ymin ymax %f %f %f %f\n",xmn,xmx,ymn,ymx);
     cpgswin(xmn,xmx,ymn,ymx);
-    cpgsch(0.5);
+//    cpgsch(0.5);
     cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
     cpgsci(1);
     cpgsch(1.0);
@@ -1387,7 +1260,7 @@ labels::labels(int nl){
 
 
 
-void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float inpDM, int pgpID,bool dokill,char *killfile){
+void setplotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float inpDM, int pgpID,bool dokill,char *killfile,bool askdevice){
 
   // Preserve global variables from tim file
   double temprefdm = refdm;
@@ -1400,16 +1273,14 @@ void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float 
   double temptstart = tstart;
 
 
-    int   i=0,j=0,nFBsamps,filesizing,nsamps,sizeofheader;//,Sread=0,Sdec=1;
+    int   i=0,j=0,nFBsamps,filesizing,sizeofheader;//,Sread=0,Sdec=1;
     long long int nsampsinfile;//Sskip=0,
     //    char  currentfile[100]; // for plotting the SNR vs DM plot
     float snrmax, snrmin,dmoff=0; // for plotting the SNR vs DM plot
     int   *archive,*rawarchive; // Filterbank colorplot files (also floatarchive)
-    float *floatarchive,fchlast;
+    float *floatarchive;
     FILE  *infile;
     bool isokay;
-    //unsigned char *buffer;
-    //    char *buffer;
     int colortable=7; //autoset to "pseudocolor"
 
 
@@ -1468,7 +1339,6 @@ void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float 
 	isokay = false;
 	return;
     }
-    fchlast = fch1 + (foff*nchans);
 
     int *killchans = new int[nchans];
     if (dokill) {
@@ -1476,7 +1346,6 @@ void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float 
     }
 
 
-    nsamps = nFBsamps;
     if (isokay){
 	for (int sdecnow=2;sdecnow<=Sdec;sdecnow*=2){
 	    filavg(&nFBsamps,nchans,floatarchive);
@@ -1485,121 +1354,22 @@ void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float 
 	if (dokill){
 	    for (int ich=0;ich<nchans;ich++){
 		if (killchans[ich] == 0){
+		    snrmax = filgetmax(floatarchive,nFBsamps);
+		    snrmin = filgetmin(floatarchive,nFBsamps);
 //		    fprintf(stderr,"ZAPMASK CHANNEL %d\n",ich);
-		    killchan(floatarchive,nFBsamps,ich,Sdec,nbits,nchans);
+		    killchan(floatarchive,nFBsamps,ich,(snrmax+snrmin)/2,nchans);
 		}
 	    }
 	}
     }
 
-    nsamps/=Sdec;
     Sskip/=Sdec;
     tsamp*=Sdec;
 
-    float timeseriesindex[nsamps];
-    for (i=0; i<nsamps; i++){
-	timeseriesindex[i]=(Sskip + float(i))*tsamp;
-    }
 
-    
+    plotfil(floatarchive,nFBsamps,Sskip,inpDM,pgpID,tsamp,nchans,fch1,foff,colortable,askdevice);
 
-    cpgopen("?");
-    //!!!    fprintf(stderr,"***Click filterbank window to return to Giant plot\n");
 
-    setcolortable(colortable);
-    if (isokay){
-	snrmax = filgetmax(floatarchive,nFBsamps);
-	snrmin = filgetmin(floatarchive,nFBsamps);
-	cpgsvp(0.1,0.9,0.1,0.9);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff, 0.0};
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	cpgimag(floatarchive,nchans,nFBsamps,1,nchans,1,nFBsamps,snrmin,snrmax,tr);
-    }
-
-    cpgslw(3);
-    cpgsci(0);
-    plotdm(Sdec,Sskip,dmoff,inpDM, nchans, tsamp, foff, fch1);
-    cpgsci(1);
-    
-
-//    cpgsls(4); //dashed:2, dotted:4
-//    cpgsci(4);
-//    cpgslw(3);
-//    plotlambda(Sdec,Sskip,dmoff,inpDM,nchans,tsamp,foff,fch1);
-
-    cpgsci(1);
-    fprintf(stderr,"\na = scrunchx2 in frequency (under development)\nk = kill current channel\nm = move dm curve\nh = kill lower 150 channels (under development)\nq = quit\n");
-    float dumx,dumy;
-    char dumchar;
-    int favg=1;
-    while(dumchar != 'q'){
-      cpgcurs(&dumx,&dumy,&dumchar);
-      if (dumchar == 'k'){
-	fprintf(stderr,"Killing channel %d\n\n",(int)((fch1-dumy)/fabs(foff*favg))-1);
-	killchan(floatarchive,nFBsamps,(int)((fch1-dumy)/fabs(foff*favg))-1,Sdec,nbits,nchans);
-	snrmax = filgetmax(floatarchive,nFBsamps);
-	snrmin = filgetmin(floatarchive,nFBsamps);
-	cpgsvp(0.1,0.9,0.1,0.9);
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff*favg, 0.0};
-	cpgimag(floatarchive,nchans,nFBsamps,1,nchans,1,nFBsamps,snrmin,snrmax,tr);	
-	cpgslw(3);
-	cpgsci(0);
-	plotdm(Sdec,Sskip,dmoff,inpDM, nchans, tsamp, foff*favg, fch1);
-	cpgsci(1);
-      }
-      if (dumchar == 'h'){
-	fprintf(stderr,"HITRUN data; killing lower 180 channels of band.\n\n");
-	for (int j=0;j<150;j++){
-	  killchan(floatarchive,nFBsamps,j,Sdec,nbits,nchans);
-	}
-	snrmax = filgetmax(floatarchive,nFBsamps);
-	snrmin = filgetmin(floatarchive,nFBsamps);
-	cpgsvp(0.1,0.9,0.1,0.9);
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff*favg, 0.0};
-	cpgimag(floatarchive,nchans,nFBsamps,1,nchans,1,nFBsamps,snrmin,snrmax,tr);
-	cpgslw(3);
-	cpgsci(0);
-	plotdm(Sdec,Sskip,dmoff,inpDM, nchans, tsamp, foff*favg, fch1);
-	cpgsci(1);
-      }
-      if (dumchar == 'm'){
-	cpgsvp(0.1,0.9,0.1,0.9);
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff*favg, 0.0};
-	cpgimag(floatarchive,nchans,nFBsamps,1,nchans,1,nFBsamps,snrmin,snrmax,tr);	
-	cpgslw(3);
-	cpgsci(0);
-	fprintf(stderr,"DM offset is now %f, dumx is %f\n\n",dumx - timeseriesindex[0],dumx);
-	dmoff = dumx - timeseriesindex[0];
-	plotdm(Sdec,Sskip,dmoff,inpDM, nchans, tsamp, foff*favg, fch1);
-	cpgsci(1);
-      }
-      if (dumchar == 'a'){
-	favg*=2;
-//	int tempchans = nchans - 1;
-	filavg(&nchans,nFBsamps,floatarchive);
-//	nchans = tempchans;
-	snrmax = filgetmax(floatarchive,nFBsamps);
-	snrmin = filgetmin(floatarchive,nFBsamps);
-	cpgsvp(0.1,0.9,0.1,0.9);
-	cpgswin(timeseriesindex[0],timeseriesindex[nsamps-1],fch1,fchlast);
-	cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
-	float tr[] = {timeseriesindex[0], 0.0, tsamp, fch1, foff*favg, 0.0};
-	cpgimag(floatarchive,nchans,nFBsamps,1,nchans,1,nFBsamps,snrmin,snrmax,tr);
-	cpgslw(3);
-	cpgsci(0);
-	plotdm(Sdec,Sskip,dmoff,inpDM, nchans, tsamp, foff*favg, fch1);
-	cpgsci(1);
-      }
-    }
-    cpgclos();
-    cpgslct(pgpID);
 
     //restore original global variables
     temprefdm = refdm = temprefdm;
@@ -1613,6 +1383,8 @@ void plotfil(char *currentfile, long long int Sskip, int Sread, int Sdec, float 
 
     return;
 }
+
+
 
 
 int load_killdata(int * killdata,int kchans,char * killfile){
@@ -1639,3 +1411,45 @@ int load_killdata(int * killdata,int kchans,char * killfile){
   fclose(kptr);
   return(0);
 }
+
+void helpmenu(){
+    fprintf(stderr,"\n\n");
+    fprintf(stderr,"* * * * * * * * * * * * * * * * * * * * * * *\n");
+    fprintf(stderr,"*              ----- GIANT -----            *\n");
+    fprintf(stderr,"* An interface for the viewing and explora- *\n");
+    fprintf(stderr,"*   tion of timeseries or filterbank data   *\n");
+    fprintf(stderr,"* * * * * * * * * * * * * * * * * * * * * * *\n\n");
+    fprintf(stderr,"Usage: giant filenames\n");
+    fprintf(stderr,"\t(e.g.>>  giant *.tim)\n");
+    fprintf(stderr,"\nINTERACTIVE USES:\n");
+    fprintf(stderr,"   -i \tinterpret signed chars as unsigned\n");
+    fprintf(stderr,"   -s [N] \tskip [N] samples\n");
+    fprintf(stderr,"   -n [N] \tread [N] samples\n");
+    fprintf(stderr,"   -k [file]\tread in channel mask (format binary:\n");
+    fprintf(stderr,"\t\t0 removes, 1 passes, one per line.\n");
+    fprintf(stderr,"   -g [dev]\topen on device [dev]. You will be\n");
+    fprintf(stderr,"\t\tqueried upon use of [viewband]\n");
+    fprintf(stderr,"   -S read spectra instead of amplitudes\n");
+    fprintf(stderr,"\nNON-INTERACTIVE USES:\n");
+    fprintf(stderr,"   -z output a zap list of bad time samples\n");
+    fprintf(stderr,"");
+    fprintf(stderr,"");
+    fprintf(stderr,"");
+    fprintf(stderr,"\n\n");
+    return;
+}
+
+void buttonexplain(){
+    fprintf(stderr,"\nThis is a big fat help menu!");
+    return;
+}
+
+/*    if (strings_equal(argv[i],"-s"))       sscanf(argv[++i],"%d",&nskipstart);
+    if (strings_equal(argv[i],"-S"))       spectra=1;
+    if (strings_equal(argv[i],"-i"))       ssigned=false;
+    if (strings_equal(argv[i],"-n"))       sscanf(argv[++i],"%d",&ngulp_original);
+    if (strings_equal(argv[i],"-c"))       sscanf(argv[++i],"%f",&Gsigmacut);
+    if (strings_equal(argv[i],"-z"))       zapswitch=1;
+    if (strings_equal(argv[i],"-g"))       {askdevice=true;sscanf(argv[++i],"%s",&devicename);}
+    if (strings_equal(argv[i],"-k"))       {killfile=(char*)malloc(strlen(argv[++i])+1); strcpy(killfile,argv[i]);dokill=true;}
+*/

@@ -30,7 +30,7 @@ spec_LDADD=@PGPLOT_LIBS@
 tune_SOURCES=tune.c
 tune_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
-giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f pch-seek-normalise.C toolkit.h toolkit.C TKfit.h TKfit.C
+giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f toolkit.h toolkit.C TKfit.h TKfit.C
 giant_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
 pgplotter_LDADD=@PGPLOT_LIBS@ $(LDADD)
