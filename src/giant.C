@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
       puti(ngulp);
 
       find_baseline(time_series[i],ngulp,tsamp,2.0,3.0); //SARAHZAP
-      mowlawn(ngulp,time_series[i], mown, &nrejects,3.5,5);
+      mowlawn(ngulp,time_series[i], mown, &nrejects,5,5);
     }
     printf("%f\n",dummy);
     printf("Bad time samples found...\n");
@@ -668,7 +668,7 @@ int main (int argc, char *argv[])
  // ZAPPER SECTION
     if (button==MOWLAWN){
       for (i=0; i<nfiles; i++){
-	 mowlawn(ngulp,time_series[i], mown, &nrejects,3.5,5);
+	 mowlawn(ngulp,time_series[i], mown, &nrejects,5,5);
       }
       printf("Lawn mown\n");
       fflush(stdout);
@@ -871,9 +871,12 @@ void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int 
 
     int nscrunch=1;
     int current_n=n;
+    float origthreshold = threshold;
 
     *nrejects=0;
     while(nscrunch < max_nscrunch){
+
+     threshold = origthreshold*sqrt(nscrunch);
 
      // Compute Mean and Sigma of timeseries
      while (noff<current_n) {
