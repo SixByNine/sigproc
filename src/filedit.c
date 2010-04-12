@@ -370,6 +370,7 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 }
 
 #define ARRL 100000
+#define POOL_VALID 100000
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma, char zap_mode){
 	long long unsigned cur_sample;
 	int sample_nbytes;
@@ -383,6 +384,8 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 	char rndarr[ARRL];
 	int mask;
 	int rem,stor;
+	long fpos;
+	long pool_offset;
 
 	printf("Zapping data, replacing with");
 	switch(zap_mode){
@@ -471,10 +474,22 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 			fseek(file,sample_nbytes,SEEK_CUR);
 			cur_sample++;
 		}
+		if (zap_mode == REPLACE_SAMPLES){
+			// check if our random sample pool is up-to-date
+			fpos = ftell(file); // the current position in the file
+			if (fpos - pool_offset > POOL_VALID && fpos > ARRL){
+				// our pool is out of date!
+				fprintf(stderr,"Refilling random pool\n");
+				fseek(file,-ARRL,SEEK_CUR);
+				fread(rndarr,1,ARRL,file);
+			}
+
+
+		}
+
 		// printf("Zapping: %d -> %d\n",tz_start,tz_end);
 		// start zapping
 		while (cur_sample < tz_end){
-			// printf("cur = %d\t%d\t%d\n",cur_sample,tz_start, tz_end);
 			i=0;
 			for(c=0;c<sample_nbytes;c++){
 				i=(int)((rand()*(ARRL-1.0))/(float)RAND_MAX);
