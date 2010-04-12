@@ -144,6 +144,8 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = 0;
 	long_opt[long_opt_idx++].val = 0;
 
+	timezaps[0] = malloc((arr_size)* sizeof(int));
+	timezaps[1] = malloc((arr_size)* sizeof(int));
 
 	while ((c = getopt_long(argc, argv, args, long_opt, &long_opt_idx)) != -1) {
 		switch (opt_flag) {
@@ -196,8 +198,6 @@ int main (int argc, char** argv){
 		}
 	}
 
-	timezaps[0] = malloc((arr_size)* sizeof(int));
-	timezaps[1] = malloc((arr_size)* sizeof(int));
 
 
 
