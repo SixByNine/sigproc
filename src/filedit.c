@@ -10,8 +10,14 @@
 int read_header(FILE *inputfile);
 
 void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams);
-void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma);
+void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma,char zap_mode);
 float get_random_value(float mean, float sigma);
+
+// Replace mode options
+#define REPLACE_SAMPLES 1
+#define REPLACE_GAUSSIAN 2
+#define REPLACE_ZERO 3
+
 
 void print_usage(){
 	printf("Modify a .fil file\n");
@@ -26,13 +32,16 @@ void print_usage(){
 	printf("--nbeams,-B {i}       : modify number of beams to {i}\n");
 	printf("\nOther options:\n");
 	printf("--time-zap,-t \"s e\" : 'zap' samples between 's' and 'e'\n");
+	printf("--replace-gaussian,-G : Replace zapped Gaussian random number generator\n");
+	printf("--replace-samples,-S  : Replace zapped with random samples (default)\n");
+	printf("--replace-zero,-Z     : Replace zapped with zeros\n");
 	printf("\n");
 }
 
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:r:m:s:k:B:b:";
+	const char* args = "d:hn:t:r:m:s:k:B:b:ZSG";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
@@ -49,6 +58,7 @@ int main (int argc, char** argv){
 	char killfile[20];
 	int killswitch=0;
 	int arr_size = 1024;
+	char zap_mode=REPLACE_SAMPLES;
 
 	newname[0]='\0';
 	ntimezaps=0;
@@ -110,12 +120,32 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'k';
 
+	long_opt[long_opt_idx].name = "replace-gaussian";
+	long_opt[long_opt_idx].has_arg = no_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'G';
+
+	long_opt[long_opt_idx].name = "replace-samples";
+	long_opt[long_opt_idx].has_arg = no_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'S';
+
+
+	long_opt[long_opt_idx].name = "replace-zero";
+	long_opt[long_opt_idx].has_arg = no_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'Z';
+
+
+
 
 	long_opt[long_opt_idx].name = 0;
 	long_opt[long_opt_idx].has_arg = 0;
 	long_opt[long_opt_idx].flag = 0;
 	long_opt[long_opt_idx++].val = 0;
 
+	timezaps[0] = malloc((arr_size)* sizeof(int));
+	timezaps[1] = malloc((arr_size)* sizeof(int));
 
 	while ((c = getopt_long(argc, argv, args, long_opt, &long_opt_idx)) != -1) {
 		switch (opt_flag) {
@@ -155,12 +185,19 @@ int main (int argc, char** argv){
 						sscanf(optarg, "%s",killfile);
 						killswitch = 1;
 						break;
+					case 'Z':
+						zap_mode=REPLACE_ZERO;
+						break;
+					case 'G':
+						zap_mode=REPLACE_GAUSSIAN;
+						break;
+					case 'S':
+						zap_mode=REPLACE_SAMPLES;
+						break;
 				}
 		}
 	}
 
-	timezaps[0] = malloc((arr_size)* sizeof(int));
-	timezaps[1] = malloc((arr_size)* sizeof(int));
 
 
 
@@ -226,7 +263,7 @@ int main (int argc, char** argv){
 
 	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams);
 
-	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma);
+	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma,zap_mode);
 
 	return 0;
 }
@@ -333,7 +370,8 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 }
 
 #define ARRL 100000
-void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma){
+#define POOL_VALID 100000
+void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma, char zap_mode){
 	long long unsigned cur_sample;
 	int sample_nbytes;
 	int cur_tzap;
@@ -346,9 +384,21 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 	char rndarr[ARRL];
 	int mask;
 	int rem,stor;
+	long fpos;
+	long pool_offset;
 
-	printf("Zapping data\n");
-
+	printf("Zapping data, replacing with");
+	switch(zap_mode){
+		case REPLACE_GAUSSIAN:
+			printf(" random Gaussian numbers\n");
+			break;
+		case REPLACE_ZERO:
+			printf(" zeros\n");
+			break;
+		default:
+			printf(" randomly selected samples\n");
+			break;
+	}
 	byte=0;
 	// rewind the file
 	fseek(file,0,SEEK_SET);
@@ -373,33 +423,50 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 	}
 
 	srand ( time(NULL) );
-	rem=0;
-	for(c=0;c<ARRL;c++){
-		byte=0;
-		i=0;
-		while(1){
-			if(i==8){
-				rndarr[c] = byte;
-				break;
-			}
+	if (zap_mode==REPLACE_GAUSSIAN){
+		// Generate gaussian random numbers
+		rem=0;
+		for(c=0;c<ARRL;c++){
+			byte=0;
+			i=0;
+			while(1){
+				if(i==8){
+					rndarr[c] = byte;
+					break;
+				}
 
-			rval=(int)rint(get_random_value(mean,sigma));
-			stor=rval;
-			rval+=rem;
-			if(rval > max){
-				rem = rval-max;
-				rval=max;
-			} else if(rval < min){
-				rem = rval-min;
-				rval=min;
-			} else {
-				rem=0;
+				rval=(int)rint(get_random_value(mean,sigma));
+				stor=rval;
+				rval+=rem;
+				if(rval > max){
+					rem = rval-max;
+					rval=max;
+				} else if(rval < min){
+					rem = rval-min;
+					rval=min;
+				} else {
+					rem=0;
+				}
+				//printf("%d %d %d\n",rval,stor,rem);
+				byte |= (rval << i);
+				i+=nbits;
 			}
-			//printf("%d %d %d\n",rval,stor,rem);
-			byte |= (rval << i);
-			i+=nbits;
 		}
+	} else if (zap_mode==REPLACE_ZERO) {
+		for(c=0;c<ARRL;c++){
+			rndarr[c]=0;
+		}
+	} else {
+		// read the first ARRL bytes for the random sample
+		fread(rndarr,1,ARRL,file);
 	}
+
+	// rewind the file
+	fseek(file,0,SEEK_SET);
+
+	// read the file header
+	read_header(file);
+
 
 	while (cur_tzap < ntzaps){
 		while (cur_sample < tz_start){
@@ -407,10 +474,22 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 			fseek(file,sample_nbytes,SEEK_CUR);
 			cur_sample++;
 		}
+		if (zap_mode == REPLACE_SAMPLES){
+			// check if our random sample pool is up-to-date
+			fpos = ftell(file); // the current position in the file
+			if (fpos - pool_offset > POOL_VALID && fpos > ARRL){
+				// our pool is out of date!
+				fprintf(stderr,"Refilling random pool\n");
+				fseek(file,-ARRL,SEEK_CUR);
+				fread(rndarr,1,ARRL,file);
+			}
+
+
+		}
+
 		// printf("Zapping: %d -> %d\n",tz_start,tz_end);
 		// start zapping
 		while (cur_sample < tz_end){
-			// printf("cur = %d\t%d\t%d\n",cur_sample,tz_start, tz_end);
 			i=0;
 			for(c=0;c<sample_nbytes;c++){
 				i=(int)((rand()*(ARRL-1.0))/(float)RAND_MAX);
