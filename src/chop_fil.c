@@ -12,6 +12,15 @@
 #include <string.h>
 
 
+void chop_fil_help(){
+	printf("chop_fil: splits a fil file in time\n");
+	printf("\nchop_fil -s skip_time -r read_length file.fil\n");
+	printf("\n\nOptions\n");
+	printf("-s st   : skip 'st' seconds at start of file\n");
+	printf("-r re   : read 're' seconds from file\n");
+
+}
+
 int wapp_header_size, wapp_incfile_length;
 int nbins;
 double period;
@@ -40,7 +49,7 @@ main(int argc, char *argv[])
 	if (argc>1) {
 		print_version(argv[0],argv[1]);
 		if (help_required(argv[1])) {
-			header_help();
+			chop_fil_help();
 			exit(0);
 		} else if (file_exists(argv[1])) {
 			strcpy(filename,argv[1]);
