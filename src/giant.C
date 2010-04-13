@@ -206,7 +206,7 @@ int main (int argc, char *argv[])
       puti(ngulp);
 
       find_baseline(time_series[i],ngulp,tsamp,2.0,3.0); //SARAHZAP
-      mowlawn(ngulp,time_series[i], mown, &nrejects,5,5);
+      mowlawn(ngulp,time_series[i], mown, &nrejects,5,4);
     }
     printf("%f\n",dummy);
     printf("Bad time samples found...\n");
@@ -668,7 +668,7 @@ int main (int argc, char *argv[])
  // ZAPPER SECTION
     if (button==MOWLAWN){
       for (i=0; i<nfiles; i++){
-	 mowlawn(ngulp,time_series[i], mown, &nrejects,5,5);
+	 mowlawn(ngulp,time_series[i], mown, &nrejects,5,4);
       }
       printf("Lawn mown\n");
       fflush(stdout);
