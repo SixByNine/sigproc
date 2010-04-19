@@ -607,7 +607,8 @@ int main (int argc, char *argv[])
 	    }
 	    output=outfileptr;
 	    // write header variables into globals
-	    refdm = DM_trial;
+	    // dedisperse_header() uses "userdm" not refdm, so make sure to set that. MJK-19042010
+	    userdm = refdm = DM_trial;
 	    nobits = 8;
 	    // write header
 	    if (!appendable) dedisperse_header();
