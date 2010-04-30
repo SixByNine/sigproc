@@ -608,6 +608,7 @@ int main (int argc, char *argv[])
 	    output=outfileptr;
 	    // write header variables into globals
 	    refdm = DM_trial;
+	    userdm = DM_trial;
 	    nobits = 8;
 	    // write header
 	    if (!appendable) dedisperse_header();
