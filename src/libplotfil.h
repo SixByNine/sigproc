@@ -15,3 +15,4 @@ void chanbaseline(float *data, int ntime, int filnchans);
 void plotfilhelp();
 void plotfil(float *floatarchive, int nFBsamps, long long int Sskip, float inpDM, int pgpID, double filtsamp, int filnchans, double filfch1, double filfoff, int colortable,bool askdevice);
 void plotfil(float *floatarchive, int nFBsamps, long long int Sskip, float inpDM, int pgpID, double filtsamp, int filnchans, double filfch1, double filfoff, int colortable);
+bool getkillfile(int * killmask,int nchans,char *killfile);
