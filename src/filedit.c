@@ -1,3 +1,6 @@
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -9,7 +12,7 @@
 
 int read_header(FILE *inputfile);
 
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams);
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart);
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma,char zap_mode);
 float get_random_value(float mean, float sigma);
 
@@ -28,6 +31,7 @@ void print_usage(){
 	printf("--ra,-r {ra}          : modify the ra to {ra}. in form hhmmss.xxx \n");
 	printf("--dec,-d {dec}        : modify the dec to {dec}. in form ddmmss.xxx \n");
 	printf("--src-name,-n         : modify the source name.\n");
+	printf("--tstart,-T           : modify the start mjd.\n");
 	printf("--beam,-b {i}         : modify the beam number to {i}\n");
 	printf("--nbeams,-B {i}       : modify number of beams to {i}\n");
 	printf("\nOther options:\n");
@@ -41,7 +45,7 @@ void print_usage(){
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:r:m:s:k:B:b:ZSG";
+	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSG";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
@@ -49,6 +53,7 @@ int main (int argc, char** argv){
 	int ntimezaps,nfreqzaps;
 	double newra;
 	double newdec;
+	double newtstart;
 	int newibeam=-1;
 	int newnbeams=-1;
 	float mean,sigma;
@@ -66,8 +71,9 @@ int main (int argc, char** argv){
 	mean=0;
 	sigma=1;
 
-	newra =900000000;
-	newdec=900000000;
+	newra =900000001;
+	newdec=900000001;
+	newtstart=900000001;
 
 
 	long_opt[long_opt_idx].name = "help";
@@ -99,6 +105,12 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].has_arg = required_argument;
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'd';
+
+	long_opt[long_opt_idx].name = "tstart";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'T';
+
 
 	long_opt[long_opt_idx].name = "beam";
 	long_opt[long_opt_idx].has_arg = required_argument;
@@ -162,6 +174,9 @@ int main (int argc, char** argv){
 						break;
 					case 'r':
 						newra = atof(optarg);
+						break;
+					case 'T':
+						newtstart = atof(optarg);
 						break;
 					case 'd':
 						newdec=atof(optarg);
@@ -257,11 +272,11 @@ int main (int argc, char** argv){
 
 	//printf("%s\n",argv[optind]);
 	if ((file = fopen(argv[optind],"r+")) ==NULL){
-		printf("Failed to open file passed as CLA.\n");
+		printf("Failed to open file '%s'.\n",argv[optind]);
 		exit(-5);
 	}
 
-	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams);
+	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart);
 
 	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma,zap_mode);
 
@@ -269,7 +284,7 @@ int main (int argc, char** argv){
 }
 
 
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams){
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart){
 	int newlen;
 	int hdr_len;
 	char* hdr_arr;
@@ -336,6 +351,16 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 			printf("new dec = '%lf'\n",newdec);
 			*((double*)(ptr)) = newdec;
 		}
+		buf[6]='\0';
+
+		if(newtstart < 900000000 && strcmp(buf,"tstart")==0){
+			ptr+=6;
+			a_double = *((double*)(ptr));
+			printf("old tstart = '%lf'\n",a_double);
+			printf("new tstart = '%lf'\n",newtstart);
+			*((double*)(ptr)) = newtstart;
+		}
+
 
 		memcpy(buf,ptr,5);
 		buf[5]='\0';
@@ -479,7 +504,7 @@ void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,f
 			fpos = ftell(file); // the current position in the file
 			if (fpos - pool_offset > POOL_VALID && fpos > ARRL){
 				// our pool is out of date!
-				fprintf(stderr,"Refilling random pool\n");
+//				fprintf(stderr,"Refilling random pool\n");
 				fseek(file,-ARRL,SEEK_CUR);
 				fread(rndarr,1,ARRL,file);
 			}

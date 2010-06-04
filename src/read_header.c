@@ -16,9 +16,9 @@ void get_string(FILE *inputfile, int *nbytes, char string[])
   int nchar;
   strcpy(string,"ERROR");
   fread(&nchar, sizeof(int), 1, inputfile);
+  *nbytes=sizeof(int);
   if (feof(inputfile)) exit(0);
   if (nchar>80 || nchar<1) return;
-  *nbytes=sizeof(int);
   fread(string, nchar, 1, inputfile);
   string[nchar]='\0';
   *nbytes+=nchar;
@@ -141,10 +141,23 @@ int read_header(FILE *inputfile) /* includefile */
       fprintf(stderr,"ERROR: %s\n",message);
       exit(1);
     } 
+    if (totalbytes != ftell(inputfile)){
+	    fprintf(stderr,"ERROR: Header bytes does not equal file position\n");
+	    fprintf(stderr,"String was: '%s'\n",string);
+	    fprintf(stderr,"       header: %d file: %d\n",totalbytes,ftell(inputfile));
+	    exit(1);
+    }
+
   } 
 
   /* add on last header string */
   totalbytes+=nbytes;
+
+  if (totalbytes != ftell(inputfile)){
+	  fprintf(stderr,"ERROR: Header bytes does not equal file position\n");
+	  fprintf(stderr,"       header: %d file: %d\n",totalbytes,ftell(inputfile));
+	  exit(1);
+  }
 
   /* return total number of bytes read */
   return totalbytes;
