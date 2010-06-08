@@ -31,7 +31,7 @@ c
       integer indx(npts/8),snum(npts/8)
       integer top,nsm,nf1,c(nfolds),cmin,cmax
 c      parameter(top=1024,nsm=1024*8)
-      parameter(top=4096,nsm=4096*8)
+      parameter(top=50000,nsm=50000*8)
       real rmea(nsm),rrms(nsm),fastmea(npts),sres,flo,fhi,fhr,smax
 c      real ralphmea(npts)   ! to  check what effect the running mean has on snr
       real*8 freq,pmax,fbest,ratio,pc(top)
