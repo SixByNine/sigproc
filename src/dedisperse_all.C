@@ -437,6 +437,19 @@ int main (int argc, char *argv[])
     getDMtable(start_DM,end_DM, tsamp*1e6, ti, foff, (fch1+(nchans/2-0.5)*foff)/1000,nchans/nbands, tol, &ndm, DMtable);
   else
     getDMtable(0.0,end_DM, tsamp*1e6, ti, foff, (fch1+(nchans/2-0.5)*foff)/1000,nchans/nbands, tol, &ndm, DMtable);
+
+  // If Gsearch is being run but start_DM is non-zero, add 0.0 to DM table.
+  if (doGsearch && start_DM != 0.0){
+      float *tempDMtable = new float[ndm+1];
+      tempDMtable[0] = 0.0;
+#pragma omp parallel for private(i)
+      for (int i=0;i<ndm;i++){
+	  tempDMtable[i+1] = DMtable[i];
+      }
+      delete DMtable;
+      DMtable = tempDMtable;
+      ndm++;
+  }
   
   fprintf(stderr,"%d subbands from %d chans\n",nbands,nchans);
 
@@ -562,7 +575,7 @@ int main (int argc, char *argv[])
 	{
 	  //DM_trial = get_DM(idm,nchans,tsamp,fch1,foff);
 	  DM_trial = DMtable[idm];
-	  if (DM_trial>=start_DM && DM_trial<=end_DM){
+	  if ((DM_trial>=start_DM && DM_trial<=end_DM) || (doGsearch && DM_trial==0)){
 	    if (verbose) fprintf(stderr,"DM trial #%d at  DM=%f ",idm,DM_trial);
 	    if (dmlogfile && igulp==0) fprintf(dmlogfileptr,"%f %07.2f\n",DM_trial,
 				   DM_trial);

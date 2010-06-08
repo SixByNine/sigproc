@@ -347,7 +347,8 @@ void normalise(float *data, int n) {
 	double mean=sum/(double)n;
 	double meansquares=sumsq/(double)n;
 	double sigma= sqrt(meansquares - (mean * mean));
-	for (i=0; i<n; i++)
+#pragma omp parallel for private(i)
+	for (int i=0; i<n; i++)
 		data[i]=(data[i]-mean)/sigma;
 }
 
@@ -369,6 +370,8 @@ double normalise(int n, float * d, double * dataaverage) {
 		fprintf(stderr, "Normalise::RMS of data is zero\n");
 		return (sigma);
 	}
+	int i;
+#pragma omp parallel for private(i)
 	for (int i=0; i<n; i++)
 		d[i]=(d[i]-mean)/sigma;
 	return (sigma);
