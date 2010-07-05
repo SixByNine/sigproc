@@ -617,18 +617,20 @@ int main (int argc, char *argv[]){
 	}
 	// Chan-baseline to clean up the plot
 	chanbaseline(floatarchive,nFBsamps,nchans);
-	if (snrplot[maxind]<18){
-	    filchanavg(nFBsamps,&nchans,floatarchive);
-	    favg*=2;
-	    chanbaseline(floatarchive,nFBsamps,nchans);
-	    if (snrplot[maxind]<13){
+	if (nchans>100){
+	    if (snrplot[maxind]<18){
 		filchanavg(nFBsamps,&nchans,floatarchive);
 		favg*=2;
 		chanbaseline(floatarchive,nFBsamps,nchans);
-		if (snrplot[maxind]<9){
+		if (snrplot[maxind]<13){
 		    filchanavg(nFBsamps,&nchans,floatarchive);
 		    favg*=2;
-		    chanbaseline(floatarchive,nFBsamps,nchans);		    
+		    chanbaseline(floatarchive,nFBsamps,nchans);
+		    if (snrplot[maxind]<9){
+			filchanavg(nFBsamps,&nchans,floatarchive);
+			favg*=2;
+			chanbaseline(floatarchive,nFBsamps,nchans);		    
+		    }
 		}
 	    }
 	}
