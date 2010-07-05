@@ -39,7 +39,8 @@ void timeavg(int n, float * d){
 }
 
 float getmax(float *data, int arraysize, int *index){
-    float max=0; 
+    float max=data[0];
+    *index = 0;
     int i;
     for (i=0; i<arraysize; i++){
 //	cout<<"index is "<<data[i]<<" \n"<<endl;
