@@ -13,7 +13,7 @@ using namespace std;
 
 
 float filgetmax(float *data, int arraysize){
-    float max=0; 
+    float max=data[0]; 
     int i;
     for (i=0; i<arraysize; i++){
 	if (data[i] > max){
@@ -25,7 +25,7 @@ float filgetmax(float *data, int arraysize){
 
 
 float filgetmin(float *data, int arraysize){
-    float min=99999;
+    float min=data[0];
     int i;
     for (i=0; i<arraysize; i++){
 	if (data[i] < min){
