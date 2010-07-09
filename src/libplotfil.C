@@ -56,7 +56,7 @@ bool getkillfile(int * killmask,int nchans,char *killfile){
     }
     for (int i=0; i<nchans;i++) {
 	if (fgets(line,20,kptr)!=NULL){  // Read in whole line
-	    int nscanned = sscanf(line,"%d",&killfile[i]);
+	    int nscanned = sscanf(line,"%d",&killmask[i]);
 	    if (nscanned==0) {
 		fprintf(stderr,"GETKILLFILE: Could not scan %s as 1 or 0\nWill NOT excise RFI channels.\n",line);
 		return(false);
