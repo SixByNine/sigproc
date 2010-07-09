@@ -193,8 +193,16 @@ int main (int argc, char *argv[]){
 		
 		nsampsinfile = nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 		if (nbits!=32 && nbits!=8) {fprintf(stderr,"\n\n\tERROR in quickgplot.C:\n\t\tFile %s must be 8- or 32-bit data",currentfile); exit(7);}
-		if (Sread) nreadinsamp = Sread;
-		else { 
+		if (Sread){
+		    if (Sread > nsampsinfile){
+			fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
+			Sread = nsampsinfile;
+		    } else if (Sread + Sskip > nsampsinfile){
+			fprintf(stderr, "\n\t**WARNING:\n\t\tskipped + read samples (%d + %d) > number of samples in file (%d). Setting Sread = %d\n\n",Sskip,Sread,nsampsinfile,nsampsinfile-Sskip);
+			Sread = nsampsinfile-Sskip;
+		    }
+		    nreadinsamp = Sread;
+		} else {
 		    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
 		    else nreadinsamp = nsampsinfile - Sskip;
 		}
@@ -249,8 +257,16 @@ int main (int argc, char *argv[]){
 	    nsampsinfile=nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 	    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %lld data samples will surpass whole fil file!\n\n",Sskip); exit(7);}
 	    if (Sread) {
+		if (Sread > nsampsinfile){
+		    fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
+		    Sread = nsampsinfile;
+		} else if (Sread + Sskip > nsampsinfile){
+		    fprintf(stderr, "\n\t**WARNING:\n\t\tskipped + read samples (%d + %d) > number of samples in file (%d). Setting Sread = %d\n\n",Sskip,Sread,nsampsinfile,nsampsinfile-Sskip);
+		    Sread = nsampsinfile-Sskip;
+		}
 		nFBsamps = Sread;
 	    } else {
+		if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
 		nFBsamps = nsampsinfile - Sskip;
 	    }
 
