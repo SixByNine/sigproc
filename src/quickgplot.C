@@ -193,6 +193,8 @@ int main (int argc, char *argv[]){
 		
 		nsampsinfile = nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 		if (nbits!=32 && nbits!=8) {fprintf(stderr,"\n\n\tERROR in quickgplot.C:\n\t\tFile %s must be 8- or 32-bit data",currentfile); exit(7);}
+		if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
+		else nreadinsamp = nsampsinfile - Sskip;
 		if (Sread){
 		    if (Sread > nsampsinfile){
 			fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
@@ -202,9 +204,6 @@ int main (int argc, char *argv[]){
 			Sread = nsampsinfile-Sskip;
 		    }
 		    nreadinsamp = Sread;
-		} else {
-		    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
-		    else nreadinsamp = nsampsinfile - Sskip;
 		}
 
 		if (!foundone) { nsamp = nreadinsamp; }
@@ -256,6 +255,7 @@ int main (int argc, char *argv[]){
 	if (data_type == 1){ //i.e., a normal sigproc binary profile.		    
 	    nsampsinfile=nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 	    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %lld data samples will surpass whole fil file!\n\n",Sskip); exit(7);}
+	    else nFBsamps = nsampsinfile - Sskip;
 	    if (Sread) {
 		if (Sread > nsampsinfile){
 		    fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
@@ -265,9 +265,6 @@ int main (int argc, char *argv[]){
 		    Sread = nsampsinfile-Sskip;
 		}
 		nFBsamps = Sread;
-	    } else {
-		if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
-		nFBsamps = nsampsinfile - Sskip;
 	    }
 
 	    // 8 throughout is the number of bits per byte; necessary because this is bitwise date
