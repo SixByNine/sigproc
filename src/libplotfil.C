@@ -13,7 +13,7 @@ using namespace std;
 
 
 float filgetmax(float *data, int arraysize){
-    float max=0; 
+    float max=data[0]; 
     int i;
     for (i=0; i<arraysize; i++){
 	if (data[i] > max){
@@ -25,7 +25,7 @@ float filgetmax(float *data, int arraysize){
 
 
 float filgetmin(float *data, int arraysize){
-    float min=99999;
+    float min=data[0];
     int i;
     for (i=0; i<arraysize; i++){
 	if (data[i] < min){
@@ -56,7 +56,7 @@ bool getkillfile(int * killmask,int nchans,char *killfile){
     }
     for (int i=0; i<nchans;i++) {
 	if (fgets(line,20,kptr)!=NULL){  // Read in whole line
-	    int nscanned = sscanf(line,"%d",&killfile[i]);
+	    int nscanned = sscanf(line,"%d",&killmask[i]);
 	    if (nscanned==0) {
 		fprintf(stderr,"GETKILLFILE: Could not scan %s as 1 or 0\nWill NOT excise RFI channels.\n",line);
 		return(false);

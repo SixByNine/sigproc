@@ -42,7 +42,8 @@ void timeavg(int n, float * d){
 }
 
 float getmax(float *data, int arraysize, int *index){
-    float max=0; 
+    float max=data[0];
+    *index = 0;
     int i;
     for (i=0; i<arraysize; i++){
 //	cout<<"index is "<<data[i]<<" \n"<<endl;
@@ -195,10 +196,17 @@ int main (int argc, char *argv[]){
 		
 		nsampsinfile = nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 		if (nbits!=32 && nbits!=8) {fprintf(stderr,"\n\n\tERROR in quickgplot.C:\n\t\tFile %s must be 8- or 32-bit data",currentfile); exit(7);}
-		if (Sread) nreadinsamp = Sread;
-		else { 
-		    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
-		    else nreadinsamp = nsampsinfile - Sskip;
+		if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
+		else nreadinsamp = nsampsinfile - Sskip;
+		if (Sread){
+		    if (Sread > nsampsinfile){
+			fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
+			Sread = nsampsinfile;
+		    } else if (Sread + Sskip > nsampsinfile){
+			fprintf(stderr, "\n\t**WARNING:\n\t\tskipped + read samples (%d + %d) > number of samples in file (%d). Setting Sread = %d\n\n",Sskip,Sread,nsampsinfile,nsampsinfile-Sskip);
+			Sread = nsampsinfile-Sskip;
+		    }
+		    nreadinsamp = Sread;
 		}
 
 		if (!foundone) { nsamp = nreadinsamp; }
@@ -250,10 +258,16 @@ int main (int argc, char *argv[]){
 	if (data_type == 1){ //i.e., a normal sigproc binary profile.		    
 	    nsampsinfile=nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 	    if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %lld data samples will surpass whole fil file!\n\n",Sskip); exit(7);}
+	    else nFBsamps = nsampsinfile - Sskip;
 	    if (Sread) {
+		if (Sread > nsampsinfile){
+		    fprintf(stderr, "\n\t**WARNING:\n\t\tRead samples (%d) > number of samples in file (%d). Setting Sread = %d\n\n",Sread,nsampsinfile,nsampsinfile);
+		    Sread = nsampsinfile;
+		} else if (Sread + Sskip > nsampsinfile){
+		    fprintf(stderr, "\n\t**WARNING:\n\t\tskipped + read samples (%d + %d) > number of samples in file (%d). Setting Sread = %d\n\n",Sskip,Sread,nsampsinfile,nsampsinfile-Sskip);
+		    Sread = nsampsinfile-Sskip;
+		}
 		nFBsamps = Sread;
-	    } else {
-		nFBsamps = nsampsinfile - Sskip;
 	    }
 
 	    // 8 throughout is the number of bits per byte; necessary because this is bitwise date
@@ -619,18 +633,20 @@ int main (int argc, char *argv[]){
 	}
 	// Chan-baseline to clean up the plot
 	chanbaseline(floatarchive,nFBsamps,nchans);
-	if (snrplot[maxind]<18){
-	    filchanavg(nFBsamps,&nchans,floatarchive);
-	    favg*=2;
-	    chanbaseline(floatarchive,nFBsamps,nchans);
-	    if (snrplot[maxind]<13){
+	if (nchans>100){
+	    if (snrplot[maxind]<18){
 		filchanavg(nFBsamps,&nchans,floatarchive);
 		favg*=2;
 		chanbaseline(floatarchive,nFBsamps,nchans);
-		if (snrplot[maxind]<9){
+		if (snrplot[maxind]<13){
 		    filchanavg(nFBsamps,&nchans,floatarchive);
 		    favg*=2;
-		    chanbaseline(floatarchive,nFBsamps,nchans);		    
+		    chanbaseline(floatarchive,nFBsamps,nchans);
+		    if (snrplot[maxind]<9){
+			filchanavg(nFBsamps,&nchans,floatarchive);
+			favg*=2;
+			chanbaseline(floatarchive,nFBsamps,nchans);		    
+		    }
 		}
 	    }
 	}
