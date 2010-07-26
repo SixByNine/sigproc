@@ -58,7 +58,7 @@ filedit_SOURCES=filedit.c header.h read_header.c strings_equal.c
 filedit_LDADD=-lm
 
 # seek
-seek_SOURCES=sigproc.h $(f_headers) seek.f dosearch.f ffft.f fftdata.f  find_norm.f formspec.f freq.f glun.f sumhrm.f seekin.f baseline.f readspec.f writespec.f singlepulse.f getrmea.f getmeanrms.f zapit.f timer.f indexxf77.f slfit.f meanrms.f getrrms.f readdat.f resample.f rotate_time.f zap_birdies.f mmzap.f recon_prof.f length.f rdhead.f rdfbtab.f getddis.f getmjd.f readtim.c pulse.c read_header.c angle_split.c clock.f open_file.c strings_equal.c aliases.c open_files.c single_ch.c write_pulses.c thresh_1d.c smooth.c 
+seek_SOURCES=sigproc.h $(f_headers) seek.f dosearch.f ffft.f fftdata.f  find_norm.f formspec.f freq.f glun.f sumhrm.f seekin.f baseline.f readspec.f writespec.f singlepulse.f getrmea.f getmeanrms.f zapit.f timer.f indexxf77.f slfit.f meanrms.f getrrms.f readdat.f resample.f rotate_time.f zap_birdies.f mmzap.f recon_prof.f length.f rdhead.f rdfbtab.f getddis.f getmjd.f readtim.c pulse.c read_header.c angle_split.c clock.f open_file.c strings_equal.c aliases.c open_files.c single_ch.c write_pulses.c thresh_1d.c smooth.c
 
 ffa_SOURCES=ffa.f glun.f timer.f clock.f getmjd.f
 

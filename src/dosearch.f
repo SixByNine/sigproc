@@ -25,6 +25,7 @@ c
 c     Local variables
 c      
       integer h,i,j,k,npf,fold,fb,lun,nc,ncal,istat,n
+      integer newh
       integer loopcounter
       real snrbest,rms,sumsq,snrc,thresh,fnyq,spcsnr
       real saverms
@@ -33,6 +34,7 @@ c
 c      parameter(top=1024,nsm=1024*8)
       parameter(top=50000,nsm=50000*8)
       real rmea(nsm),rrms(nsm),fastmea(npts),sres,flo,fhi,fhr,smax
+      real rmea1,rrms1,rrmsd,rmead
 c      real ralphmea(npts)   ! to  check what effect the running mean has on snr
       real*8 freq,pmax,fbest,ratio,pc(top)
       real*8 freqff
@@ -53,6 +55,8 @@ c      parameter(snfact=1.1284) ! = sqrt(4/pi)
          call readspec(sfile,fold,samp,refdm,refac,tsamp,npf)
          nf1=real(tsamp)*2*npf/real(pmax)
       else
+
+
          nf1=real(tsamp)*ntim/real(pmax)
          write(llog,*) 'Forming amplitude spectrum. (Pmax=',pmax,' s!)'
          call formspec(npf,nf1)
@@ -137,6 +141,13 @@ c
 
          call getrmed(samp,npf,nf1,nav,rmea,ncal)
 
+      else if (oldwhite.eq.99) then
+              write(llog,*) 'Using MJK whitening...'
+              write(llog,*) 'Compute AGL mean and rms every',
+     &   nav,' bins...',real(freq(tsamp,npf,1,nav+1))
+     &   -real(freq(tsamp,npf,1,1)),' Hz'
+
+              call getmeanrms(samp,npf,nav,rmea,ncal,rrms)
       else
          stop 'Do not know how to whiten spectrum...'
 
@@ -150,9 +161,20 @@ c
       n=0
       sumsq=0.0
       j=0
+      h=0
+      rmea(ncal+1)=rmea(ncal)
+      rrms(ncal+1)=rmea(ncal)
       do i=1,npf
-         h=min(ncal,i/nav+1)
 
+         newh=min(ncal,i/nav+1)
+         if (newh.ne.h) then
+                 h=newh
+                 rrms1=rrms(h)
+                 rmea1=rmea(h)
+                 rrmsd=(rrms(h+1)-rrms1)/real(nav)
+                 rmead=(rmea(h+1)-rmea1)/real(nav)
+         endif
+         
          if (samp(i).ne.0.0) then
 
             if (oldwhite.le.1) then ! new and old mean -> same normalization
@@ -171,7 +193,23 @@ c
                   series(2*i)=series(2*i)/rrms(h) 
                endif               
                
-            else
+             else if (oldwhite.ge.99) then
+c
+c               Use MJK smoothed running means/rmss
+c
+                if (rrms(h).ne.0.0) samp(i)=(samp(i)-rmea1)/rrms1
+                if (rmea(h).eq.0.0) samp(i)=0.0
+
+                if (rrms(h).eq.0.0) then
+                  series(2*i-1) = 0
+                  series(2*i) = 0
+                else
+                  series(2*i-1)=series(2*i-1)/rrms1
+                  series(2*i)=series(2*i)/rrms1
+                endif               
+                rrms1 = rrms1 + rrmsd
+                rmea1 = rmea1 + rmead
+             else
 c
 c              New method (default) is to divide by running median
 c              to minimize biases and then subtract unity from the result
@@ -220,7 +258,7 @@ c         write(88,*) i, samp(i), series(2*i-1), series(2*i)
       if (rms.le.0.1) then
               print *,"ERROR: RMS is zero! Cannot continue, file likely"
      &        //" all zeros"
-              stop 1
+c              stop 1
       endif
 
 c     save rms for later recall

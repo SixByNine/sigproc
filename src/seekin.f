@@ -66,6 +66,7 @@ c
          write(*,1)'-submn   - mean subtraction (old method) to' //
      &   ' whiten spectrum'
          write(*,1)'-submd   - median subtraction to whiten spectrum'
+         write(*,1)'-submjk  - MJK whitening method (prototype)'
          write(*,1)'-head    - adds header info to output .prd files'
          write(*,1)'-nopow2  - Do not force power of 2 samples'//
      &             ' (EXPERIMENTAL)'
@@ -196,6 +197,8 @@ c          endif
            oldw=1
         else if (index(option,'-submd').gt.0) then
            oldw=2
+        else if (index(option,'-submjk').gt.0) then
+           oldw=99
         else if (index(option,'-pmzap').gt.0) then
            pmzap=.true.
         else if (index(option,'-pulse').gt.0) then

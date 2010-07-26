@@ -28,6 +28,7 @@ c     '
 c=============================================================================
       implicit none
       include 'seek.inc'
+      integer i
       logical dump,rspc,acsearch,tanalyse,pmzap,mmzap,pulse,
      &        append,pzero,fftw,recon,prdh,nopowtwo
       integer oldw ! = 0 new mean, = 1 old mean, = 2 median
@@ -56,6 +57,12 @@ c=============================================================================
       if (rspc) tanalyse=.false.
       if (tanalyse) then                     ! (time series analysis only)
          if (acsearch) call resample(llog)   ! re-sample time series
+         if (oldw.eq.99) then
+                 write(llog,*) 'MJK Prewhitening...'
+                 do i=1,ntim
+                       series(i)=series(i) - series(i+1)
+                 enddo
+         endif
          if (fftw) then
                  call fftwdata(llog)          ! fft the data using FFTW
          else 
