@@ -506,7 +506,10 @@ int main (int argc, char *argv[])
   
   printf("Dividing output by %d to scale to 1 byte per sample per subband\n",(int)(pow(2,rotate)));
 
-  if(randomise) printf("WARNING: Randomising channel order! Data will not be astrophysical.\n");
+  if(randomise){
+	  sprintf(outfile_root,"%s_RAND",outfile_root);
+	  printf("WARNING: Randomising channel order! Data will not be astrophysical.\n");
+  }
 
   // Set up gpulse control variables
   GPulseState Gholder(ndm); // Giant pulse state to hold trans-DM detections
