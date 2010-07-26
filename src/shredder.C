@@ -195,7 +195,8 @@ int main (int argc, char *argv[])
     /* this is filterbank data */
     if (output!=stdout) output=fopen(outfile,"wb");
     if (output==NULL){
-      fprintf(stderr,"Error opening file %s\n",output);
+      perror("Outfile error 1\n");
+      fprintf(stderr,"Error opening file %s\n",outfile);
       exit(-1);
     }
   }
@@ -267,6 +268,7 @@ int main (int argc, char *argv[])
 	if (igulp==0) {
 	  outfileptr=fopen(outfile,"w");
 	  if (outfileptr==NULL) {
+            perror("Outfile error 2\n");
 	    fprintf(stderr,"Error opening file %s\n",outfile);
 	    exit(-1);
 	  }
