@@ -551,14 +551,28 @@ int main (int argc, char *argv[])
 	doperiod=plotno;
 	button=PLOT;
       }
-      if (ans==','){  // subtract 0.000001 seconds from period
+      if (ans=='m'){  // subtract 0.0000005 seconds from period
+	d->plotregions[plotno].reset();
+	trialperiod-=0.0000005;
+	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	doperiod=plotno;
+	button=PLOT;
+      }
+      if (ans=='/'){  // add 0.0000005 seconds to period
+	d->plotregions[plotno].reset();
+	trialperiod+=0.0000005;
+	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	doperiod=plotno;
+	button=PLOT;
+      }
+      if (ans==','){  // subtract 0.000005 seconds from period
 	d->plotregions[plotno].reset();
 	trialperiod-=0.000005;
 	fprintf(stderr,"Trial period is now %f\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
-      if (ans=='.'){  // add 0.000001 seconds to period
+      if (ans=='.'){  // add 0.000005 seconds to period
 	d->plotregions[plotno].reset();
 	trialperiod+=0.000005;
 	fprintf(stderr,"Trial period is now %f\n",trialperiod);

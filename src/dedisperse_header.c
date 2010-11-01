@@ -5,6 +5,7 @@
 
 void dedisperse_header() /* includefile */
 {
+
   /* go no further here if not interested in header parameters */
   if (headerless) return;
 
@@ -19,6 +20,7 @@ void dedisperse_header() /* includefile */
   send_int("machine_id",machine_id);
   send_coords(src_raj,src_dej,az_start,za_start);
   refdm=userdm;
+
   if (nbands==1) {
     send_int("data_type",2);
     send_double("refdm",refdm);
