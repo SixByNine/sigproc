@@ -702,13 +702,9 @@ int main (int argc, char *argv[])
 	int pos = UTroot.find(".fil");
 	if( pos != string::npos)
 	    UTroot.replace(pos, 4, "");
+	
+	Gresults = Gholder.givetimes(&Gndet,tsamp,flo,fhi,Girrel,&UTroot[0],ibeam,Gfilename);
 
-	if (doMultibeam){
-	    fprintf(stderr,"Associating...\n");
-	    Gresults = Gholder.givetimes(&Gndet,tsamp,flo,fhi,Girrel,&UTroot[0],ibeam,Gfilename);
-	} else {
-	    Gresults = Gholder.givetimes(&Gndet,tsamp,flo,fhi,Girrel,&UTroot[0],-1,Gfilename);
-	}
 	Gholder.selfdestruct();
 //	for (i=0;i<ndm;i++) Gholder.DMtrials[i].erase(Gholder.DMtrials[i].begin(),Gholder.DMtrials[i].end());
 //      fprintf(stderr,"GRESULTS:\n");
