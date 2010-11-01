@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 #include "cpgplot.h"
 #include "string.h"
 #include "libplotfil.h"

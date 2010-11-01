@@ -189,6 +189,10 @@ main(int argc, char *argv[])
 				printf("%.5f\n",tsamp*1.0e6);
 			} else if (strings_equal(argv[i],"-nbits")) {
 				printf("%d\n",nbits);
+			} else if (strings_equal(argv[i],"-ibeam")) {
+				printf("%d\n",ibeam);
+			} else if (strings_equal(argv[i],"-nbeam")) {
+				printf("%d\n",nbeams);
 			} else if (strings_equal(argv[i],"-nifs")) {
 				printf("%d\n",nifs);
 			} else if (strings_equal(argv[i],"-src_raj")) {

@@ -59,6 +59,7 @@ int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, basel
 double refrf,userdm,fcorrect;
 float clipvalue,jyf1,jyf2;
 int fftshift;
+bool randomise;
 #include "wapp_header.h"
 #include "key.h"
 struct WAPP_HEADER *wapp;
@@ -142,7 +143,8 @@ void do_dedispersion(unsigned short int ** storage, unsigned short int * unpacke
     int idelay,start_chan,end_chan;
     LONG64BIT * casted_times;
     int chans_per_band = (int)(nchans/nbands);
-    
+    int chan; 
+    if(randomise)srand((unsigned int)(unpackeddata[ntodedisp/4]));
     for (int iband=0;iband<nbands;iband++){
 	casted_times = (LONG64BIT*) storage[iband];
 	start_chan = iband*chans_per_band;
@@ -151,7 +153,9 @@ void do_dedispersion(unsigned short int ** storage, unsigned short int * unpacke
 	for (int j=0;j<(ntodedisp)/4;j++)casted_times[j]=0;
 	for (int k=start_chan;k<end_chan;k++){
 	  if (killdata[k]==1){
-	    idelay = DM_shift(DMtrial,k-start_chan,tsamp,fch1_subband,foff);
+            chan=k-start_chan;
+	    if(randomise)chan=rand()%(end_chan-start_chan)+start_chan;
+	    idelay = DM_shift(DMtrial,chan,tsamp,fch1_subband,foff);
 	    int stride = k*ntoload+idelay;
 #pragma omp parallel for private(j)
 	    for (int j=0;j<ntodedisp/4;j++){
@@ -235,6 +239,7 @@ int main (int argc, char *argv[])
   clipvalue=refrf=userdm=fcorrect=0.0;
   refdm=-1.0;
   output=NULL;
+  randomise=false;
   strcpy(ignfile,"");
 
   // **************************************
@@ -261,7 +266,11 @@ int main (int argc, char *argv[])
       /* Create a log file of the DMs */
       dmlogfile=1;
     }
-    else if (!strcmp(argv[i],"-i")) {
+    else if (!strcmp(argv[i],"--randomise")) {
+      /* randomise channels */
+      randomise=true;
+    }
+   else if (!strcmp(argv[i],"-i")) {
       /* set intrinsic width */
       ti=atof(argv[++i]);
     }
@@ -496,6 +505,11 @@ int main (int argc, char *argv[])
     rotate++;
   
   printf("Dividing output by %d to scale to 1 byte per sample per subband\n",(int)(pow(2,rotate)));
+
+  if(randomise){
+	  sprintf(outfile_root,"%s_RAND",outfile_root);
+	  printf("WARNING: Randomising channel order! Data will not be astrophysical.\n");
+  }
 
   // Set up gpulse control variables
   GPulseState Gholder(ndm); // Giant pulse state to hold trans-DM detections
