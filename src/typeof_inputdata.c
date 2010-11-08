@@ -17,7 +17,7 @@
    9 - parkes 1-bit
   10 - GMRT data
   11 - PULSAR2000 search data (Effelsberg); new data format (27.08.2002 BK)
-
+  12 - PSRFITS
 */
 #include <math.h>
 #include <stdio.h>
@@ -79,10 +79,22 @@ int typeof_inputdata(FILE *fptr, char *filename) /* includefile */
     if (data_type == 3) return(0);
   }
 
+  // Try reading as PSRFITS
+#ifdef PSRFITS
+  rewind( fptr );
+  fgets( cbuffer, 7, fptr );
+  if (strstr(cbuffer,"SIMPLE")!=NULL)
+    {
+      fclose(fptr);
+      readpsrfits_hd(filename,&machine_id,&telescope_id,&data_type,
+		     source_name,&fch1,&nchans,&foff,&nifs,&tsamp,
+		     &src_raj,&src_dej,&tstart,&nbits,&ibeam);
+      return 12;
+    }
+#endif
   /* try reading as PULSAR2000 data		-> case 11 */
   rewind( fptr );
   fgets( cbuffer, 100, fptr );
-
   if ( strncmp(cbuffer, "@@@PULSAR2000@@@", 16) == 0 )  {
 
     machine_id=8;				// PULSAR2000

@@ -24,7 +24,7 @@
 #include "cordat.h"
 
 /* cfitsio include file */
-#include "fitsio.h"
+#include <fitsio.h>
 
 #define WBSAM_FIXED 0x2
 

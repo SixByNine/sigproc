@@ -160,7 +160,6 @@ main (int argc, char *argv[])
   strcpy(inpfile,argv[fileidx]);
   input=open_file(inpfile,"rb");
   inputdata=typeof_inputdata(input,inpfile);
-  
   /*Establish whether or not the file data type is BCPM*/
   if (inputdata == 5) {
     /* If the start time is not zero, find the file to start with */
@@ -206,8 +205,7 @@ main (int argc, char *argv[])
 
     }
   }
-  fclose(input);
-
+  if (inputdata != 12) fclose(input);
   /* main loop around input files */
   while (fileidx <= nfiles) {
 
@@ -273,9 +271,12 @@ main (int argc, char *argv[])
       /* Effelsberg pulsar2000 data */
       pulsar2k2fb(input,output);
       break;
+    case 12:
+      /* PSRFITS data */
+      psrfits2fb(input,output,inpfile);
     }
     fileidx++;
-    fclose(input);
+    if (inputdata!=12) fclose(input);
   }
 
   /* all done, update log, close all files and exit normally */
