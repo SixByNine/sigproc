@@ -159,6 +159,7 @@ void fake_help() /*includefile*/
   puts("-fch1     f - frequency of channel 1 in MHz (def=433.968)");
   puts("-foff     f - channel bandwidth in MHz (def=0.062)");
   puts("-seed     s - seed for Numerical Recipes ran1 (def=seconds since midnight)");
+  puts("-rednoise r - add red noise of magnitude 'r'");
   puts("-nosmear    - do not add in dispersion/sampling smearing (def=add)");
   puts("-swapout    - perform byte swapping on output data (def=native)");
   puts("-evenodd    - even channels=1 odd channels=0 (def=noise+signal)");
