@@ -10,8 +10,9 @@ Compilation
 ==============
 To compile from the source distribution, you need GNU autotools. If you
 don't have autotools, or it doesn't work for you, you will need to obtain
-a distribution version of sigproc. (email mkeith@pulsarastronomy.net for
-an up to date version).
+a distribution version of sigproc. This can be downloaded and installed 
+through psrsoft (http://www.pulsarastronomy.net/wiki/Software/PSRSoft)
+or by emailing mkeith@pulsarastronomy.net to get an up-to-date tarball.
 
 ./bootstrap
 ./configure --prefix=/path/to/install
