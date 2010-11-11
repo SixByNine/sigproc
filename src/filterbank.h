@@ -19,6 +19,7 @@ int obits, sumifs, headerless, headerfile, swapout, invert_band;
 int compute_spectra, do_vanvleck, hanning, hamming, zerolagdump;
 int headeronly;
 char ifstream[8];
+char flip_band;
 
 /* library of subroutines and functions */
 #include "sigproc.h"
