@@ -104,6 +104,9 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     vector<Gpulse> SPvectorstorage;
     Gpulse gpulsestorage;
     FILE* resultsfile = fopen(resultsfilename,"a");
+    if (resultsfile==NULL){
+	    fprintf(stderr,"ERROR: Could not open SP file '%s'\n",resultsfilename);
+    }
     FILE* SPfile;
     char SPfilename[200];
     
@@ -282,7 +285,7 @@ vector<Gpulse> giantsearch(int n, float * data, float thresh, double RMS, float 
 	Gpulse pulse;
 	bool detected = false, first = true;
 	int xstart = 0, width = 0; //first bin of detected pulse
-	int j, imax, ngiants=0, lastend=0; //counters
+	int j, imax=0, ngiants=0, lastend=0; //counters
 	float snr; //imax will store the location in d of the max peak of a pulse
 	vector<Gpulse> giants;
 
@@ -757,7 +760,7 @@ void removebaseline(unsigned short int *indata, float* outdata, int ndat, int ru
     // do end bit
     for (int j=nb;j<ndat;j++)outdata[j]=(outdata[j]-mean)*inverse_rms_f;
     
-    delete tdata;
+    delete[] tdata;
 }
 
 
