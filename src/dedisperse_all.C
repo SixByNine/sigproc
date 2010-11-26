@@ -28,6 +28,7 @@ void inline_dedisperse_all_help(){
   fprintf(stderr,"-s Nsamps          Skip Nsamp samples before starting\n");
   fprintf(stderr,"-m Nsub            Create files with Nsub subbands\n");
   fprintf(stderr,"-l                 Create logfile of exact DMs used\n");
+  fprintf(stderr,"--zerodm           Use 'ZeroDM' RFI removal scheme.\n");
   fprintf(stderr,"-G                 Do giant burst search.\n");
   fprintf(stderr,"Gburst suboptions:\n");
   fprintf(stderr,"    -wid N [d: 30]  allow N bin tolerance between discrete bursts\n");
@@ -59,7 +60,9 @@ int ascii, asciipol, stream, swapout, headerless, nbands, userbins, usrdm, basel
 double refrf,userdm,fcorrect;
 float clipvalue,jyf1,jyf2;
 int fftshift;
+int verbose;
 bool randomise;
+bool zerodm;
 #include "wapp_header.h"
 #include "key.h"
 struct WAPP_HEADER *wapp;
@@ -167,6 +170,22 @@ void do_dedispersion(unsigned short int ** storage, unsigned short int * unpacke
 }
 
 
+void do_zerodm(unsigned short int * zerodm, unsigned short int * unpackeddata, int ntodedisp, int ntoload,int * killdata){
+	int j=0;
+	if (verbose) printf("ZERODM %d %d\n",zerodm[0],zerodm[0]/nchans);
+	for (int k=0;k<nchans;k++){
+		if (killdata[k]==1){
+			int stride = k*ntoload;
+#pragma omp parallel for private(j)
+			for (j=0;j<ntodedisp;j++){
+				unpackeddata[j+stride] -= zerodm[j]/nchans;
+			}
+		} // killdata
+	} // channel #
+	if (verbose) printf("Done ZERODM\n");
+}
+
+
 int main (int argc, char *argv[])
 {
   /* local variables */
@@ -179,6 +198,7 @@ int main (int argc, char *argv[])
   int ibyte,j,k;
   unsigned char abyte;
   unsigned short int ** times;
+  unsigned short int * dmzero;
   int nread;
   float DM_trial;
   int ndm=0;
@@ -187,7 +207,7 @@ int main (int argc, char *argv[])
   float total_MBytes = 0;
   float start_DM=0.0, end_DM;
   int counts;
-  int dmlogfile=0, verbose=0;
+  int dmlogfile=0;
   int readsamp = 0;
   int nreadsamp = 0;
   int skip = 0;
@@ -240,6 +260,7 @@ int main (int argc, char *argv[])
   refdm=-1.0;
   output=NULL;
   randomise=false;
+  zerodm=true;
   strcpy(ignfile,"");
 
   // **************************************
@@ -270,6 +291,11 @@ int main (int argc, char *argv[])
       /* randomise channels */
       randomise=true;
     }
+    else if (!strcmp(argv[i],"--zerodm")) {
+      /* randomise channels */
+      zerodm=true;
+    }
+
    else if (!strcmp(argv[i],"-i")) {
       /* set intrinsic width */
       ti=atof(argv[++i]);
@@ -480,6 +506,10 @@ int main (int argc, char *argv[])
 	      (int)(nchans*ntoload*sizeof(unsigned short int)));
       exit(-2);
     }
+    if (zerodm){
+	    dmzero = (unsigned short int *) 
+		    malloc(sizeof(unsigned short int)*ntodedisp); 
+    }
     times = (unsigned short int **) 
       malloc(sizeof(unsigned short int*)*nbands); 
     for(int band=0; band < nbands; band++){
@@ -500,8 +530,20 @@ int main (int argc, char *argv[])
       for (int i=0;i<nchans;i++) killdata[i]=1; // ie don't kill anything.
     }
 
+
+
+  int prerotate=0;
+  if (zerodm){
+	  while(nchans*(pow(2,nbits)-1)*(float)(pow(2,prerotate)) < 32768)
+		  prerotate++;
+
+	  printf("Using 'ZERODM' RFI reduction method\n");
+	  printf("Multiplying input by %d to increase dynamic range for zerodm removal\n",(int)(pow(2,prerotate)));
+  }
+
+
   int rotate = 0;
-  while(nchans*(pow(2,nbits)-1)/(float)nbands/(float)(pow(2,rotate)) > 255)
+  while(pow(2,prerotate)*nchans*(pow(2,nbits)-1)/(float)nbands/(float)(pow(2,rotate)) > 255)
     rotate++;
   
   printf("Dividing output by %d to scale to 1 byte per sample per subband\n",(int)(pow(2,rotate)));
@@ -545,6 +587,7 @@ int main (int argc, char *argv[])
   
     /* Unpack it if dedispersing */
     
+    
     if (1){
       if (verbose) fprintf(stderr,"Reordering data\n");
       // all time samples for a given freq channel in order in RAM
@@ -554,7 +597,7 @@ int main (int argc, char *argv[])
         for (j=0;j<ntoload;j++){
           abyte = rawdata[ibyte+j*nchans/sampperbyte];
 	  for (k=0;k<8;k+=nbits)
-            unpacked[j+((ibyte*8+k)/(int)nbits)*ntoload]=(unsigned short int)((abyte>>k)&andvalue);
+            unpacked[j+((ibyte*8+k)/(int)nbits)*ntoload]=(unsigned short int)((abyte>>k)&andvalue) << prerotate;
 	  }
       }
       
@@ -585,6 +628,13 @@ int main (int argc, char *argv[])
 	}
       }
       if (igulp==0) appendable=0; else appendable=1;
+
+
+      if (zerodm){
+	    do_dedispersion(&dmzero, unpacked, 1, ntodedisp, ntoload, 0, killdata);
+	    do_zerodm(dmzero, unpacked, ntodedisp, ntoload, killdata);
+      }
+
       for (int idm=0;idm<ndm;idm++)
 	{
 	  //DM_trial = get_DM(idm,nchans,tsamp,fch1,foff);
@@ -657,7 +707,7 @@ int main (int argc, char *argv[])
 		    removebaseline(times[0],temptimes,ntodedisp,runningmeanval,3.0);
 		    Gholder.searchforgiants(idm,ntodedisp,(int)(Goffset*igulp),temptimes,Gthresh,Gwidtol,Gscrnch,DM_trial,1);
 		}
-		delete temptimes;
+		delete[] temptimes;
 	    }
 
 
