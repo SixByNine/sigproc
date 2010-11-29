@@ -177,9 +177,8 @@ int blen;
 	fprintf(output,"\t\t<bits_per_sample>%d</bits_per_sample>\n",nbits);
 	fprintf(output,"\t\t<data_order>TFP</data_order>\n");
 	fprintf(output,"\t\t<bit_order_first_sample_in>LSB</bit_order_first_sample_in>\n");
-	if(nbits >= 8){
+	if(nbits > 8){
                 fprintf(output,"\t\t<signed>TRUE</signed>\n");
-
 	} else {
 		fprintf(output,"\t\t<signed>FALSE</signed>\n");
 	}

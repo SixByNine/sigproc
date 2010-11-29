@@ -177,7 +177,7 @@ void do_zerodm(unsigned short int * zerodm, unsigned short int * unpackeddata, i
 		if (killdata[k]==1){
 			int stride = k*ntoload;
 #pragma omp parallel for private(j)
-			for (j=0;j<ntodedisp;j++){
+			for (j=0;j<ntoload-1;j++){
 				unpackeddata[j+stride] -= zerodm[j]/nchans;
 			}
 		} // killdata
@@ -631,7 +631,7 @@ int main (int argc, char *argv[])
 
 
       if (zerodm){
-	    do_dedispersion(&dmzero, unpacked, 1, ntodedisp, ntoload, 0, killdata);
+	    do_dedispersion(&dmzero, unpacked, 1, ntoload, ntoload, 0, killdata);
 	    do_zerodm(dmzero, unpacked, ntodedisp, ntoload, killdata);
       }
 
@@ -736,6 +736,8 @@ int main (int argc, char *argv[])
     
     // After gulp's done, pump out the Gsearch results for that gulp
     if (doGsearch){
+
+	if (verbose) fprintf(stderr,"Completeing Gsearch results for this gulp\n");
 	string UTroot = outfile_root;
 	int pos = UTroot.find(".fil");
 	if( pos != string::npos)
@@ -753,6 +755,7 @@ int main (int argc, char *argv[])
 //      for (int i=0;i<Gndet;i+=2){
 //	  fprintf (stderr,"Detection %d: %d\t%d\n",i,Gresults[i],Gresults[i+1]);
 //      }
+	if (verbose) fprintf(stderr,"Completed Gsearch results for this gulp\n");
     }
 
   } //end per-gulp loop
