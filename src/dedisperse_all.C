@@ -62,7 +62,7 @@ float clipvalue,jyf1,jyf2;
 int fftshift;
 int verbose;
 bool randomise;
-bool zerodm;
+bool zerodm=false;
 #include "wapp_header.h"
 #include "key.h"
 struct WAPP_HEADER *wapp;
@@ -260,7 +260,7 @@ int main (int argc, char *argv[])
   refdm=-1.0;
   output=NULL;
   randomise=false;
-  zerodm=true;
+  zerodm=false;
   strcpy(ignfile,"");
 
   // **************************************
