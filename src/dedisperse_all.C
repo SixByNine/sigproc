@@ -601,6 +601,7 @@ int main (int argc, char *argv[])
 	  }
       }
       
+      
       if (1==0){ // Old way.
       if (killing){
 	for (int i=0;i<nchans;i++){
@@ -647,9 +648,19 @@ int main (int argc, char *argv[])
 	    if(nbands==1)sprintf(outfile,"%s.%07.2f.tim",outfile_root,DM_trial);
 	    else sprintf(outfile,"%s.%07.2f.sub",outfile_root,DM_trial);
 	    // open it
-	    if (appendable) outfileptr=fopen(outfile,"a");
-	    if (!appendable){
+	    if (appendable){
+		outfileptr=fopen(outfile,"a");
+		if (outfileptr==NULL) {
+		    fprintf(stderr,"Error opening file %s\n",outfile);
+		    exit(-3);
+		}
+	    }
+	      if (!appendable){
 	      outfileptr=fopen(outfile,"w");
+	      if (outfileptr==NULL) {
+		  fprintf(stderr,"Error opening file %s\n",outfile);
+		  exit(-3);
+	      }
 	      // create a log of the 'sub' dms to dedisperse at
 	      // These DMs are chosen fairly arbitraraly, rather than
 	      // based on any ridgid mathematics.
@@ -685,13 +696,14 @@ int main (int argc, char *argv[])
 	    output=outfileptr;
 	    // write header variables into globals
 	    // dedisperse_header() uses "userdm" not refdm, so make sure to set that. MJK-19042010
-	    userdm = refdm = DM_trial;
+	    refdm = DM_trial;
+	    userdm = refdm;
 	    nobits = 8;
 	    // write header
 	    if (!appendable) dedisperse_header();
 	    // do the dedispersion
 	    do_dedispersion(times, unpacked, nbands, ntodedisp, ntoload, DM_trial, killdata);
-	    
+
 	    // Do the Gsearch for this DM trial
 	    if (doGsearch){
 		int runningmeanval = (int)(2.0/tsamp); //will smooth over two seconds.

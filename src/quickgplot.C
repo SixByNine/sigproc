@@ -504,7 +504,7 @@ int main (int argc, char *argv[]){
     cpgsci(1);
 
 //    cout<<"plotted the timeseries...\n";
-    cpgsch(0.5);
+    cpgsch(1.0);
     //--- SNR v DM ---//
     cpgsvp(0.55,0.75,0.63,0.93);
     dmmax = 1.1*dmmax;
@@ -536,7 +536,8 @@ int main (int argc, char *argv[]){
     cpgsvp(0.75,0.95,0.63,0.93);
     cpgswin(0,tscrmax,0,snrmax);
     cpgbox("BCNST",0.0,0,"BCST",0.0,0);
-    cpgmtxt("T",1,0.5,0.5,"SNR vs. Tscrunch");
+    cpgmtxt("T",2,0.5,0.5,"SNR vs.");
+    cpgmtxt("T",1,0.5,0.5,"Boxcar width");
     color=0;
     cpgsci(color);
 
