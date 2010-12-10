@@ -63,6 +63,9 @@ int fftshift;
 int verbose;
 bool randomise;
 bool zerodm=false;
+int max_chan_val=0;
+int output_rotate=0;
+int output_subtract=0;
 #include "wapp_header.h"
 #include "key.h"
 struct WAPP_HEADER *wapp;
@@ -172,16 +175,30 @@ void do_dedispersion(unsigned short int ** storage, unsigned short int * unpacke
 
 void do_zerodm(unsigned short int * zerodm, unsigned short int * unpackeddata, int ntodedisp, int ntoload,int * killdata){
 	int j=0;
+
 	if (verbose) printf("ZERODM %d %d\n",zerodm[0],zerodm[0]/nchans);
+
+	signed short int* zerodm_s = (signed short int*) zerodm;
+	signed short int* unpackeddata_s = (signed short int*) unpackeddata;
+	for (j=0;j<ntoload-1;j++){
+		zerodm_s[j] = zerodm_s[j]/nchans - max_chan_val;
+	}
+
+//	printf("%d %d\n",zerodm[0],unpackeddata[0]);
 	for (int k=0;k<nchans;k++){
 		if (killdata[k]==1){
 			int stride = k*ntoload;
 #pragma omp parallel for private(j)
 			for (j=0;j<ntoload-1;j++){
-				unpackeddata[j+stride] -= zerodm[j]/nchans;
+				unpackeddata_s[j+stride] -= zerodm_s[j];
+				unpackeddata_s[j+stride] /=2;
 			}
 		} // killdata
 	} // channel #
+
+/*	for (int k=0;k<nchans;k++){
+		printf("%d %d\n",k,unpackeddata[k*ntoload]);
+	}*/
 	if (verbose) printf("Done ZERODM\n");
 }
 
@@ -332,8 +349,11 @@ int main (int argc, char *argv[])
       killing = 1;
       killfile = (char *) malloc(strlen(argv[++i])+1);
       strcpy(killfile,argv[i]);
-    }
-    else if (!strcmp(argv[i],"-G")) {
+    } else if (!strcmp(argv[i],"-or")) {
+	output_rotate=atoi(argv[++i]);
+    } else if (!strcmp(argv[i],"-os")) {
+	output_subtract=atoi(argv[++i]);
+    } else if (!strcmp(argv[i],"-G")) {
       doGsearch = 1;
       fprintf(stderr,"Will perform giant pulse search\n");
     }
@@ -537,6 +557,8 @@ int main (int argc, char *argv[])
 	  while(nchans*(pow(2,nbits)-1)*(float)(pow(2,prerotate)) < 32768)
 		  prerotate++;
 
+	  max_chan_val=(pow(2,nbits)-1)*(float)(pow(2,prerotate));
+
 	  printf("Using 'ZERODM' RFI reduction method\n");
 	  printf("Multiplying input by %d to increase dynamic range for zerodm removal\n",(int)(pow(2,prerotate)));
   }
@@ -546,6 +568,11 @@ int main (int argc, char *argv[])
   while(pow(2,prerotate)*nchans*(pow(2,nbits)-1)/(float)nbands/(float)(pow(2,rotate)) > 255)
     rotate++;
   
+  rotate-=output_rotate;
+
+  if (output_rotate){
+	  printf("Warning: Modifying scale factor by %d, some clipping may occur!\n",(int)(pow(2,output_rotate)));
+  }
   printf("Dividing output by %d to scale to 1 byte per sample per subband\n",(int)(pow(2,rotate)));
 
   if(randomise){
@@ -725,12 +752,22 @@ int main (int argc, char *argv[])
 
 	    // write data
 	    if (1==1){
-		unsigned char lotsofbytes[ntodedisp];
+		char lotsofbytes[ntodedisp];
 		for (int d=0;d<ntodedisp;d++){
 		    for(int iband=0; iband<nbands; iband++){
 			unsigned short int twobytes = times[iband][d]>>rotate;
+			if (output_subtract){
+				twobytes-=output_subtract;
+				if (twobytes > 32768){
+					twobytes=0;
+				}
+			}
+			if (output_rotate && twobytes > 255){
+				printf("TTTT\n");
+				twobytes=255;
+			}
 			//		unsigned char onebyte = twobytes;
-			lotsofbytes[d]=(twobytes-128);
+			lotsofbytes[d]=(twobytes);
 		    }
 		}
 		fwrite(lotsofbytes,ntodedisp,1,outfileptr);

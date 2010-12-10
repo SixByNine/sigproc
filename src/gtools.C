@@ -114,6 +114,8 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	suspectvectorstorage.insert(suspectvectorstorage.end(),DMtrials[i].begin(), DMtrials[i].end());
      }
 
+    fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
+
     vector<Gpulse>* suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,irrel);
 
 //	fprintf(stderr,"sampletime: %f flo:%f fhi:%f\n",sampletime,flo,fhi);
