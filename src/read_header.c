@@ -30,6 +30,7 @@ int read_header(FILE *inputfile) /* includefile */
   char string[80], message[80];
   int itmp,nbytes,totalbytes,expecting_rawdatafile=0,expecting_source_name=0; 
   int expecting_frequency_table=0,channel_index;
+  isign=0;
 
 
   /* try to read in the first line of the header */
@@ -130,6 +131,9 @@ int read_header(FILE *inputfile) /* includefile */
     } else if (strings_equal(string,"refdm")) {
       fread(&refdm,sizeof(refdm),1,inputfile);
       totalbytes+=sizeof(refdm);
+    } else if (strings_equal(string,"signed")) {
+      fread(&isign,sizeof(isign),1,inputfile);
+      totalbytes+=sizeof(isign);
     } else if (expecting_rawdatafile) {
       strcpy(rawdatafile,string);
       expecting_rawdatafile=0;
@@ -147,6 +151,14 @@ int read_header(FILE *inputfile) /* includefile */
 	    fprintf(stderr,"       header: %d file: %d\n",totalbytes,ftell(inputfile));
 	    exit(1);
     }
+
+    if (isign < 0 && OSIGN > 0){
+	    fprintf(stderr,"WARNING! You are reading unsigned numbers with a signed version of sigproc\n");
+    }
+    if (isign > 0 && OSIGN < 0){
+	    fprintf(stderr,"WARNING! You are reading signed numbers with a unsigned version of sigproc\n");
+    }
+
 
   } 
 

@@ -5,6 +5,7 @@ int machine_id, telescope_id, data_type, nchans, nbits, nifs, scan_number,
 double tstart,mjdobs,tsamp,fch1,foff,refdm,az_start,za_start,src_raj,src_dej;
 double gal_l,gal_b,header_tobs,raw_fch1,raw_foff;
 int nbeams, ibeam;
+char isign;
 /* added 20 December 2000    JMC */
 double srcl,srcb;
 double ast0, lst0;
@@ -16,3 +17,8 @@ double analog_power[2];
 /* added frequency table for use with non-contiguous data */
 double frequency_table[4096]; /* note limited number of channels */
 long int npuls; /* added for binary pulse profile format */
+
+
+// define the signedness for the 8-bit data type
+#define OSIGN 1
+#define SIGNED OSIGN < 0

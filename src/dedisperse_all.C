@@ -49,6 +49,12 @@ void inline_dedisperse_all_help(){
 #else
   fprintf(stderr,"**SINGLE THREADED MODE**\nLink against OpenMP (-fopenmp with GNU on gcc > 4.2 for multi-threaded)\n");
 #endif
+
+#if SIGNED
+  fprintf(stderr,"This version writes SIGNED 8-bit numbers\n");
+#else
+  fprintf(stderr,"This version writes UNSIGNED 8-bit numbers\n");
+#endif
 }
 
 FILE *input, *output, *outfileptr, *dmlogfileptr;
@@ -752,7 +758,11 @@ int main (int argc, char *argv[])
 
 	    // write data
 	    if (1==1){
+#if SIGNED
 		char lotsofbytes[ntodedisp];
+#else
+		unsigned char lotsofbytes[ntodedisp];
+#endif
 		for (int d=0;d<ntodedisp;d++){
 		    for(int iband=0; iband<nbands; iband++){
 			unsigned short int twobytes = times[iband][d]>>rotate;
@@ -763,11 +773,16 @@ int main (int argc, char *argv[])
 				}
 			}
 			if (output_rotate && twobytes > 255){
-				printf("TTTT\n");
 				twobytes=255;
 			}
 			//		unsigned char onebyte = twobytes;
+#if SIGNED
+			// here we subtract 128 to make signed since numbers were scaled
+			// to be between 0 -> 256
+			lotsofbytes[d]=(twobytes-128);
+#else
 			lotsofbytes[d]=(twobytes);
+#endif
 		    }
 		}
 		fwrite(lotsofbytes,ntodedisp,1,outfileptr);

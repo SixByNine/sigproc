@@ -14,7 +14,11 @@ main(int argc, char *argv[])
   int numerate,i,j,k,l,n,m,stream,nsperdmp,nsamps,indexing,indexnow;
   int ifchan[16],frchan[4096],ifnum,chnum,ns,charout;
   char message[80],byte;
+#if SIGNED
+  char c;
+#else
   unsigned char c;
+#endif
   unsigned short s;
   float f[8];
 

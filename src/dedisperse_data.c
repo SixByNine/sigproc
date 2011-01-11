@@ -265,10 +265,17 @@ void write_dedisp(float *dedisp, int nsout, int nifs, int nbands, float *offset,
 	/* now write out samples and bat on */
 	switch (nobits) {
 		case 8:
+#if SIGNED
+			onebyte = (char *) malloc(nsout*nifs*nbands);
+			for (i=0; i<nsout*nifs*nbands; i++) 
+				onebyte[i] = ((char) dedisp[i])-128;
+			fwrite(onebyte,sizeof(char),nsout*nifs*nbands,output);
+#else
 			onebyte = (unsigned char *) malloc(nsout*nifs*nbands);
 			for (i=0; i<nsout*nifs*nbands; i++) 
-				onebyte[i] = ((unsigned char) dedisp[i])-128;
+				onebyte[i] = ((unsigned char) dedisp[i]);
 			fwrite(onebyte,sizeof(unsigned char),nsout*nifs*nbands,output);
+#endif
 			break;
 		case 16:
 			twobyte = (short *) malloc(nsout*nifs*nbands);

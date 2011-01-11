@@ -101,6 +101,7 @@ int main (int argc, char *argv[])
   char *killfile;
   bool dokill=false;
   bool ssigned=true;
+  bool fsigned=false;
   int topfold=-1;
   int topgiant=-1;
   int toppeak=-1; //?!? sarah added this 
@@ -123,6 +124,7 @@ int main (int argc, char *argv[])
     if (strings_equal(argv[i],"-s"))       sscanf(argv[++i],"%d",&nskipstart);
     if (strings_equal(argv[i],"-S"))       spectra=1;
     if (strings_equal(argv[i],"-i"))       ssigned=false;
+    if (strings_equal(argv[i],"-f"))      fsigned=true;
     if (strings_equal(argv[i],"-n"))       sscanf(argv[++i],"%d",&ngulp_original);
     if (strings_equal(argv[i],"-c"))       sscanf(argv[++i],"%f",&Gsigmacut);
     if (strings_equal(argv[i],"-z"))       zapswitch=1;
@@ -131,6 +133,7 @@ int main (int argc, char *argv[])
     if (nfiles>MAXFILES) error_message("too many open files");
     i++;
   }
+
 
   int ntimglobal_smallest=0, nsamp;
   for (i=0; i<nfiles; i++) {
@@ -146,6 +149,16 @@ int main (int argc, char *argv[])
     else
     {
     if ((headersize[i]=read_header(inputfile[i]))) {
+	    if (! fsigned){
+		    if (isign > 0) {
+			    ssigned=false;
+			    fprintf(stderr,"using signed header variable to set UNSIGNED\n");
+		    }
+		    if (isign < 0) {
+			    ssigned=true;
+			    fprintf(stderr,"using signed header variable to set SIGNED\n");
+		    }
+	    }
       if (i==0) dmoffirstfile = refdm;
       if (nbits!=8 && nbits!=32)
 	    error_message("giant currently only works for 8- or 32-bit data");

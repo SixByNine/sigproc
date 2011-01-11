@@ -21,6 +21,9 @@ void dedisperse_header() /* includefile */
   send_coords(src_raj,src_dej,az_start,za_start);
   refdm=userdm;
 
+  if (nobits==8){
+	  send_char("signed",OSIGN);
+  }
   if (nbands==1) {
     send_int("data_type",2);
     send_double("refdm",refdm);

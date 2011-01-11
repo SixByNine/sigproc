@@ -298,6 +298,12 @@ main(int argc, char *argv[])
 			break;
 	}
 
+	if (isign > 0){
+		printf("Signedness of 8-bit numbers      : UNSIGNED (%d,%d)\n",isign,OSIGN);
+	}
+	if (isign < 0){
+		printf("Signedness of 8-bit numbers      : SIGNED (%d,%d)\n",isign,OSIGN);
+	}
 	printf("Time stamp of first sample (MJD) : %.12f\n",tstart);
 	printf("Gregorian date (YYYY/MM/DD)      : %4d/%02d/%02d\n",year,month,day);
 

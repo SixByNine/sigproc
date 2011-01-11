@@ -40,6 +40,13 @@ void send_int(char *name, int integer) /* includefile */
   /*fprintf(stderr,"%d\n",integer);*/
 }
 
+void send_char(char *name, char integer) /* includefile */
+{
+  send_string(name);
+  fwrite(&integer,sizeof(char),1,output);
+}
+
+
 void send_long(char *name, long integer) /* includefile */
 {
   send_string(name);
