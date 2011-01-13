@@ -1,0 +1,46 @@
+About
+==============
+Hello. This is the readme for Michael Keith's release of Duncan Lorimer's
+SIGPROC.
+
+SIGPROC is a pulsar search processing software: See the documentation at
+http://sigproc.sf.net/
+
+Compilation
+==============
+To compile from the source distribution, you need GNU autotools. If you
+don't have autotools, or it doesn't work for you, you will need to obtain
+a distribution version of sigproc. This can be downloaded and installed 
+through psrsoft (http://www.pulsarastronomy.net/wiki/Software/PSRSoft)
+or by emailing mkeith@pulsarastronomy.net to get an up-to-date tarball.
+
+./bootstrap
+./configure --prefix=/path/to/install
+make
+make install
+
+The GNU automake system accepts many "standard" variables for controling
+how your system is detected, including the following very useful variables...
+
+If you need to set your compilers (e.g. if you have gfortran and g77 installed)
+set the following variables prior to ./configure (e.g. for gcc and gfortran) 
+
+e.g.
+FC=gfortran
+F77=gfortran
+CC=gcc
+CXX=g++
+
+If you have strange compile-time options that need to be set (e.g. for PGPLOT)
+set the following variables prior to ./configure
+
+e.g.
+CFLAGS=-I/pgplot/include/path
+CXXFLAGS=$CFLAGS
+LDFLAGS=-L/pgplot/lib/path
+
+If you need special fortran compiler flags...
+
+e.g.
+FFFLAGS=-ffixed-line-length-none
+

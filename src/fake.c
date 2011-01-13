@@ -55,6 +55,7 @@ main (int argc, char *argv[])
 	double nexttime,timestep,tdm,p0,pdot,accn,speed_of_light=299792458.0,plst;
 	long seed;
 	float *fblock;
+	float rwalk,rwsum;
 	unsigned short *sblock;
 	unsigned char *cblock;
 
@@ -98,6 +99,8 @@ main (int argc, char *argv[])
 	dc=0.04;
 	evenodd=swapout=0;
 	headerless=0;
+	rwalk=0.0;
+	rwsum=0;
 	
 	usebinary = 0;
 	binaryParams.orbitalPeriod = 36000; 	/* 10 hours */
@@ -122,6 +125,9 @@ main (int argc, char *argv[])
 			} else if (strings_equal(argv[i],"-pdot")) {
 				i++;
 				pdot=atof(argv[i]);
+			} else if (strings_equal(argv[i],"-rednoise")) {
+				i++;
+				rwalk==atof(argv[i])*0.0005;
 			} else if (strings_equal(argv[i],"-accn")) {
 				i++;
 				accn=atof(argv[i]);
@@ -237,6 +243,8 @@ main (int argc, char *argv[])
 	snr/=sqrt((double) nchans);
 	if (snr > 1.0) max*=snr;
 
+	rwalk/=sqrt((double) nchans);	
+
 	/* define the data blocks */
 	arraysize=nchans*nifs*nsblk;
 	fblock=(float *) malloc(sizeof(float)*arraysize);
@@ -291,6 +299,12 @@ main (int argc, char *argv[])
 		}
 		for (s=0;s<nsblk;s++) {
 			faketime+=tsamp;
+			if (rwalk != 0.0){
+				if (gasdev(&seed) > 2.8)rwalk=-rwalk;
+				if (rwsum >= max/2)rwalk=-fabs(rwalk);
+				if (rwsum <= min/2)rwalk=fabs(rwalk);
+				rwsum+=rwalk;
+			}
 			for (i=0;i<nifs;i++) {
 				for (c=0;c<nchans;c++) {
 					if (evenodd) {
@@ -311,7 +325,7 @@ main (int argc, char *argv[])
 							}
 							plst=pulsephase;
 						}
-						fblock[s*ic+i*nchans+c]=gasdev(&seed)+pulse;
+						fblock[s*ic+i*nchans+c]=gasdev(&seed)+pulse +rwsum;
 					}
 				}
 			}

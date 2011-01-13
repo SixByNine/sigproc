@@ -103,6 +103,8 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     vector<Gpulse> suspectvectorstorage;
     vector<Gpulse> SPvectorstorage;
     Gpulse gpulsestorage;
+
+
     FILE* SPfile;
     char SPfilename[200];
     
@@ -110,14 +112,14 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	suspectvectorstorage.insert(suspectvectorstorage.end(),DMtrials[i].begin(), DMtrials[i].end());
      }
 
+    fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
+
     vector<Gpulse>* suspectarraystorage = new vector<Gpulse>[suspectvectorstorage.size()];
     suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,resultsfilename,filetimestamp,beamID,irrel);
 
-//	fprintf(stderr,"sampletime: %f flo:%f fhi:%f\n",sampletime,flo,fhi);
+
     fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
     fprintf(stderr,"N candidates in this block after associating: %d\n\n",nsinglebeamcands);
-//    fprintf(resultsfile,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
-//    fprintf(resultsfile,"N candidates in this block after associating: %d\n#\n",nsinglebeamcands);
     int* detectiontimestamps = new int[nsinglebeamcands*2];
 //    if (beamID<0){ BEAMID
     for (int i=0; i<(nsinglebeamcands*2); i+=2){
@@ -281,7 +283,7 @@ vector<Gpulse> giantsearch(int n, float * data, float thresh, double RMS, float 
 	Gpulse pulse;
 	bool detected = false, first = true;
 	int xstart = 0, width = 0; //first bin of detected pulse
-	int j, imax, ngiants=0, lastend=0; //counters
+	int j, imax=0, ngiants=0, lastend=0; //counters
 	float snr; //imax will store the location in d of the max peak of a pulse
 	vector<Gpulse> giants;
 
@@ -758,7 +760,7 @@ void removebaseline(unsigned short int *indata, float* outdata, int ndat, int ru
     // do end bit
     for (int j=nb;j<ndat;j++)outdata[j]=(outdata[j]-mean)*inverse_rms_f;
     
-    delete tdata;
+    delete[] tdata;
 }
 
 

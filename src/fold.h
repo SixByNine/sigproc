@@ -25,6 +25,6 @@ double time_offset, skip_time, read_time;
 
 #ifdef PSRFITS
 /* Define CFITS file pointer - global- defined in fitsio.h */
-#include "fitsio.h"
+#include <fitsio.h>
 fitsfile *fits;
 #endif

@@ -6,7 +6,7 @@
 #include <string.h>
 #include <math.h>
 /* cfitsio include file */
-#include "fitsio.h"
+#include <fitsio.h>
 
 /* Define CFITS file pointer - global- defined in fitsio.h */
 fitsfile *fits;

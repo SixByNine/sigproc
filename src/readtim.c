@@ -72,7 +72,11 @@ int skipsample_(int *nskip)
 int readsample_(float *sample) 
 {
   unsigned short twobytes;
+#if SIGNED
   char byte;
+#else
+  unsigned char byte;
+#endif
 
   if (feof(timfile)) {
     fclose(timfile);

@@ -100,6 +100,15 @@ int blen;
 	angle_split(src_dej,&ded,&dem,&des);
 			
 
+	cal(tstart,&year,&month,&day);
+	frac=tstart-floor(tstart);
+	int  uth=(int) floor(24.0*frac);
+	frac-=(double)uth/24.0;
+	int utm=(int) floor(1440.0*frac);
+	frac-=(double)utm/1440.0;
+	int uts=(int) floor(86400.0*frac);
+
+
 	// write out the new header!
 
 	fprintf(output,"<?xml version='1.0'?>\n");
@@ -113,6 +122,7 @@ int blen;
 	fprintf(output,"\t<centre_freq_first_channel units='MHz'>%lf</centre_freq_first_channel>\n",fch1);
 	fprintf(output,"\t<channel_offset units='MHz'>%lf</channel_offset>\n",foff);
 	fprintf(output,"\t<number_of_channels>%d</number_of_channels>\n",nchans);
+	fprintf(output,"\t<utc>%d-%02d-%02dT%02d:%02d:%02dZ</utc>\n",year,month,day,uth,utm,uts);
 	fprintf(output,"\t<reference_dm>%f</reference_dm>\n",refdm);
 
 	fprintf(output,"\t<start_coordinate>\n");
@@ -177,9 +187,8 @@ int blen;
 	fprintf(output,"\t\t<bits_per_sample>%d</bits_per_sample>\n",nbits);
 	fprintf(output,"\t\t<data_order>TFP</data_order>\n");
 	fprintf(output,"\t\t<bit_order_first_sample_in>LSB</bit_order_first_sample_in>\n");
-	if(nbits >= 8){
+	if(nbits > 8){
                 fprintf(output,"\t\t<signed>TRUE</signed>\n");
-
 	} else {
 		fprintf(output,"\t\t<signed>FALSE</signed>\n");
 	}
