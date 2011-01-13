@@ -57,7 +57,7 @@ void Gpulse::put_pulse(float a, float s, int b, int l, int w, int t, float d, in
 
 //State: to hold results of multiple DM trials
 GPulseState::GPulseState(int ndms) {
-    DMtrials = new vector<Gpulse>[ndms]; //!!!!!!! There maybe used to be a memory leak here but i think i fixed it
+    DMtrials = new vector<Gpulse>[ndms];
     NDMtrials = ndms;
 }
 
@@ -103,7 +103,6 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     vector<Gpulse> suspectvectorstorage;
     vector<Gpulse> SPvectorstorage;
     Gpulse gpulsestorage;
-    FILE* resultsfile = fopen(resultsfilename,"a");
     FILE* SPfile;
     char SPfilename[200];
     
@@ -111,13 +110,14 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	suspectvectorstorage.insert(suspectvectorstorage.end(),DMtrials[i].begin(), DMtrials[i].end());
      }
 
-    vector<Gpulse>* suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,irrel);
+    vector<Gpulse>* suspectarraystorage = new vector<Gpulse>[suspectvectorstorage.size()];
+    suspectarraystorage = assoc_giants(suspectvectorstorage,&nsinglebeamcands,resultsfilename,filetimestamp,beamID,irrel);
 
 //	fprintf(stderr,"sampletime: %f flo:%f fhi:%f\n",sampletime,flo,fhi);
     fprintf(stderr,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
     fprintf(stderr,"N candidates in this block after associating: %d\n\n",nsinglebeamcands);
-    fprintf(resultsfile,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
-    fprintf(resultsfile,"N candidates in this block after associating: %d\n#\n",nsinglebeamcands);
+//    fprintf(resultsfile,"\n\nN candidates in this block before associating: %d\n",suspectvectorstorage.size());
+//    fprintf(resultsfile,"N candidates in this block after associating: %d\n#\n",nsinglebeamcands);
     int* detectiontimestamps = new int[nsinglebeamcands*2];
 //    if (beamID<0){ BEAMID
     for (int i=0; i<(nsinglebeamcands*2); i+=2){
@@ -132,7 +132,6 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	fprintf(stderr,";  there were %d detections of this candidate.\n",SPvectorstorage.size());
 	
 //	    SPfilename contains a .pulse file for EACH CANDIDATE.
-//      !!!NOTE: THE i/2 IN THIS NEXT LINE SHOULD LATER BE CHANGED TO THE UT TIMESTAMP OF THE OBSERVATION!!!
 	sprintf(SPfilename,"%f_%f_%d_%d_%d_%d_%07.2f_%s_%d.pulse",gpulsestorage.amp,gpulsestorage.SNR,gpulsestorage.start,gpulsestorage.loc,gpulsestorage.width,gpulsestorage.tscrfac,gpulsestorage.dm,filetimestamp,beamID);
 	SPfile = fopen(SPfilename,"w");
 	for (int j=1;j<SPvectorstorage.size();j++){ 
@@ -142,7 +141,7 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
 	}
 	fclose(SPfile);
 //          resultsfile is a SUMMARY FILE for all the detected candidates.
-	fprintf(resultsfile,"Candidate %4d: DM %5.2f SNR %5.2f SCR %4d STARTBIN %13d PEAK %13d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac,gpulsestorage.start,gpulsestorage.loc);
+//	fprintf(resultsfile,"Candidate %4d: DM %5.2f SNR %5.2f SCR %4d STARTBIN %13d PEAK %13d\n",i/2,gpulsestorage.dm,gpulsestorage.SNR,gpulsestorage.tscrfac,gpulsestorage.start,gpulsestorage.loc);
 	totdelay = delayinsamples+gpulsestorage.width;
 	if (gpulsestorage.start-(totdelay)<0)
 	    detectiontimestamps[i] = 0;
@@ -152,7 +151,7 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     }
     *ndetected = nsinglebeamcands;
     suspectvectorstorage.erase(suspectvectorstorage.begin(),suspectvectorstorage.end());
-    fclose(resultsfile);
+    SPvectorstorage.erase(SPvectorstorage.begin(),SPvectorstorage.end()); //added to try to abate a possible memory leak
     
     return (detectiontimestamps);
 //    } else { BEAMID
@@ -511,7 +510,6 @@ void timeavg(int n, float * d) {
 }
 
 
-
 //**************************************************
 //      MIN/MAX  +  TYPE CONVERSION ROUTINES
 //**************************************************
@@ -550,7 +548,6 @@ float getmin(float *data, int arraysize) {
 
 float* int2float(int *array, int arraysize) {
 	float *floatarray = (float*) malloc(sizeof(float)*arraysize);
-	char *temparray;
 	for (int i=0; i<arraysize; i++) {
 		floatarray[i] = float(array[i]);
 	}
@@ -566,37 +563,26 @@ float* int2float(int *array, int arraysize) {
 //**************************************************
 //**************************************************
 
-//TEST:
-//21.668367 398160 8 rmsmow on baseline on
-//19.413151 398160 8 rmsmow on baseline off
-//19.038822 398160 8 rmsmow off baseline on
-//17.576635 398160 8 neither
-
-
-//SAME TEST WITH 3SIGMA getmowedsigma:
-//23.854885 398160 8 rmsmow on baseline on
-//21.628765 398160 8 rmsmow on baseline off
-
-
 //**************************************************
 //      FIRST-PASS RFI EXCISION: assoc_giants
 //**************************************************
-vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands) {
-	vector<Gpulse> *cands;
-	cands = assoc_giants(uapulses, nsinglebeamcands, 5.0); //DEFAULT IRREL DM = 5.0
+vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands, char* resultsfilename,char* filetimestamp, int beamID) {
+        vector<Gpulse> *cands = new vector<Gpulse>[uapulses.size()/2];
+	cands = assoc_giants(uapulses, nsinglebeamcands, resultsfilename,filetimestamp,beamID,5.0); //DEFAULT IRREL DM = 5.0
 	return (cands); //IS nsinglebeamcands IMPLEMENTED CORRECTLY HERE?
 }
 
-vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,float irrel) {
+vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char* resultsfilename,char* filetimestamp,int beamID,float irrel) {
 	int maxdm=0, scanrangelo, scanrangehi, ncandidates=0;
 	int npulses = uapulses.size(),suslo,sushi,ninonecand,maxsnrindex=1;
 	vector<Gpulse> *candidates;
-	vector<Gpulse> onecand, RFIpulses;
-	bool doRFItrack=false;
+	vector<Gpulse> onecand;
+	FILE* resultsfile = fopen(resultsfilename,"a");
 	Gpulse placeholder;
 	bool newpulse;
 	float maxsnr;
-
+	char dettype;
+	cout<<"Associating...\n";
 	if (npulses == 0) {
 		fprintf(stderr,"\nDid not find any giant pulses in this block.\n");
 		*nsinglebeamcands=0;
@@ -660,23 +646,38 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,floa
 		    }
 		}
 
-//		if (onecand.size()<=3 || onecand[maxsnrindex].dm<irrel) {
-		if (onecand.size()<=2 || onecand[maxsnrindex].dm<irrel) {
-		    printf("The burst is RFI. Npulses:%d DM:%f SNR:%f Loc'n:%d Wid:%d Scr:%d\n\n",onecand.size(),onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR,onecand[maxsnrindex].loc,onecand[0].width,onecand[maxsnrindex].tscrfac);//!!!!!!!!!!!l8rfix
-		    if (doRFItrack){
-			RFIpulses.insert(RFIpulses.end(), onecand.begin()+1, onecand.end());
+		if (onecand.size()<3 || onecand[maxsnrindex].dm<irrel) {
+		    printf("The burst is RFI. Npulses:%d DM:%f SNR:%f Loc'n:%d Wid:%d Scr:%d\n\n",onecand.size(),onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR,onecand[maxsnrindex].loc,onecand[0].width,onecand[maxsnrindex].tscrfac);
+		    if (onecand.size()<3){
+			dettype = 'g';
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'G',onecand[maxsnrindex].loc);
+		    } else if (onecand[maxsnrindex].dm<irrel){
+			//nrfi++;
+			//detnum = nrfi; //!!! NEED TO MAKE NRFI/DETNUM/DETTYPE
+			dettype = 'r';
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'R',onecand[maxsnrindex].loc);
 		    }
+		    for (int j=0;j<onecand.size();j++){
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,dettype,onecand[maxsnrindex].loc);
+		    }
+		    //RFIpulses.insert(RFIpulses.end(), onecand.begin()+1, onecand.end());
 		} else {
 		    onecand[0].put_pulse(onecand[maxsnrindex].amp,
 					 onecand[maxsnrindex].SNR, scanrangelo,
 					 onecand[maxsnrindex].loc, scanrangehi-scanrangelo,
 					 onecand[maxsnrindex].tscrfac, onecand[maxsnrindex].dm);
 		    candidates[ncandidates] = onecand;
-//		    printf("!!GOOD!! %4d %10d %5.2f %5.3f\n",onecand.size(),onecand[0].start,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
+//		    printf("GOOD! %4d %10d %5.2f %5.3f\n",onecand.size(),onecand[0].start,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
+		    fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'C',onecand[maxsnrindex].loc);
+		    for (int j=0;j<onecand.size();j++){
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,'c',onecand[maxsnrindex].loc);
+		    }
+		    cout<<"...done printing.\n";
 		    ncandidates++;
 		}
 		onecand.erase(onecand.begin(),onecand.end());
 	}
+	fclose(resultsfile);
 
 	*nsinglebeamcands = ncandidates;
 	return (candidates);
@@ -871,7 +872,6 @@ vector<Gpulse>* beamassoc_giants(vector<Gpulse> *beams, int nbeams, int *nmultib
 					 onecand[maxsnrindex].loc, scanrangehi-scanrangelo,
 					 onecand[maxsnrindex].tscrfac, onecand[maxsnrindex].dm);
 		    candidates[ncandidates] = onecand;
-//		    printf("!!GOOD!! %4d %10d %5.2f %5.3f\n",onecand.size(),onecand[0].start,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
 		    ncandidates++;
 		}
 		onecand.clear();

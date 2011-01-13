@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "string.h"
 #include <libgen.h>
+#include <inttypes.h>
 #include "gtools.h"
 extern "C" {
 #include "dedisperse_all.h"
@@ -173,6 +174,7 @@ int main (int argc, char *argv[])
 //  char string[180];
   int i,useroutput=0,nfiles=0,fileidx,sigproc,scan_number,subscan=0;
   int numsamps=0;
+  long long int totnumsamps=0;
   unsigned char * rawdata;
   unsigned short int * unpacked; //, * times;
   int nbytesraw;
@@ -208,7 +210,9 @@ int main (int argc, char *argv[])
   int Gscrnch = 256;
   int Goffset = 0;
   float Girrel = 3;
-  char * Gfilename = "GResults.txt";
+  char *Gfilename;
+  Gfilename = (char *) malloc(13);
+  strcpy(Gfilename,"GResults.txt");
   float flo,fhi;
 
   if(sizeof(LONG64BIT) != 8 ){
@@ -324,7 +328,8 @@ int main (int argc, char *argv[])
       Girrel = atof(argv[++i]);
     }
     else if (!strcmp(argv[i],"-file")){
-      Gfilename = (argv[++i]);
+      Gfilename = (char *) malloc(strlen(argv[++i])+1);
+      strcpy(Gfilename,argv[i]);
     }
     else if (!strcmp(argv[i],"-mb")){
 	doMultibeam = 1;
@@ -408,6 +413,7 @@ int main (int argc, char *argv[])
   }
   
   numsamps = nsamples(inpfile,sigproc,nbits,nifs,nchans);	/* get numsamps */
+  totnumsamps = nsamples(inpfile,sigproc,nbits,nifs,nchans);
   if (usrdm) maxdelay = DM_shift(end_DM,nchans,tsamp,fch1,foff);
   cout << "maxdelay = " << maxdelay << endl;
   
@@ -515,6 +521,22 @@ int main (int argc, char *argv[])
   GPulseState Gholder(ndm); // Giant pulse state to hold trans-DM detections
   int Gndet;                // Integer number of detections in this beam
   int *Gresults;            // Integer array of results: contained as cand1.start.bin cand1.end.bin cand2.start.bin cand2.end.bin...... etc)
+  //Gresults = new int[totnumsamps*ndm]; // This declaration might not be necessary
+
+  if (doGsearch){
+      FILE *Gresultsfile;
+      Gresultsfile = fopen(Gfilename,"w");
+      if (Gresultsfile==NULL){
+	  fprintf(stderr,"Error opening giant search results output file %s.\nWILL NOT RUN GIANT SEARCH.\n\n",Gresultsfile);
+	  doGsearch = false;
+      } else {
+	  //HERE open Gfile and print out a short "header". Gfilename is the name of the file.
+	  // header needs to contain:        //      infilename, nsamp, tsamp, ctr. frequency, bandwidth, RA, DEC, UTC  time/date of obs, snr limit, Ndms, DM search range.
+	  fprintf(Gresultsfile,"# %s %lld %g %g %g %g %g %g %.3f %d %.2f %.2f\n",outfile_root,totnumsamps,tsamp,fch1 + 0.5*(nchans*foff),fabs(foff*nchans),(src_raj),(src_dej),(src_dej),Gthresh,ndm,start_DM,end_DM);
+      }
+      fclose(Gresultsfile);
+  }
+
 
   // Start of main loop
   for (int igulp=0; igulp<ngulps;igulp++){

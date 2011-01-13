@@ -66,8 +66,8 @@ float getmin(float *data, int arraysize);            //get min of data
 float* int2float(int *array, int arraysize);         //convert int array to float array
 void removebaseline(unsigned short int *indata, float* outdata, int ndat, int runmeansize, float thresh);
 double getmowedsigma(int n, float * d, double unmowedsigma, double mean);
-vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands);
-vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands, float irrel);
+vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char* resultsfilename,char* filetimestamp,int beamID);
+vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char* resultsfilename,char* filetimestamp,int beamID,float irrel);
 vector<Gpulse>* beamassoc_giants(vector<Gpulse> *beams, int nbeams, int *nmultibeamcands);
 vector<Gpulse>* beamassoc_giants(vector<Gpulse> *beams, int nbeams, int *nmultibeamcands, float irrel);
 
