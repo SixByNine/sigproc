@@ -285,9 +285,9 @@ int main (int argc, char *argv[])
   int nplot=ngulp_original;
   nstart=0;  //COMMENTED IN ZAPPER VERSION: MAY CAUSE CONFLICTS IN THIS VER.
   ngulp=ngulp_original;  //COMMENTED IN ZAPPER VERSION: MAY CAUSE CONFLICTS IN THIS VER.
-  float trialperiod;
+  double trialperiod;
   int doperiod=-1;
-  float xperiod;
+  double xperiod;
 
   bool zoneplot=false;
   int ngates=0;
@@ -560,49 +560,49 @@ int main (int argc, char *argv[])
 	//plot the thing;
 	fprintf(stderr,"Please enter a period in seconds: ");
 	cin>>trialperiod;
-	xperiod = x;
+	xperiod = (double)x;
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='m'){  // subtract 0.0000005 seconds from period
 	d->plotregions[plotno].reset();
 	trialperiod-=0.0000005;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='/'){  // add 0.0000005 seconds to period
 	d->plotregions[plotno].reset();
 	trialperiod+=0.0000005;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans==','){  // subtract 0.000005 seconds from period
 	d->plotregions[plotno].reset();
 	trialperiod-=0.000005;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='.'){  // add 0.000005 seconds to period
 	d->plotregions[plotno].reset();
 	trialperiod+=0.000005;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='<'){  // subtract 0.001 seconds from period
 	d->plotregions[plotno].reset();
 	trialperiod-=0.001;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
       if (ans=='>'){  // add 0.001 seconds to period
 	d->plotregions[plotno].reset();
 	trialperiod+=0.001;
-	fprintf(stderr,"Trial period is now %f\n",trialperiod);
+	fprintf(stderr,"Trial period is now %lf\n",trialperiod);
 	doperiod=plotno;
 	button=PLOT;
       }
@@ -618,8 +618,8 @@ int main (int argc, char *argv[])
 	  min_means_min(&x,&xgate);
 	  printf("Period from %f to %f is %f\n",x,xgate,xgate-x);  
 	  doperiod=plotno;
-	  xperiod = x;
-	  trialperiod=xgate-x;
+	  xperiod = (double)x;
+	  trialperiod=(double)(xgate-x);
 	  ngates=0;
 	  button=PLOT;
 	}
@@ -740,11 +740,11 @@ int main (int argc, char *argv[])
       if (doperiod>=0){
 	d->plotregions[doperiod].reset();
 	cpgsci(7);
-	for (float pstep=xperiod;pstep<10*nplot;pstep+=trialperiod){
+	for (double pstep=xperiod;pstep<10*nplot;pstep+=trialperiod){
 	  cpgmove(pstep,-1000);
 	  cpgdraw(pstep,1000);
 	}
-	for (float pstep=xperiod;pstep>0;pstep-=trialperiod){
+	for (double pstep=xperiod;pstep>0;pstep-=trialperiod){
 	  cpgmove(pstep,-1000);
 	  cpgdraw(pstep,1000);
 	}
