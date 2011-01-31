@@ -128,7 +128,7 @@ int main (int argc, char *argv[]){
     FILE  *infile;                                 // timeseries[13-15]: dm0, dmlo, dmhi
     bool isokay[17];
     bool foundone = false;
-    bool ISsigned = true;
+    bool ISsigned = true,fsigned=false;
     bool dokill = false;
     char *killfile;
     unsigned char *buffer;
@@ -145,6 +145,7 @@ int main (int argc, char *argv[]){
 	if (strings_equal(argv[i],"-c"))       sscanf(argv[++i],"%d",&colortable);
 	if (strings_equal(argv[i],"-bestbeam"))sscanf(argv[++i],"%d",&bestbeam);
 	if (strings_equal(argv[i],"-i"))       ISsigned = false;
+	if (strings_equal(argv[i],"-f"))       fsigned=true;
 	if (strings_equal(argv[i],"-k"))       {killfile=(char*)malloc(strlen(argv[++i])+1); strcpy(killfile,argv[i]);dokill=true;}
 //	if (strings_equal(argv[i],"-dm"))      sscanf(argv[++i],"%f",&bestfitdm);
 	if (strings_equal(argv[i],"-h"))       {printhelp();exit(0);}
@@ -193,7 +194,16 @@ int main (int argc, char *argv[]){
 	    if (infile==NULL) {fputs ("File error\n",stderr); exit (1);}
 	    
 	    if (sizeofheader=read_header(infile)) {
-		
+		if (! fsigned){
+		    if (isign > 0) {
+			ISsigned=false;
+			fprintf(stderr,"using signed header variable to set UNSIGNED\n");
+		    }
+		    if (isign < 0) {
+			ISsigned=true;
+			fprintf(stderr,"using signed header variable to set SIGNED\n");
+		    }
+		}
 		nsampsinfile = nsamples(currentfile,sizeofheader,nbits,nifs,nchans);
 		if (nbits!=32 && nbits!=8) {fprintf(stderr,"\n\n\tERROR in quickgplot.C:\n\t\tFile %s must be 8- or 32-bit data",currentfile); exit(7);}
 		if (Sskip > nsampsinfile) {fprintf(stderr, "\n\tERROR in quickgplot:\n\t\tSkipping %d data samples will surpass whole data file!\n\n",Sskip); exit(7);}
