@@ -868,7 +868,7 @@ void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax){
 /* scrunches by a factor 2 */
 void bscrunch(int npoints, float * d){
   int i;
-  for (i=0; i<npoints/2; ++i) d[i]=(d[2*i]+d[2*i+1])/2.0;
+  for (i=0; i<npoints/2; i++) d[i]=(d[2*i]+d[2*i+1])/2.0;
 }
 
 void plotminmax(int npoints, float * data, float tstart, float delta){
@@ -964,7 +964,7 @@ void plotminmaxeff(int npoints, int nplot, float * data, float tstart,
 void formpdf(float * pdf, int pdfmax, int ngulp, float * time_series){
   //negative values are ignored
 
-    //normalise(ngulp,time_series);
+    normalise(ngulp,time_series);
     //zero pdf
     for (int i=0;i<pdfmax;i++)
       pdf[i]=0.0;
