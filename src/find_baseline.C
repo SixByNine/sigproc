@@ -68,7 +68,7 @@ find_baseline( int ndat, float * dat) {
     int i;
     double cSum = 0.0;
     /* set the smoothing factor */
-    double sf = 1e-2;
+    double sf = 3e-5;
     /* normalize the timeseries */
     normalise(ndat, dat);
 
@@ -87,9 +87,9 @@ find_baseline( int ndat, float * dat, float threshold) {
     int i;
     double cSum = 0.0;
     /* set the smoothing factor */
-    double sf = 1e-2;
+    double sf = 3e-5;
     /* normalize the timeseries */
-    normalise(ndat, dat);
+    normalise(ndat, dat,threshold);
 
     cSum=dat[0];
 
