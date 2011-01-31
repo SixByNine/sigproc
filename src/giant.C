@@ -32,9 +32,7 @@ void buttonexplain();
 float * Creadspec(char * filename, int * npf, double * rate);
 void find_formspec(int n, float * d);
 void find_fft(int * n, float * d);
-void normalise(int n, float * d);
-void normalise(int n, float * d, float threshold);
-void mowlawn(int n, float * d, int *mown, int *nrejects, float threshold, int maxnscrunch); //ZAPPER
+void mowlawn(int n, float * d,float threshold, int maxnscrunch); //ZAPPER
 void getminmax(int n, float * d, float * min, float * max);
 void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax);
 void bscrunch(int npoints, float * d);
@@ -217,9 +215,8 @@ int main (int argc, char *argv[])
 	}
       }
       puti(ngulp);
-
-      find_baseline(time_series[i],ngulp,tsamp,2.0,3.0); //SARAHZAP
-      mowlawn(ngulp,time_series[i], mown, &nrejects,5,4);
+      find_baseline(ngulp,time_series[i],5.0);
+      mowlawn(ngulp,time_series[i],5,256);
     }
     printf("%f\n",dummy);
     printf("Bad time samples found...\n");
@@ -308,7 +305,7 @@ int main (int argc, char *argv[])
 //    printf("manage x %f y %f plotno %d\n",x,y,plotno);
     if (button==BASELINE) {
 	for (i=0; i<nfiles; i++){
-	  find_baseline(time_series[i],ngulp,tsamp,2.0,3.0);
+	    find_baseline(ngulp,time_series[i],5.0);
 	}
 	button = PLOT;
 	zoneplot=false;
@@ -408,7 +405,7 @@ int main (int argc, char *argv[])
     }
     if (button==NORMALISE) {
 	for (i=0; i<nfiles; i++){
-	  normalise(ngulp,time_series[i],3.0);
+	  normalise(ngulp,time_series[i],5.0);
 	}
 	button = PLOT;
 	Gsearched=false;
@@ -695,7 +692,7 @@ int main (int argc, char *argv[])
  // ZAPPER SECTION
     if (button==MOWLAWN){
       for (i=0; i<nfiles; i++){
-	 mowlawn(ngulp,time_series[i], mown, &nrejects,5,4);
+	 mowlawn(ngulp,time_series[i],5,256);
       }
       printf("Lawn mown\n");
       fflush(stdout);
@@ -792,215 +789,54 @@ int main (int argc, char *argv[])
   return(0);
 
 }
-
-void normalise(int n, float * d){
-
-  printf("Normalising %d samples\n",n);
-    double sum=0.0;
-    double sumsq=0.0;
-    int noff=0;
-    while (noff<n) {
-	sum+=d[noff];
-	sumsq+=d[noff]*d[noff];
-	noff++;
-      }
-    double mean=sum/(double)n;
-    double meansq=sumsq/(double)n;
-    double sigma=sqrt(meansq-mean*mean);
-    for (int i=0;i<n;i++) d[i]=(d[i]-mean)/sigma;
-    printf("mean, %f sigma! %f\n",mean,sigma);
-}
-
-void normalise(int n, float * d, float threshold){
-    printf("Normalising %d samples\n",n);
-    double sum=0.0;
-    double sumsq=0.0;
-    int noff=0;
-    while (noff<n) {
-	sum+=d[noff];
-	sumsq+=d[noff]*d[noff];
-	noff++;
-      }
-    double mean=sum/(double)n;
-    double meansq=sumsq/(double)n;
-    double sigma=sqrt(meansq-mean*mean);
-    for (int i=0;i<n;i++) d[i]=(d[i]-mean)/sigma;
-    printf("Mean, %f sigma! %f\n",mean,sigma);
-    // Now recompute sigma without threshold spikes
-    sum = 0.0;
-    sumsq=0.0;
-    int nsum=0;
-    noff=0;
-    while (noff<n) {
-      if (d[noff]<threshold){
-	sum+=d[noff];
-	sumsq+=d[noff]*d[noff];
-	nsum++;
-      }
-      noff++;
-    }
-    mean=sum/(double)noff;
-    meansq=sumsq/(double)noff;
-    sigma=sqrt(meansq-mean*mean);
-    for (int i=0;i<n;i++) d[i]=(d[i]-mean)/sigma;
-    printf("new mean, %f new sigma! %f\n",mean,sigma);
-}
-
-
-int quicksort_inplace_partition(int* array, int top, int bottom);
-void quicksort_inplace(int* array, int top, int bottom){
-	int middle;
-	if (top < bottom)
-	{
-		middle = quicksort_inplace_partition(array, top, bottom);
-		quicksort_inplace(array, top, middle);
-		quicksort_inplace(array, middle+1, bottom);
+/**
+ * timezap now includes MODES, modes will be passed in the modes array.
+ * to activate mode 0, enter {1,0}, to activate all modes, fill the array with 1's {1,1}
+ * currently two modes exist:
+ * PACMAN eats RFI trails, {1,0}
+ * CLIFFEATER eats cliffs {0,1}
+**/
+void mowlawn(int n, float * d, float threshold, int max_nscrunch){
+    printf("Mowing lawn: %d samples\n",n);
+    int i,j;
+    int nscrunch;
+    int cNum = n;
+    /* initiate and populate mask array */
+    int * mown = (int*)malloc(sizeof(int)*n);
+    for(i=0;i<n;mown[i]=1, ++i);
+    /* initiate and populate array used for manipulation */
+    float * ts = (float*)malloc(sizeof(float)*n);
+    for(i=0;i<n;ts[i]=d[i], ++i);
+    /* normalize data so amplitude == magnitude */
+    normalise(n,ts);
+    
+    /* main loop for RFI cutting */
+    for(nscrunch=1;nscrunch<=max_nscrunch;nscrunch*=2) {
+	/* normalise data without spikes */
+	normalise(cNum,ts,threshold);
+	for(i=0;i<cNum;++i) {
+            if(fabs(ts[i])>threshold) {
+                for(j=0; j<nscrunch; ++j) { mown[((i)*nscrunch+j)]=0; }
+	    }
 	}
-	return;
-}
-
-
-int quicksort_inplace_partition(int* array, int top, int bottom){
-	int x = array[top];
-	int topidx = top - 1;
-	int botidx = bottom + 1;
-	int swap;
-	do
-	{
-		do
-		{
-			botidx --;
-		}while (x <array[botidx]);
-
-		do
-		{
-			topidx++;
-		} while (x >array[topidx]);
-
-		if (topidx < botidx)
-		{
-			swap = array[topidx];
-			array[topidx] = array[botidx];
-			array[botidx] = swap;
-		}
-	}while (topidx < botidx);
-	return botidx;
-}
-
-void mowlawn(int n, float * d, int * mown, int * nrejects, float threshold, int max_nscrunch){
-    printf("Mowing lawn %d samples\n",n);
-    double sum=0.0;
-    double sumsq=0.0;
-    int noff=0;
-
-    double meankeep;
-    double sigmakeep;
-
-    int nscrunch=1;
-    int current_n=n;
-    float origthreshold = threshold;
-
-    *nrejects=0;
-    while(nscrunch < max_nscrunch){
-
-     threshold = origthreshold*sqrt(nscrunch);
-
-     // Compute Mean and Sigma of timeseries
-     while (noff<current_n) {
-	 sum+=d[noff];
-	 sumsq+=d[noff]*d[noff];
-	 noff++;
-       }
-
-     double mean=sum/(double)current_n;
-     double meansq=sumsq/(double)current_n;
-     double sigma=sqrt(meansq-mean*mean);
-
-     // Normalise timeseries
-     for (int i=0;i<current_n;i++) d[i]=(d[i]-mean)/sigma;
-
-     if(nscrunch==1){
-       printf("Mean, %f sigma! %f\n",mean,sigma);
-       meankeep = mean;
-       sigmakeep = sigma;
-     }
-
-     // Now recompute sigma without spikes > threshold
-     sum = 0.0;
-     sumsq=0.0;
-     int nsum=0;
-     noff=0;
-     while (noff<current_n) {
-       if (d[noff]<threshold){
-	 sum+=d[noff];
-	 sumsq+=d[noff]*d[noff];
-	 nsum++;
-       }
-       noff++;
-     }
-
-     mean=sum/(double)nsum; //was previosly noff
-     meansq=sumsq/(double)nsum; // was previously noff
-     sigma=sqrt(meansq-mean*mean);
-     for (int i=0;i<current_n;i++) d[i]=(d[i]-mean)/sigma;
-     printf("new mean, %f new sigma, %f\n",mean,sigma);
-     noff =0;
-     int i=0;
+	bscrunch(cNum,ts);
+	cNum /=2;
+    }
     
-     while (noff<current_n) {
-       if (fabs(d[noff]) > threshold){
-	 //printf("d[%d]=%f\n",noff,d[noff]);
-	 d[noff]= mean;
-	 for(int z = 0 ; z < nscrunch; z++){
-	   mown[*nrejects] = noff*nscrunch + z;
-	   *nrejects = *nrejects+1;
-	 }
-	 i++;
-       }
-
-       noff++;
-    /*   if ( *nrejects > (n/100)-1 ){
-	 printf("Too many rejects %d (out of %d) change threshold......\n",*nrejects,n/100-1);
-	 exit(-1);
-       }*/
-     }
-
-     bscrunch(current_n,d);
-     nscrunch*=2;
-     current_n /=2;
+    /* write the mask to the file tchan.kill */
+    FILE * tchanfile;
+    if ((tchanfile = fopen("tchan.kill","w"))==NULL) {
+	    printf("Error opening file\n");
+    } 
+    else {
+	fprintf(tchanfile,"#\n");
+        for(i=0; i<n; ++i) {
+	    fprintf(tchanfile, "%d\n", mown[i]);
+            d[i] = (mown[i]) ? d[i] : 0;
+        }
     }
-
-    FILE *chantkill;
-    if ((chantkill = fopen("tchan.kill","w")) == NULL){
-      printf("Error opening file\n");
-      exit(-4);
-    }
-    fprintf(chantkill,"#%lf\t%lf\n",meankeep,sigmakeep);
-
-    
-    quicksort_inplace(mown,0,*nrejects);
-//    for (int i =0 ; i < *nrejects; i++){
-//	    printf("%d\n",mown[i]);
-  //  }
-    int currzap=0;
-    for (int i =0 ; i < n; i++){
-      // Skip on, writing 1s, until we reach the next thing that was mown
-      if(currzap >= *nrejects || i < mown[currzap]){
-	fprintf(chantkill,"1\n",i);
-      } else {
-	// When we reach something to mow, write a zero
-	fprintf(chantkill,"0\n",i);
-	currzap++;
-	// in case we mow the same sample more than once, we check that we have moved on
-	// to a larger sample to mow, otherwise we try the next entry in the mown array.
-	while(currzap < *nrejects && mown[currzap]<=i)currzap++;
-      }
-    }
-
-    fclose(chantkill);
+    fclose(tchanfile);
 }
-
-
 
 void getminmax(int n, float * d, float * min, float * max){
   int i;
@@ -1030,10 +866,9 @@ void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax){
 }
 
 /* scrunches by a factor 2 */
-
 void bscrunch(int npoints, float * d){
   int i;
-  for (i=0;i<npoints/2;i++) d[i]=(d[2*i]+d[2*i+1])/2.0;
+  for (i=0; i<npoints/2; ++i) d[i]=(d[2*i]+d[2*i+1])/2.0;
 }
 
 void plotminmax(int npoints, float * data, float tstart, float delta){
@@ -1129,7 +964,7 @@ void plotminmaxeff(int npoints, int nplot, float * data, float tstart,
 void formpdf(float * pdf, int pdfmax, int ngulp, float * time_series){
   //negative values are ignored
 
-    normalise(ngulp,time_series);
+    //normalise(ngulp,time_series);
     //zero pdf
     for (int i=0;i<pdfmax;i++)
       pdf[i]=0.0;
