@@ -36,6 +36,7 @@ void mowlawn(int n, float * d,float threshold, int maxnscrunch); //ZAPPER
 void getminmax(int n, float * d, float * min, float * max);
 void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax);
 void bscrunch(int npoints, float * d);
+void bscrunch(int * npoints, float * d);
 void plotminmax(int npoints, float * data, float tstart, float delta);
 void plotminmaxeff(int npoints, int nplot, float * data, float tstart, float delta);
 void min_means_min(float * min, float * max);
@@ -789,12 +790,14 @@ int main (int argc, char *argv[])
   return(0);
 
 }
+
 /**
- * timezap now includes MODES, modes will be passed in the modes array.
- * to activate mode 0, enter {1,0}, to activate all modes, fill the array with 1's {1,1}
- * currently two modes exist:
- * PACMAN eats RFI trails, {1,0}
- * CLIFFEATER eats cliffs {0,1}
+ * timezap function creates a mask file (tchan.kill), with a bitmask for all RFI above threshold
+ * input: n = number of elements
+ * input: d = timeseries data
+ * input: threshold = max sigma of spikes.
+ * input: max_nscrunch = max amount of elements to average together. (default 256)
+ * output: modifies timeseries data (d) setting all masked spikes to 0.
 **/
 void mowlawn(int n, float * d, float threshold, int max_nscrunch){
     printf("Mowing lawn: %d samples\n",n);
@@ -809,7 +812,6 @@ void mowlawn(int n, float * d, float threshold, int max_nscrunch){
     for(i=0;i<n;ts[i]=d[i], ++i);
     /* normalize data so amplitude == magnitude */
     normalise(n,ts);
-    
     /* main loop for RFI cutting */
     for(nscrunch=1;nscrunch<=max_nscrunch;nscrunch*=2) {
 	/* normalise data without spikes */
@@ -819,10 +821,8 @@ void mowlawn(int n, float * d, float threshold, int max_nscrunch){
                 for(j=0; j<nscrunch; ++j) { mown[((i)*nscrunch+j)]=0; }
 	    }
 	}
-	bscrunch(cNum,ts);
-	cNum /=2;
+	bscrunch(&cNum,ts);
     }
-    
     /* write the mask to the file tchan.kill */
     FILE * tchanfile;
     if ((tchanfile = fopen("tchan.kill","w"))==NULL) {
@@ -838,37 +838,63 @@ void mowlawn(int n, float * d, float threshold, int max_nscrunch){
     fclose(tchanfile);
 }
 
+/**
+ * fixed getminmax now has one loop
+**/
 void getminmax(int n, float * d, float * min, float * max){
   int i;
   *min=*max=d[0];
-  for (i=0;i<n;i++) if (*min>d[i])*min=d[i];
-  for (i=0;i<n;i++) if (*max<d[i])*max=d[i];
-}
-
-void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax){
-
-  // problems with int overflows in this routine for large n, nplot.
-  int i,j;
-  if (n<nplot){
-    for (i=0;i<n;i++) ymin[i]=ymax[i]=d[i];
+  for (i=0; i<n; ++i) {
+    if(*min>d[i]) *min=d[i];
+    if(*max<d[i]) *max=d[i];
   }
-  else
-    {
-     for (j=0;j<nplot;j++){
-       int index = (int) ((double)j*(double) n/double(nplot));
-       ymin[j]=ymax[j]=d[index];
-       for (i=index;i<index+n/nplot;i++){
-         if (ymin[j]>d[i])ymin[j]=d[i];
-         if (ymax[j]<d[i])ymax[j]=d[i];
-       }
-       }
-    }
 }
 
-/* scrunches by a factor 2 */
+/**
+ * fixed getminmaxes with no int overflow, if n<=nplot then the min and max arrays point to the d array.
+ * input: n, number of elements.
+ * input: d, data array.
+ * input: nplot, max number of points to plot.
+ * input: ymin, array of min values size of nplot.
+ * input: ymax, array of max values size of nplot.
+**/
+void getminmaxes(int n, float * d, int nplot, float * ymin, float * ymax){
+  long i,j,k,z;
+  float * dptr;
+  if(n<=nplot) {
+    ymin=ymax=d;
+  } else {
+    z = n/nplot;
+    for(i=0; i<nplot; ++i) {
+      k = i*z;
+      dptr = d+k;
+      if(k+z>=n) { z = n-(k+z); }
+      getminmax(z, d+k, ymin+i, ymax+i);
+    }
+  }
+}
+
+/* scrunches by a factor of 2 */
 void bscrunch(int npoints, float * d){
-  int i;
-  for (i=0; i<npoints/2; i++) d[i]=(d[2*i]+d[2*i+1])/2.0;
+    int i;
+    for (i=0; i<npoints/2; ++i) d[i]=(d[2*i]+d[2*i+1])/2.0;
+}
+
+/** 
+ * safely scrunches by a factor of 2,
+ * now includes overflow checking and min array size checking.
+ * input: npoints pointer
+ * input: (d) timeseries array
+ * output: modifies npoints to npoints/2 if successful
+ * output: modifies (d) to scrunched form (non-resized) if successful.
+**/
+void
+bscrunch(int * npoints, float * d) {
+    int i;
+    if(*npoints > 3) {
+	*npoints /= 2;
+	for (i=0; (2*i+2)<=(*npoints); ++i) d[i]=(d[2*i]+d[2*i+1])/2;
+    }
 }
 
 void plotminmax(int npoints, float * data, float tstart, float delta){
@@ -882,16 +908,13 @@ void plotminmax(int npoints, float * data, float tstart, float delta){
   int xend = npoints;
   int npointsnow=npoints;
   int nplotnow=npoints;
-
-  //  printf("plotminmax entered\n");
-
+  
   x = (float*)malloc(sizeof(float)*nplotnow);
   if (x==NULL){
-    fprintf(stderr,"Error allocating %d bytes in plotminmax\n",
-	    sizeof(float)*nplotnow);
+    fprintf(stderr,"Error allocating %d bytes in plotminmax\n", sizeof(float)*nplotnow);
     exit(-1);
   }
-  //  printf("getminmax\n");
+
   getminmax(npoints, &data[xstart], &min, &max);
   diff = max-min;
   for (i=0;i<nplotnow;i++) x[i]=tstart + (float)(i) * delta;
@@ -899,9 +922,7 @@ void plotminmax(int npoints, float * data, float tstart, float delta){
     xmx=xmn + delta * (float)nplotnow;
     ymn = min-diff*0.05;
     ymx = max+diff*0.05;
-//    printf("plotminmax xmin xmax ymin ymax %f %f %f %f\n",xmn,xmx,ymn,ymx);
     cpgswin(xmn,xmx,ymn,ymx);
-//    cpgsch(0.5);
     cpgbox("BCNST",0.0,0,"BCNST",0.0,0);
     cpgsci(1);
     cpgsch(1.0);
@@ -910,8 +931,7 @@ void plotminmax(int npoints, float * data, float tstart, float delta){
 
 /* plots min and max for every npoints/nplot points */
 
-void plotminmaxeff(int npoints, int nplot, float * data, float tstart,
-		   float delta){
+void plotminmaxeff(int npoints, int nplot, float * data, float tstart, float delta) {
 
   //  fprintf(stderr,"plotminmaxeff\n");
   if (nplot>npoints) {
@@ -964,7 +984,7 @@ void plotminmaxeff(int npoints, int nplot, float * data, float tstart,
 void formpdf(float * pdf, int pdfmax, int ngulp, float * time_series){
   //negative values are ignored
 
-    normalise(ngulp,time_series);
+    //normalise(ngulp,time_series);
     //zero pdf
     for (int i=0;i<pdfmax;i++)
       pdf[i]=0.0;
@@ -1281,6 +1301,7 @@ void helpmenu(){
     fprintf(stderr,"*              ----- GIANT -----            *\n");
     fprintf(stderr,"* An interface for the viewing and explora- *\n");
     fprintf(stderr,"*   tion of timeseries or filterbank data   *\n");
+    fprintf(stderr,"*        **** TEST VERSION  ******          *\n");
     fprintf(stderr,"* * * * * * * * * * * * * * * * * * * * * * *\n\n");
     fprintf(stderr,"Usage: giant filenames\n");
     fprintf(stderr,"\t(e.g.>>  giant *.tim)\n");
