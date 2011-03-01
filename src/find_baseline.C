@@ -4,6 +4,8 @@
  * R Neil, 27,Jan,2011
 ***/
 #include "find_baseline.h"
+#include <limits>
+#define MAX_BL_ITTR 5
 /**
  * Normalize method, returns a normalized timeseries
  * Overloaded Normalize method takes a threshold and skips all values above that 
@@ -56,6 +58,58 @@ normalise(int n, float * d, float threshold){
     for (i=0; i<n; ++i) { d[i]=(d[i]-mean)/sigma; }
     printf("Normalized: %d samples, %d skipped, mean %f, sigma %f\n",n,nsum,mean,sigma);
 }
+
+
+
+
+float find_baseline_i(int ndat, float * dat, float smooth_nsamp, float threshold) {
+
+    int i;
+    float frac;
+    double cSum = 0.0;
+    /* set the smoothing factor */
+    double sf = 1.0/smooth_nsamp;
+    /* normalize the timeseries */
+    normalise(ndat, dat,threshold);
+
+    printf("sm=%f\tsf=%f\n",smooth_nsamp,sf);
+    float* smooth=(float*)malloc(sizeof(float)*ndat);
+
+    cSum=dat[0];
+    for(i=1; i<ndat; i++) {
+	if (dat[i]<threshold) {
+        	cSum = (sf*dat[i])+((1-sf)*cSum);
+	}
+        smooth[i] = cSum;
+    }
+    cSum=dat[ndat-1];
+    for(i=ndat-2; i>=0; i--) {
+	if (dat[i]<threshold) {
+        	cSum = (sf*dat[i])+((1-sf)*cSum);
+	}
+	frac=(float)i/ndat;
+        smooth[i] = frac*smooth[i]+(1.0-frac)*cSum;
+    }
+
+    for(i=0; i<ndat; i++) {
+	    dat[i]-=smooth[i];
+    }
+
+
+    normalise(ndat, dat,threshold);
+
+    float ssq=0;
+    for(i=0; i<ndat; i++) {
+	    ssq+=smooth[i]*smooth[i];
+    }
+
+    free(smooth);
+    return ssq/(float)ndat;
+}
+
+
+
+
 /**
  * baseline method using exponential smoothing, smoothing factor set at 0.02 default.
  * ndat is the size of the timeseries
@@ -64,39 +118,30 @@ normalise(int n, float * d, float threshold){
  * threshold in sigma's.
 **/
 void
-find_baseline( int ndat, float * dat) {
-    int i;
-    double cSum = 0.0;
-    /* set the smoothing factor */
-    double sf = 3e-5;
-    /* normalize the timeseries */
-    normalise(ndat, dat);
-
-    cSum=dat[0];
-
-    for(i=1; i<ndat; ++i) {
-        cSum = (sf*dat[i])+((1-sf)*cSum);
-        dat[i] -= cSum;
-    }
+find_baseline( int ndat, float * dat,float smooth_nsamp) {
+	find_baseline(ndat,dat,smooth_nsamp,std::numeric_limits<float>::max());
 }
+
+char sw=1;
 /** 
  * Overloaded baseline method takes threshold
 **/
 void
-find_baseline( int ndat, float * dat, float threshold) {
-    int i;
-    double cSum = 0.0;
-    /* set the smoothing factor */
-    double sf = 3e-5;
-    /* normalize the timeseries */
-    normalise(ndat, dat,threshold);
-
-    cSum=dat[0];
-
-    for(i=1; i<ndat; ++i) {
-	if (dat[i]<threshold) {
-        	cSum = (sf*dat[i])+((1-sf)*cSum);
+find_baseline( int ndat, float * dat, float smooth_nsamp, float threshold) {
+	int count=0;
+	if(sw){
+		for(int i=0; i<ndat; i++) {
+			float x= (float)i/100000.0;
+			dat[i]+=x - 100*x*x + 5*x*x*x;
+		}
+		sw=0;
+	} else{
+		while(count < MAX_BL_ITTR){
+			float goodness = find_baseline_i(ndat,dat,smooth_nsamp,threshold);
+			printf("%02d goodness = %f\n",count,goodness);
+			count++;
+			if(goodness < 0.01) break;
+		}
 	}
-        dat[i] -= cSum;
-    }
 }
+

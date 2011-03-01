@@ -216,7 +216,7 @@ int main (int argc, char *argv[])
 	}
       }
       puti(ngulp);
-      find_baseline(ngulp,time_series[i],5.0);
+      find_baseline(ngulp,time_series[i],2.0/tsamp,5.0);
       mowlawn(ngulp,time_series[i],5,256);
     }
     printf("%f\n",dummy);
@@ -306,7 +306,7 @@ int main (int argc, char *argv[])
 //    printf("manage x %f y %f plotno %d\n",x,y,plotno);
     if (button==BASELINE) {
 	for (i=0; i<nfiles; i++){
-	    find_baseline(ngulp,time_series[i],5.0);
+	    find_baseline(ngulp,time_series[i],2.0/tsamp,5.0);
 	}
 	button = PLOT;
 	zoneplot=false;

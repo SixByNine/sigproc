@@ -13,7 +13,7 @@ void normalise(int n, float * d);
 
 void normalise(int n, float * d, float threshold);
 
-void find_baseline(int ndat, float * dat);
+void find_baseline(int ndat, float * dat,float smooth_nsamp);
 
-void find_baseline(int ndat, float * dat, float threshold);
+void find_baseline(int ndat, float * dat, float smooth_nsamp, float threshold);
 #endif

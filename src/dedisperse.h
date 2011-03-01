@@ -1,3 +1,6 @@
+#ifndef DEDISPERSE_H
+#define DEDISPERSE_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -32,3 +35,4 @@ float clipvalue,jyfactor,jyf1,jyf2,*inputClipHigh,*inputClipLow;
 
 /* list of subroutines and functions */
 #include "sigproc.h"
+#endif
