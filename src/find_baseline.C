@@ -129,19 +129,21 @@ char sw=1;
 void
 find_baseline( int ndat, float * dat, float smooth_nsamp, float threshold) {
 	int count=0;
-	if(sw){
+/*
+ * TEST code that put in a huge cubic!
+ 	if(sw){
 		for(int i=0; i<ndat; i++) {
 			float x= (float)i/100000.0;
 			dat[i]+=x - 100*x*x + 5*x*x*x;
 		}
 		sw=0;
-	} else{
+	} else{*/
 		while(count < MAX_BL_ITTR){
 			float goodness = find_baseline_i(ndat,dat,smooth_nsamp,threshold);
 			printf("%02d goodness = %f\n",count,goodness);
 			count++;
 			if(goodness < 0.01) break;
 		}
-	}
+/*	}*/
 }
 
