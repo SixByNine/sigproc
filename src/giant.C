@@ -186,6 +186,10 @@ int main (int argc, char *argv[])
     } // each file
     } // spectra or not
   }  // for (i...)
+
+  if(ssigned)printf("Interpreting as SIGNED\n");
+  else printf("Interpreting as UNSIGNED\n");
+
   puti(ntimglobal_smallest);
   if (ngulp_original==0) ngulp_original=ntimglobal_smallest;
 
