@@ -1,7 +1,7 @@
 bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit chop_fil dedisperse_all shredder filterbank
-bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook 
-EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh 
-MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook
+bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
+EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh spsearch.pl dmsampdelay.pl
+MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
 noinst_LIBRARIES=libsigproc.a
 
 BUILT_SOURCES=sigproc.h
@@ -126,6 +126,14 @@ ahunt : ahunt.csh
 	echo 'set bin        = `dirname $$0`'  >> ahunt
 	cat $(src)/ahunt.csh                    >> ahunt
 	chmod +x ahunt
+
+spsearch : spsearch.pl
+	cp $(src)/spsearch.pl spsearch
+	chmod +x spsearch
+
+dmsampdelay : dmsampdelay.pl
+	cp $(src)/dmsampdelay.pl dmsampdelay
+	chmod +x dmsampdelay
 
 csearch : csearch.csh
 	echo "#!`which csh`" >             csearch
