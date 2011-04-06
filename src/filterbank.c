@@ -271,9 +271,12 @@ main (int argc, char *argv[])
       /* Effelsberg pulsar2000 data */
       pulsar2k2fb(input,output);
       break;
+#ifdef PSRFITS
     case 12:
       /* PSRFITS data */
       psrfits2fb(input,output,inpfile);
+      break;
+#endif
     }
     fileidx++;
     if (inputdata!=12) fclose(input);
