@@ -28,7 +28,7 @@ normalise(int n, float * d){
     meanSq=sumSq/(n*1.0);
     sigma=sqrt(meanSq-(mean*mean));
     for (i=0; i<n; ++i) { d[i]=(d[i]-mean)/sigma; }
-    printf("Normalized: %d samples, mean %f, sigma %f\n",n,mean,sigma);
+    //printf("Normalized: %d samples, mean %f, sigma %f\n",n,mean,sigma);
 }
 /**
  * Overloaded Normalize method takes threshold.
@@ -56,7 +56,7 @@ normalise(int n, float * d, float threshold){
     meanSq = sumSq/(1.0*nsum);
     sigma=sqrt(meanSq-(mean*mean));
     for (i=0; i<n; ++i) { d[i]=(d[i]-mean)/sigma; }
-    printf("Normalized: %d samples, %d skipped, mean %f, sigma %f\n",n,nsum,mean,sigma);
+    //printf("Normalized: %d samples, %d skipped, mean %f, sigma %f\n",n,nsum,mean,sigma);
 }
 
 
@@ -72,7 +72,7 @@ float find_baseline_i(int ndat, float * dat, float smooth_nsamp, float threshold
     /* normalize the timeseries */
     normalise(ndat, dat,threshold);
 
-    printf("sm=%f\tsf=%f\n",smooth_nsamp,sf);
+    //printf("sm=%f\tsf=%f\n",smooth_nsamp,sf);
     float* smooth=(float*)malloc(sizeof(float)*ndat);
 
     cSum=dat[0];
@@ -140,7 +140,7 @@ find_baseline( int ndat, float * dat, float smooth_nsamp, float threshold) {
 	} else{*/
 		while(count < MAX_BL_ITTR){
 			float goodness = find_baseline_i(ndat,dat,smooth_nsamp,threshold);
-			printf("%02d goodness = %f\n",count,goodness);
+			//printf("%02d goodness = %f\n",count,goodness);
 			count++;
 			if(goodness < 0.01) break;
 		}

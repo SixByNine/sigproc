@@ -24,7 +24,7 @@ INCLUDES+=@CFITSIO_CFLAGS@ -DPSRFITS
 endif
 
 if HAVE_PGPLOT
-bin_PROGRAMS+=spec tune giant pgplotter getpulse peak best quickplot plotpulses quickgplot extragplot
+bin_PROGRAMS+=spec tune giant spexplorer pgplotter getpulse peak best quickplot plotpulses quickgplot extragplot
 # PGPLOT BASED CODE HERE...
 spec_SOURCES=spec.f readspec.f freq.f minmax.f histmax.f glun.f
 spec_LDADD=@PGPLOT_LIBS@
@@ -34,6 +34,9 @@ tune_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
 giant_SOURCES=giant.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f toolkit.h toolkit.C TKfit.h TKfit.C
 giant_LDADD=@PGPLOT_LIBS@ $(LDADD)
+
+spexplorer_SOURCES=spexplorer.C Creadspec.C  dialog.C  find_baseline.C  find_fft.C  find_formspec.C  gtools.C  libplotfil.C fftdata.f newoldsumhrm.f toolkit.h toolkit.C TKfit.h TKfit.C
+spexplorer_LDADD=@PGPLOT_LIBS@ $(LDADD)
 
 extragplot_SOURCES=extragplot.C
 extragplot_LDADD=@PGPLOT_LIBS@ $(LDADD)
