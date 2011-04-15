@@ -247,7 +247,7 @@ int main (int argc, char *argv[])
 
   /* add the "action" buttons */
   int QUIT         = d->addbutton(0.02,0.95,"Quit");
-  int GLOBALRESET  = d->addbutton(0.02,0.90,"Reset everything");
+  int GLOBALRESET  = d->addbutton(0.02,0.90,"Reset All");
   int PLOT         = d->addbutton(0.02,-0.80,"Plot");
 
   // View options
