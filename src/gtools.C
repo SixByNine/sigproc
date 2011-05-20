@@ -104,6 +104,7 @@ int* GPulseState::givetimes(int* ndetected, float sampletime, float flo, float f
     vector<Gpulse> SPvectorstorage;
     Gpulse gpulsestorage;
 
+    if (beamID <= 0) beamID = 1;
 
     FILE* SPfile;
     char SPfilename[200];
@@ -584,6 +585,7 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char
 	bool newpulse;
 	float maxsnr;
 	char dettype;
+	if (beamID <= 0 ) beamID = 1;
 	cout<<"Associating...\n";
 	if (npulses == 0) {
 		fprintf(stderr,"\nDid not find any giant pulses in this block.\n");
@@ -652,15 +654,15 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char
 		    printf("The burst is RFI. Npulses:%d DM:%f SNR:%f Loc'n:%d Wid:%d Scr:%d\n\n",onecand.size(),onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR,onecand[maxsnrindex].loc,onecand[0].width,onecand[maxsnrindex].tscrfac);
 		    if (onecand.size()<3){
 			dettype = 'g';
-			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'G',onecand[maxsnrindex].loc);
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'G',onecand[maxsnrindex].start);
 		    } else if (onecand[maxsnrindex].dm<irrel){
 			//nrfi++;
 			//detnum = nrfi; //!!! NEED TO MAKE NRFI/DETNUM/DETTYPE
 			dettype = 'r';
-			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'R',onecand[maxsnrindex].loc);
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'R',onecand[maxsnrindex].start);
 		    }
 		    for (int j=0;j<onecand.size();j++){
-			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,dettype,onecand[maxsnrindex].loc);
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,dettype,onecand[maxsnrindex].start);
 		    }
 		    //RFIpulses.insert(RFIpulses.end(), onecand.begin()+1, onecand.end());
 		} else {
@@ -670,9 +672,9 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char
 					 onecand[maxsnrindex].tscrfac, onecand[maxsnrindex].dm);
 		    candidates[ncandidates] = onecand;
 //		    printf("GOOD! %4d %10d %5.2f %5.3f\n",onecand.size(),onecand[0].start,onecand[maxsnrindex].dm,onecand[maxsnrindex].SNR);
-		    fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'C',onecand[maxsnrindex].loc);
+		    fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand[maxsnrindex].amp,onecand[maxsnrindex].SNR,scanrangelo,onecand[maxsnrindex].loc,scanrangehi-scanrangelo,onecand[maxsnrindex].tscrfac,onecand[maxsnrindex].dm,beamID,'C',onecand[maxsnrindex].start);
 		    for (int j=0;j<onecand.size();j++){
-			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,'c',onecand[maxsnrindex].loc);
+			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,'c',onecand[maxsnrindex].start);
 		    }
 		    cout<<"...done printing.\n";
 		    ncandidates++;
