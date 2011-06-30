@@ -586,7 +586,7 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char
 	float maxsnr;
 	char dettype;
 	if (beamID <= 0 ) beamID = 1;
-	cout<<"Associating...\n";
+	//cout<<"Associating...\n";
 	if (npulses == 0) {
 		fprintf(stderr,"\nDid not find any giant pulses in this block.\n");
 		*nsinglebeamcands=0;
@@ -676,7 +676,7 @@ vector<Gpulse>* assoc_giants(vector<Gpulse> uapulses, int *nsinglebeamcands,char
 		    for (int j=0;j<onecand.size();j++){
 			fprintf(resultsfile,"%s\t%8.5f %8.5f %12d %12d %12d %6d %8.2f %d %c %d\n",filetimestamp,onecand.at(j).amp,onecand.at(j).SNR,onecand.at(j).start,onecand.at(j).loc,onecand.at(j).width,onecand.at(j).tscrfac,onecand.at(j).dm,beamID,'c',onecand[maxsnrindex].start);
 		    }
-		    cout<<"...done printing.\n";
+		    //cout<<"...done printing.\n";
 		    ncandidates++;
 		}
 		onecand.erase(onecand.begin(),onecand.end());
