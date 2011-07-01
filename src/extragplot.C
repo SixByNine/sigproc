@@ -35,11 +35,13 @@ int main (int argc, char *argv[]){
     int j=0,ncands=0,nsubcands=0;
     long long int Sskip=0,Sread=0,i=1;
     char  textline[300];
+    char  filename[300];
     char *typedata;
-    float *snrdata,*dmdata,plotdmlo=-1,plotdmhi=-1,snrlimit=6.5;
+    float *snrdata,*dmdata,plotdmlo=-99999,plotdmhi=-99999,snrlimit=6.5;
     int *peakdata,*boxcardata,boxplotnow,bestboxcardetected,bestpeakdetected;
     float bestdmdetected,bestsnrdetected=-9999,datamaxplotpoint[1];
     float datamin,datamax,snrmax=-9999,snrmin=9999,scalesnrlo=-1,scalesnrhi=-1;
+    float maxdmdetected=-9999,mindmdetected=9999;
     FILE  *infile;
     bool needfiles = true;
 
@@ -61,10 +63,10 @@ int main (int argc, char *argv[]){
 //----------------PARSE INPUT LINE----------------
     while (i<argc) {
 	if (fopen(argv[i],"r")!=NULL){
-	    strcpy(textline,argv[i]);
-	    infile=fopen(textline,"r");
+	    strcpy(filename,argv[i]);
+	    infile=fopen(filename,"r");
 	    if (infile==NULL){
-		fprintf(stderr,"Error opening file %s\n",textline);
+		fprintf(stderr,"\n\tError opening file %s\n\n",filename);
 		exit(-1);
 	    }
 	    needfiles=false;
@@ -94,115 +96,130 @@ int main (int argc, char *argv[]){
     
 //--------------READ DETECTION DATA FILE--------------
     long long int numlines = 0;
-    infile = fopen(textline, "r");
+    infile = fopen(filename, "r");
     if (infile==NULL){
-	fprintf(stderr,"***FATAL ERROR: File %s not found!\n",textline);
+	fprintf(stderr,"\n\tError: File %s not readable!\n\n",filename);
 	exit(0);
-    } else {
-	while(fgets(textline, 300, infile)){
-	    if(textline[0] == '#' || (textline[0] == 'f' && textline[1] == 'i')) continue;
-	    else numlines++;
-	}
-	rewind(infile);
-	numlines = numlines - 1;
-	if ((snrdata = (float*) malloc (sizeof(float)*numlines)) == NULL){fprintf(stderr,"Error allocating RAM for SNR data\n");exit(-1);}
-	if ((peakdata = (int*) malloc (sizeof(int)*numlines)) == NULL){fprintf(stderr,"Error allocating RAM for peak data\n");exit(-1);}
-	if ((boxcardata = (int*) malloc (sizeof(int)*numlines)) == NULL){fprintf(stderr,"Error allocating RAM for boxcar data\n");exit(-1);}
-	if ((dmdata = (float*) malloc (sizeof(float)*numlines)) == NULL){fprintf(stderr,"Error allocating RAM for dm data\n");exit(-1);}
-	if ((typedata = (char*) malloc (sizeof(char)*numlines)) == NULL){fprintf(stderr,"Error allocating RAM for type data\n");exit(-1);}
-	//detnumdata = (int*) malloc (sizeof(int)*numlines);
+    }
 
+    while(fgets(textline, 300, infile)){
+	if(textline[0] == '#' || (textline[0] == 'f' && textline[1] == 'i')) continue;
+	else numlines++;
+    }
+    rewind(infile);
+    if (numlines == 0){
+	fprintf(stderr, "\n\tError: input file %s contains no detections!\n\n",filename);
+	exit(-1);
+    }
 
-	// Read "header" info from file.
-	fgets(textline, 300, infile);
-	sscanf(textline,"%*s %s %lld %f %f %f %s %s %s %f %d %f %f",&procfilename[0],&nsamp,&tsamp,&ctrfreq,&bandwidth,&ra,&dec,&UTCdatetime,&gthresh,&ndms,&dmlo,&dmhi);
-	dmhist = new float[ndms];
-	dmhistvalues = new float[ndms];
-	cdmhist = new float[ndms];
-	cdmhistvalues = new float[ndms];
+    if ((snrdata = (float*) malloc (sizeof(float)*numlines)) == NULL){fprintf(stderr,"\n\tError allocating RAM for SNR data\n\n");exit(-1);}
+    if ((peakdata = (int*) malloc (sizeof(int)*numlines)) == NULL){fprintf(stderr,"\n\tError allocating RAM for peak data\n\n");exit(-1);}
+    if ((boxcardata = (int*) malloc (sizeof(int)*numlines)) == NULL){fprintf(stderr,"\n\tError allocating RAM for boxcar data\n\n");exit(-1);}
+    if ((dmdata = (float*) malloc (sizeof(float)*numlines)) == NULL){fprintf(stderr,"\n\tError allocating RAM for dm data\n\n");exit(-1);}
+    if ((typedata = (char*) malloc (sizeof(char)*numlines)) == NULL){fprintf(stderr,"\n\tError allocating RAM for type data\n\n");exit(-1);}
+    //numlines = numlines - 1;
+    //detnumdata = (int*) malloc (sizeof(int)*numlines);
+    
 
+    // Read "header" info from file.
+    fgets(textline, 300, infile);
+    sscanf(textline,"%*s %s %lld %f %f %f %s %s %s %f %d %f %f",&procfilename[0],&nsamp,&tsamp,&ctrfreq,&bandwidth,&ra,&dec,&UTCdatetime,&gthresh,&ndms,&dmlo,&dmhi);
+    dmhist = new float[(ndms+1)*3];
+    dmhistvalues = new float[(ndms+1)*3];
+    cdmhist = new float[(ndms+1)*3];
+    cdmhistvalues = new float[(ndms+1)*3];
 
-	// Do input checks
-	if (Sread > nsamp || Sskip > nsamp){	   
-	    fprintf(stderr,"WARNING in extragplot:\n\tSamples to skip/read exceeds samples in file.\n\tWill plot whole file (%lld samples).\n\n", nsamp);
-	    Sread = nsamp - Sskip;
-	    Sskip = 0;
-	} else if (Sskip + Sread > nsamp){
-	    fprintf(stderr,"WARNING in extragplot:\n\tSamples to skip+read exceeds samples in file.\n\tWill plot from skip (sample %lld) to end of file (sample %lld).\n\n",Sskip,nsamp);
-	    Sread = nsamp - Sskip;
-	} else if (Sread == 0){
-	    Sread = nsamp;
-	}
+    // Do input checks
+    if (Sread > nsamp || Sskip > nsamp){	   
+	fprintf(stderr,"WARNING in extragplot:\n\tSamples to skip/read exceeds samples in file.\n\tWill plot whole file (%lld samples).\n\n", nsamp);
+	Sread = nsamp - Sskip;
+	Sskip = 0;
+    } else if (Sskip + Sread > nsamp){
+	fprintf(stderr,"WARNING in extragplot:\n\tSamples to skip+read exceeds samples in file.\n\tWill plot from skip (sample %lld) to end of file (sample %lld).\n\n",Sskip,nsamp);
+	Sread = nsamp - Sskip;
+    } else if (Sread == 0){
+	Sread = nsamp;
+    }
 
-	// If plotdmlo/hi set wrong or unset, make plot range 1.1*search range size (or 0 to dmhi*1.1).
-	if (plotdmlo == -1){
-	    if (dmlo == 0) plotdmlo = dmlo;
-	    else plotdmlo = dmlo-0.1*fabs(dmlo);
-	}
-	if (plotdmhi == -1) plotdmhi = dmhi*1.1;
-	if (plotdmlo >= plotdmhi){
-	    fprintf(stderr,"\nWARNING in extragplot:\n\tdmlo > dmhi. Will plot from minimum to maximum searched DM (%f - %f).\n\n",dmlo,dmhi);
-	    if (dmlo == 0) plotdmlo = dmlo;
-	    else plotdmlo = dmlo-0.1*fabs(dmlo);
-	    plotdmhi = dmhi*1.1;
-	}
-
-
-	// READ IN DATA.
-	i = 0;
-	while(fgets(textline, 300, infile)){
-	    if(textline[0] == '#') continue;
-	    else {
-		sscanf(textline,"%*s %*f %f %*lld %lld %*d %d %f %*d %c",&snrdata[i],&peakdata[i],&boxcardata[i],&dmdata[i],&typedata[i]); //,&detnumdata[i]);
-		if (snrmax==-9999) snrmax = snrdata[i];
-		if (bestsnrdetected==-9999) bestsnrdetected = snrdata[i];
-		if (snrmin==9999 && snrdata[i] != 0) snrmin = snrdata[i];
-		if (snrdata[i] > bestsnrdetected && typedata[i] == 'C'){
-		    bestpeakdetected = peakdata[i];
-		    bestdmdetected = dmdata[i];
-		    bestboxcardetected = boxcardata[i];
-		    bestsnrdetected = snrdata[i];
-		}
-		if (typedata[i] == 'c') nsubcands++;
-		if (typedata[i] == 'G' || typedata[i] == 'R' || typedata[i] == 'C'){
-		    if (snrdata[i] > snrmax){
-			snrmax=snrdata[i];
-		    }
-		}
-		if (snrdata[i] < snrmin && snrdata[i] !=0){
-		    snrmin = snrdata[i];
+    // READ IN DATA.
+    i = 0;
+    while(fgets(textline, 300, infile)){
+	if(textline[0] == '#') continue;
+	else {
+	    sscanf(textline,"%*s %*f %f %*lld %lld %*d %d %f %*d %c",&snrdata[i],&peakdata[i],&boxcardata[i],&dmdata[i],&typedata[i]); //,&detnumdata[i]);
+	    if (snrmax==-9999) snrmax = snrdata[i];
+	    if (bestsnrdetected==-9999) bestsnrdetected = snrdata[i];
+	    if (snrmin==9999 && snrdata[i] != 0) snrmin = snrdata[i];
+	    if (dmdata[i]<mindmdetected){mindmdetected=dmdata[i];}
+	    if (dmdata[i]>maxdmdetected){maxdmdetected=dmdata[i];}
+	    if (snrdata[i] > bestsnrdetected && typedata[i] == 'C'){
+		bestpeakdetected = peakdata[i];
+		bestdmdetected = dmdata[i];
+		bestboxcardetected = boxcardata[i];
+		bestsnrdetected = snrdata[i];
+	    }
+	    if (typedata[i] == 'c') nsubcands++;
+	    if (typedata[i] == 'G' || typedata[i] == 'R' || typedata[i] == 'C'){
+		if (snrdata[i] > snrmax){
+		    snrmax=snrdata[i];
 		}
 	    }
-	    i++;
-	}
-	cdmdata = new float[nsubcands];
-
-	// If scalesnrlo/hi set wrong or unset, make plot range sensible
-	if (scalesnrhi == -1) {
-	    for (i=0;i<numlines;i++){
-		if (typedata[i] == 'C'){
-		    if (snrdata[i]>scalesnrhi) scalesnrhi = snrdata[i];
-		}
+	    if (snrdata[i] < snrmin && snrdata[i] !=0){
+		snrmin = snrdata[i];
 	    }
 	}
-	if (scalesnrlo == -1){
-	    scalesnrlo = 0.1*scalesnrhi;
-	    if (scalesnrlo < snrlimit) scalesnrlo = snrlimit;
-	}
-	if (scalesnrlo >= scalesnrhi){
-	    scalesnrlo = snrlimit;
-	    for (i=0;i<numlines;i++){
-		if (typedata[i] == 'C'){
-		    if (snrdata[i]>scalesnrhi) scalesnrhi = snrdata[i];
-		}
-	    }
-	    if (scalesnrlo >= scalesnrhi) scalesnrlo = 0.5*scalesnrhi;
-	    fprintf(stderr,"\nWARNING in extragplot:\n\tBad scale range. Will scale dots between %f and %f.\n\n",snrlimit,3*snrlimit);
-	}
-	if (bestsnrdetected<scalesnrlo) fprintf(stderr,"WARNING in extragplot:\n\tNo candidate points above SNR scale lower limit %f.\n\n",scalesnrlo);
+	i++;
     }
     fclose(infile);
+    cdmdata = new float[nsubcands];
+    
+    // If plot ranges set wrong or unset, make plot range sensible
+    // Make DM plot range 1.1*search range size (or 0 to dmhi).
+    //   SNR scaling
+    if (scalesnrhi == -1) {
+	for (i=0;i<numlines;i++){
+	    if (typedata[i] == 'C'){
+		if (snrdata[i]>scalesnrhi) scalesnrhi = snrdata[i];
+	    }
+	}
+    }
+    if (scalesnrlo == -1){
+	scalesnrlo = 0.5*scalesnrhi;
+	if (scalesnrlo < snrlimit) scalesnrlo = snrlimit;
+    }
+    if (scalesnrlo >= scalesnrhi){
+	scalesnrlo = snrlimit;
+	for (i=0;i<numlines;i++){
+	    if (typedata[i] == 'C'){
+		if (snrdata[i]>scalesnrhi) scalesnrhi = snrdata[i];
+	    }
+	}
+	if (scalesnrlo >= scalesnrhi) scalesnrlo = 0.5*scalesnrhi;
+	fprintf(stderr,"\nWARNING in extragplot:\n\tBad scale range. Will scale dots between %f and %f.\n\n",snrlimit,3*snrlimit);
+    }
+    if (bestsnrdetected<scalesnrlo) fprintf(stderr,"WARNING in extragplot:\n\tNo candidate points above SNR scale lower limit %f.\n\n",scalesnrlo);
 
+    //   DM scaling
+    if (plotdmlo == -99999){
+	plotdmlo = dmlo;
+	if (plotdmlo <= 0) plotdmlo = 0;
+    }
+    if (plotdmhi == -99999) plotdmhi = dmhi;
+    if (plotdmlo >= plotdmhi){
+	fprintf(stderr,"\nWARNING in extragplot:\n\tdmlo > dmhi. Will plot from minimum to maximum searched DM (%f - %f).\n\n",dmlo,dmhi);
+	if (dmlo == 0) plotdmlo = dmlo;
+	else plotdmlo = dmlo;
+	plotdmhi = dmhi;
+    }
+    if (maxdmdetected<plotdmlo || mindmdetected>plotdmhi){
+	fprintf(stderr,"WARNING in extragplot:\n\tNo candidate points in DM range %f to %f.",plotdmlo,plotdmhi);
+	fprintf(stderr,"\n\t Will plot from minimum to maximum searched DM (%f - %f).\n\n",dmlo,dmhi);
+	plotdmlo = dmlo;
+	plotdmhi = dmhi;
+//	fprintf(stderr,"\n\tSetting DM range from %f to %f.\n\n",mindmdetected,maxdmdetected);
+//	plotdmlo = mindmdetected;
+//	plotdmhi = maxdmdetected;
+    }
     //cout<<"Plotting from "<<scalesnrlo<<" to "<<scalesnrhi<<"\n";
     //cout<<"Plotting from "<<plotdmlo<<" to "<<plotdmhi<<"\n";
 
@@ -363,47 +380,87 @@ int main (int argc, char *argv[]){
     }
     int idm = 0,cidm=0;
     float ndmmax=1,ncdmmax=1;
-    qsort(dmdata,numlines,sizeof(float),comparefunction);
-    qsort(cdmdata,nsubcands,sizeof(float),comparefunction);
-    dmhist[0] = 1;
-    dmhistvalues[0]=dmdata[0];
-    cdmhist[0] = 1;
-    cdmhistvalues[0]=dmdata[0];
-    for (i=0;i<numlines-1;i++){
-	if (dmdata[i]<plotdmlo){
-	    dmhistvalues[0] = dmdata[i];
+    float dmdataSort[numlines];
+    float cdmdataSort[nsubcands];
+    float prevDMval,cprevDMval;
+    for (i=0;i<numlines;i++){
+	dmdataSort[i] = dmdata[i];
+	if (i<nsubcands)
+	    cdmdataSort[i] = cdmdata[i];
+    }
+    qsort(dmdataSort,numlines,sizeof(float),comparefunction);
+    qsort(cdmdataSort,nsubcands,sizeof(float),comparefunction);
+
+//    dmhist[0] = 1;
+//    dmhistvalues[0]=dmdata[0];
+//    cdmhist[0] = 1;
+//    cdmhistvalues[0]=dmdata[0];
+    // Add initial padding
+
+    for (i=0;i<numlines;i++){ //HERE
+	if (i==0){
+	    dmhistvalues[idm]=plotdmlo;
+	    dmhistvalues[idm+1]=plotdmlo;
+	    dmhistvalues[idm+2]=plotdmlo;
+	    prevDMval = plotdmlo;
+	}
+	if (dmdataSort[i]<plotdmlo){
 	    continue;
-	} else if (dmdata[i]>plotdmhi){
+	} else if (dmdataSort[i]>plotdmhi){
 	    break;
 	}
-	if (dmdata[i]!=dmdata[i+1]){
-	    idm++;
-	    if (dmdata[i+1]>plotdmhi) break;
-	    dmhistvalues[idm]=dmdata[i+1];
-	    //dmhist[idm] = 0;
+	if (dmdataSort[i] == prevDMval){
+	    dmhist[idm+1]++;
 	} else {
-	    dmhist[idm]++;
-	}
-	if (i<nsubcands-1){
-	    if (cdmdata[i]<plotdmlo){
-		cdmhistvalues[0] = cdmdata[i];
-		continue;
-	    } else if (cdmdata[i]>plotdmhi){
-		break;
-	    }
-	    if (cdmdata[i]!=cdmdata[i+1]){
-		cidm++;
-		if (cdmdata[i+1]>plotdmhi) break;
-		cdmhistvalues[cidm]=cdmdata[i+1];
-		//cdmhist[cidm] = 1;
-	    } else {
-		cdmhist[cidm]++;
-		if (cdmhist[cidm]>ndmmax) ndmmax = cdmhist[cidm];
-	    }
+	    idm+=3;
+	    dmhist[idm+1]++;
+	    dmhistvalues[idm]=dmdataSort[i];
+	    dmhistvalues[idm+1]=dmdataSort[i];
+	    dmhistvalues[idm+2]=dmdataSort[i];
+	    prevDMval = dmdataSort[i];
 	}
     }
-    fprintf(stderr,"Found detections at %d unique DMs.\n",idm);
-    fprintf(stderr,"Found candidates at %d unique DMs.\n",cidm);
+    
+    // Do similar operation for cands...
+    for (i=0;i<nsubcands;i++){
+	if (i==0){
+	    cdmhistvalues[cidm]=plotdmlo;
+	    cdmhistvalues[cidm+1]=plotdmlo;
+	    cdmhistvalues[cidm+2]=plotdmlo;
+	    cprevDMval = plotdmlo;
+	}
+	if (cdmdataSort[i]<plotdmlo){
+	    continue;
+	} else if (cdmdataSort[i]>plotdmhi){
+	    break;
+	}
+	if (cdmdataSort[i] == cprevDMval){
+	    cdmhist[cidm+1]++;
+	    if (cdmhist[cidm+1]>ndmmax) ndmmax = cdmhist[cidm+1];
+	} else {
+	    cidm+=3;
+	    cdmhist[cidm+1]++;
+	    cdmhistvalues[cidm]=cdmdataSort[i];
+	    cdmhistvalues[cidm+1]=cdmdataSort[i];
+	    cdmhistvalues[cidm+2]=cdmdataSort[i];
+	    cprevDMval = cdmdataSort[i];
+	}
+    }
+    if (dmhistvalues[idm]!=plotdmhi){
+	idm+=3;
+	dmhistvalues[idm]==plotdmhi;
+	dmhistvalues[idm+1]==plotdmhi;
+	dmhistvalues[idm+2]==plotdmhi;
+    }
+    if (cdmhistvalues[cidm]!=plotdmhi){
+	cidm+=3;
+	cdmhistvalues[cidm]==plotdmhi;
+	cdmhistvalues[cidm+1]==plotdmhi;
+	cdmhistvalues[cidm+2]==plotdmhi;
+    }
+
+    fprintf(stderr,"Found detections at %d unique DMs.\n",(int)(idm/3));
+    fprintf(stderr,"Found candidates at %d unique DMs.\n",(int)(cidm/3));
 
     //Now actually make the plot...
     ndmmax = 1.1*ndmmax;
@@ -414,10 +471,11 @@ int main (int argc, char *argv[]){
     //cpglab("Time (s)","DM (pc/cm3)","");
     cpgmtxt("B",2.2,0.5,0.5,"DM in pc/cm\\u3\\d");
     cpgmtxt("L",2.1,0.5,0.5,"N detections");
+    cpgsci(14);
     cpgslw(3);
     cpgline(idm,dmhistvalues,dmhist);
     cpgsci(11);
-    cpgslw(4);
+    cpgslw(5);
     cpgline(cidm,cdmhistvalues,cdmhist);
     cpgsci(1);
     cpgslw(1);
