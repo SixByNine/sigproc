@@ -219,9 +219,9 @@ foreach $infile (@file){
 	print STDERR "------------------------------------\nPlotting $plotnamebase:\n";
 	print STDERR "\n\nquickgplot $plotnamebase -s $sampskip -r $sampread -dec $dec -bestbeam $maxbeam";
 	if ($killmask eq ''){
-	    system "$quickgplot $plotnamebase -s $sampskip -r $sampread -dec $dec -bestbeam $maxbeam\n\n";
+	    system "quickgplot $plotnamebase -s $sampskip -r $sampread -dec $dec -bestbeam $maxbeam\n\n";
 	} else {
-	    system "$quickgplot $plotnamebase -s $sampskip -r $sampread -dec $dec -bestbeam $maxbeam -k $killmask\n\n";
+	    system "quickgplot $plotnamebase -s $sampskip -r $sampread -dec $dec -bestbeam $maxbeam -k $killmask\n\n";
 	}
 	system "rm $plotnamebase.dm0 $plotnamebase.dm?? $plotnamebase.beam? $plotnamebase.PULSEDATA $plotnamebase.fil";
     }
