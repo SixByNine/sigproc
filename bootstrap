@@ -1,2 +1,6 @@
 #!/bin/sh
+
+rm -rf autoconf
+cp -r autoconf.boot autoconf
+
 autoreconf --install --force
