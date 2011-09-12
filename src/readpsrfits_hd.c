@@ -95,7 +95,8 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   fits_read_key(fp, TDOUBLE, "CHAN_BW", &chanbw, NULL, &status );
 //  if (chanbw < 0) obsbw=-(obsbw);
 
-  *fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
+  //*fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
+  *fch1 = fc - (*nchans / 2 - 1)*chanbw;
   *foff = chanbw;
 
   
