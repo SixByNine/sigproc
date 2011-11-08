@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <fitsio.h>
 
+#define MX_NCHAN 4096
+
 // Routine to read the header from a PSRFITS file 
 void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_type,char *source_name,
 		    double *fch1,int *nchans,double *foff,int *nifs,double *tsamp,
@@ -21,6 +23,11 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   double h,m,sec,chanbw;
   int imjd;
   float smjd;
+
+  int ncol, NCHANS, anynul;
+  unsigned char nulval = 0;
+  long long row, firstelem, nelem;
+  float ch_freq[MX_NCHAN];
 
   // Defaults that are not being set
   *machine_id=-1;
@@ -95,6 +102,18 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   fits_read_key(fp, TDOUBLE, "CHAN_BW", &chanbw, NULL, &status );
 //  if (chanbw < 0) obsbw=-(obsbw);
 
+  fits_movnam_hdu( fp, BINARY_TBL, "SUBINT", 0, &status );
+  fits_read_key( fp, TINT, "NCHAN", &NCHANS, NULL, &status);
+  fits_get_colnum( fp, CASESEN, "DAT_FREQ", &ncol, &status );
+
+  firstelem = 1LL;
+  nelem = NCHANS;
+  row = 1LL;
+
+  fits_read_col( fp, TFLOAT, ncol, row, firstelem, nelem, &nulval,
+		  ch_freq, &anynul, &status );
+
+  *fch1 = ch_freq[0];
   //*fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
   *fch1 = fc - (*nchans / 2 - 1)*chanbw;
   *foff = chanbw;
