@@ -11,8 +11,7 @@
 #include "header.h"
 
 int read_header(FILE *inputfile);
-
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart);
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff);
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma,char zap_mode);
 float get_random_value(float mean, float sigma);
 
@@ -34,6 +33,10 @@ void print_usage(){
 	printf("--tstart,-T           : modify the start mjd.\n");
 	printf("--beam,-b {i}         : modify the beam number to {i}\n");
 	printf("--nbeams,-B {i}       : modify number of beams to {i}\n");
+	printf("--nchan,-c {i}        : modify number of channels to {i}\n");
+	printf("--fch2,-f {f}         : modify fch1 {f}\n");
+	printf("--foff,-F {f}         : modify foff {f}\n");
+	printf("--nbits,-i {b}           : modify nbits {b}\n");
 	printf("\nOther options:\n");
 	printf("--time-zap,-t \"s e\" : 'zap' samples between 's' and 'e'\n");
 	printf("--replace-gaussian,-G : Replace zapped Gaussian random number generator\n");
@@ -45,7 +48,7 @@ void print_usage(){
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSG";
+	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSGf:F:c:i:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
@@ -53,7 +56,7 @@ int main (int argc, char** argv){
 	int ntimezaps,nfreqzaps;
 	double newra;
 	double newdec;
-	double newtstart;
+	double newtstart=-1;
 	int newibeam=-1;
 	int newnbeams=-1;
 	float mean,sigma;
@@ -64,6 +67,10 @@ int main (int argc, char** argv){
 	int killswitch=0;
 	int arr_size = 1024;
 	char zap_mode=REPLACE_SAMPLES;
+	float newfch1= 0;
+	float newfoff= 0;
+	int newnbits  = 0;
+	int newnchan = 0;
 
 	newname[0]='\0';
 	ntimezaps=0;
@@ -148,6 +155,25 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'Z';
 
+	long_opt[long_opt_idx].name = "nchan";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'c';
+
+	long_opt[long_opt_idx].name = "foff";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'F';
+
+	long_opt[long_opt_idx].name = "fch1";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'f';
+
+	long_opt[long_opt_idx].name = "nbits";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'i';
 
 
 
@@ -208,6 +234,18 @@ int main (int argc, char** argv){
 						break;
 					case 'S':
 						zap_mode=REPLACE_SAMPLES;
+						break;
+					case 'c':
+						newnchan=atoi(optarg);
+						break;
+					case 'f':
+						newfch1 = atof(optarg);
+						break;
+					case 'F':
+						newfoff = atof(optarg);
+						break;
+					case 'i':
+						newnbits = atoi(optarg);
 						break;
 				}
 		}
@@ -276,7 +314,7 @@ int main (int argc, char** argv){
 		exit(-5);
 	}
 
-	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart);
+	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000 || newnbits || newnchan || newfch1 != 0 || newfoff != 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart,newnchan,newnbits,newfch1,newfoff);
 
 	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma,zap_mode);
 
@@ -284,7 +322,7 @@ int main (int argc, char** argv){
 }
 
 
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart){
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff){
 	int newlen;
 	int hdr_len;
 	char* hdr_arr;
@@ -381,6 +419,50 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 			printf("new nbeams = '%d'\n",newnbeams);
 			*((int*)(ptr)) = newnbeams;
 		}
+
+		memcpy(buf,ptr,5);
+		buf[5]='\0';
+		if(newnbits && strcmp(buf,"nbits")==0){
+			ptr+=5;
+			an_int = *((int*)(ptr));
+			printf("old nbits = '%d'\n",an_int);
+			printf("new nbits = '%d'\n",newnbits);
+			*((int*)(ptr)) = newnbits;
+		}
+
+		memcpy(buf,ptr,6);
+		buf[6]='\0';
+		if(newnchan && strcmp(buf,"nchans")==0){
+			ptr+=6;
+			an_int = *((int*)(ptr));
+			printf("old nchans= '%d'\n",an_int);
+			printf("new nchans= '%d'\n",newnchan);
+			*((int*)(ptr)) = newnchan;
+		}
+
+		memcpy(buf,ptr,4);
+		buf[4]='\0';
+		if(newfch1 != 0 && strcmp(buf,"fch1")==0){
+			ptr+=4;
+			a_double = *((double*)(ptr));
+			printf("old fch1= '%lf'\n",a_double);
+			printf("new fch1= '%f'\n",newfch1);
+			*((double*)(ptr)) = (double)newfch1;
+		}
+
+
+		memcpy(buf,ptr,4);
+		buf[4]='\0';
+		if(newfoff != 0 && strcmp(buf,"foff")==0){
+			ptr+=4;
+			a_double = *((double*)(ptr));
+			printf("old foff= '%lf'\n",a_double);
+			printf("new foff= '%f'\n",newfoff);
+			*((double*)(ptr)) = (double)newfoff;
+		}
+
+
+
 
 		ptr++;
 	}
