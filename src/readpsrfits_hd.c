@@ -20,9 +20,8 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   float obsbw,fc;
   char sobsbw[100],sfc[100],ras[100],decs[100];
   char name[100],telescope[100];
-  double h,m,sec,chanbw;
+  double h,m,sec,chanbw,smjd,offs;
   int imjd;
-  float smjd;
 
   int ncol, NCHANS, anynul;
   unsigned char nulval = 0;
@@ -49,8 +48,8 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
       status=0;
     }
   fits_report_error(stderr,status);
-  fits_read_key(fp, TINT, "OBSNCHAN", nchans, NULL, &status);
-  fits_report_error(stderr,status);
+  //fits_read_key(fp, TINT, "OBSNCHAN", nchans, NULL, &status);
+  //fits_report_error(stderr,status);
   fits_read_key(fp, TFLOAT, "OBSBW", &obsbw, NULL, &status);
   //  if (obsbw > 0) obsbw = -obsbw; // We must invert the data
   // The bandwidth in FITS is always positive
@@ -62,7 +61,9 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   fits_report_error(stderr,status);
   fits_read_key(fp, TINT, "STT_IMJD", &imjd, NULL, &status);
   fits_report_error(stderr,status);
-  fits_read_key(fp, TFLOAT, "STT_SMJD", &smjd, NULL, &status);
+  fits_read_key(fp, TDOUBLE, "STT_SMJD", &smjd, NULL, &status);
+  fits_report_error(stderr,status);
+  fits_read_key(fp, TDOUBLE, "STT_OFFS", &offs, NULL, &status);
   fits_report_error(stderr,status);
   fits_read_key(fp, TSTRING, "TELESCOP", telescope, NULL, &status);
   fits_report_error(stderr,status);
@@ -80,7 +81,7 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
     *telescope_id = -1;
 
   // Start time
-  *tstart = imjd+smjd/86400.0;
+  *tstart = imjd+(smjd+offs)/86400.0;
 
   fits_read_key(fp, TSTRING, "RA", ras, NULL, &status);
   sscanf(ras,"%lf:%lf:%lf",&h,&m,&sec);
@@ -108,14 +109,15 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
 
   firstelem = 1LL;
   nelem = NCHANS;
+  *nchans = NCHANS;
   row = 1LL;
 
   fits_read_col( fp, TFLOAT, ncol, row, firstelem, nelem, &nulval,
 		  ch_freq, &anynul, &status );
 
-  *fch1 = ch_freq[0];
+  *fch1 = ch_freq[0] > ch_freq[nelem-1] ? ch_freq[0] : ch_freq[nelem-1];
   //*fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
-  *fch1 = fc - (*nchans / 2 - 1)*chanbw;
+  //*fch1 = fc - (*nchans / 2 - 1)*chanbw;
   *foff = chanbw;
 
   
