@@ -80,6 +80,8 @@ main (int argc, char *argv[])
 	strcpy(inpfile,"stdin");
 	strcpy(outfile,"stdout");
 	machine_id=telescope_id=0;
+	machine_id=10;
+	telescope_id=4;
 	nchans=128;
 	nbits=4;
 	tstart=50000.0;

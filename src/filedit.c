@@ -45,12 +45,12 @@ void print_usage(){
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSG";
+	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSGF:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
 	int fzaps[1024];
-	int ntimezaps,nfreqzaps;
+	int ntimezaps,nfzaps;
 	double newra;
 	double newdec;
 	double newtstart;
@@ -64,10 +64,12 @@ int main (int argc, char** argv){
 	int killswitch=0;
 	int arr_size = 1024;
 	char zap_mode=REPLACE_SAMPLES;
+	char fzap_fname[1024];
 
 	newname[0]='\0';
+	fzap_fname[0]='\0';
 	ntimezaps=0;
-	nfreqzaps=0;
+	nfzaps=0;
 	mean=0;
 	sigma=1;
 
@@ -148,6 +150,11 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'Z';
 
+	long_opt[long_opt_idx].name = "fzap";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'F';
+
 
 
 
@@ -209,6 +216,9 @@ int main (int argc, char** argv){
 					case 'S':
 						zap_mode=REPLACE_SAMPLES;
 						break;
+					case 'F':
+						strcpy(fzap_fname,optarg);
+						break;
 				}
 		}
 	}
@@ -264,6 +274,14 @@ int main (int argc, char** argv){
 		printf("Zapping %d/%d time samples\n",ntimezaps,j);
 	}
 
+	if (strlen(fzap_fname) > 0){
+	   file=fopen(fzap_fname,"r");
+	   while(!feof(file)){
+		  fscanf(file,"%d",fzaps+nfzaps);
+		  nfzaps++;
+	   }
+	   fclose(file);
+	}
 
 	if (optind >= argc) {
 		printf("Error: Need a fil file to work on... (use --help for options)\n");
@@ -278,7 +296,7 @@ int main (int argc, char** argv){
 
 	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart);
 
-	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma,zap_mode);
+	if(ntimezaps > 0 || nfzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfzaps,mean,sigma,zap_mode);
 
 	return 0;
 }

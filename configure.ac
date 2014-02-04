@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([sixproc],[2011.7],[mkeith@pulsarastronomy.net])
+AC_INIT([sixproc],[2013.2],[mkeith@pulsarastronomy.net])
 
 if test -n "${CXXFLAGS}"; then
 	user_set_cxxflags=yes
@@ -67,6 +67,13 @@ if test X$have_openmp == Xno; then
 fi
 
 
+
+AC_CHECK_HEADER(tempo2pred.h,have_tempo2=yes, have_tempo2=no)
+if test X$have_tempo2 == Xyes; then
+   AC_CHECK_LIB(tempo2pred,T2Predictor_GetPhase,have_tempo2=yes, have_tempo2=no)
+fi
+
+AM_CONDITIONAL(HAVE_T2PRED, [test x"$have_tempo2" = xyes])
 
 AC_SUBST(XML_CPPFLAGS)
 AC_SUBST(PSRXML_LIBS)
