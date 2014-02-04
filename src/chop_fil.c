@@ -18,6 +18,7 @@ void chop_fil_help(){
 	printf("\n\nOptions\n");
 	printf("-s st   : skip 'st' seconds at start of file\n");
 	printf("-r re   : read 're' seconds from file\n");
+	printf("-f      : force reading more data than was in the file.\n");
 
 }
 
@@ -109,6 +110,7 @@ main(int argc, char *argv[])
 	} else {
 		check=0;
 	}
+	char force_read=0;
 
 	for (i = 0; i < argc ; i++){
 		if (strcmp(argv[i],"-s")==0){
@@ -117,6 +119,10 @@ main(int argc, char *argv[])
 		if (strcmp(argv[i],"-r")==0){
 			readsec=atof(argv[++i]);
 		}
+		if (strcmp(argv[i],"-f")==0){
+		   force_read=1;
+		}
+
 	}
 
 	rewind(fileptr);
@@ -170,14 +176,22 @@ main(int argc, char *argv[])
 
 	fprintf(stderr,"\n\n");
 	block_array = (char*) malloc(blocksize);
+	
 	fprintf(stderr,"Copying data...\n");
 	count = 0;
 	update_count = update_size;
 	while ( count < bytes_to_read ) { 
 		int read = fread(block_array,1,blocksize,fileptr);
 		if ( read < 1 ) {
+		   if (force_read){
+			  fclose(fileptr);
+			  fileptr = fopen("/dev/urandom","r");
+			  fprintf(stderr,"\rPast end of file, reading from /dev/urandom\n");
+			  continue;
+		   } else {
 			fprintf(stderr,"Error! Could not read enough data\n");
 			exit(2);
+		   }
 		}
 		read = fwrite(block_array,1,read,outfile);
 		if ( read < 1 ) {
