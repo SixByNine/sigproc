@@ -21,9 +21,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `z' library (-lz). */
-#undef HAVE_LIBZ
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -60,9 +57,21 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if ZLIB is available. */
+#undef HAVE_ZLIB
+
+/* Define to 1 if you have the </tmp/dummy1_zlib.h> header file. */
+#undef HAVE__TMP_DUMMY1_ZLIB_H
+
+/* Define to 1 if you have the </tmp/dummy3_zlib.h> header file. */
+#undef HAVE__TMP_DUMMY3_ZLIB_H
+
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE

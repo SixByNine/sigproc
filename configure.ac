@@ -56,7 +56,7 @@ if test X$have_openmp == Xyes; then
 fi
 
 
-CHECK_ZLIB
+AC_PATH_ZLIB
 MJK_LIB_FFTW
 
 if test X$have_fftw != Xyes; then
