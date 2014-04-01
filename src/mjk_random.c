@@ -19,7 +19,7 @@ void mjk_rand_fill_fallback(mjk_rand_t *state){
 	int64_t astateN;
 
 	const uint64_t buf_chunk = state->buffer_len/state->nthreadmax;
-	const uint64_t chunk=16;
+	const uint64_t chunk=64;
 
 #pragma omp parallel shared(state,astateN) private(iblk,ibuf,astateP)
 	{
@@ -147,8 +147,8 @@ void mjk_rand_gauss_atleast(mjk_rand_t *state, uint64_t n){
 mjk_rand_t *mjk_rand_init(uint64_t seed){
    mjk_rand_t *state = calloc(1,sizeof(mjk_rand_t));
    state->next=-1;
-   state->nthreadmax=256;
-   state->buffer_len=1024*1024*64;
+   state->nthreadmax=1024*1024;
+   state->buffer_len=state->nthreadmax*64;
    state->alg=FALLBACK;
    state->alg_state=calloc(1,sizeof(int64_t));
    state->buffer=calloc(state->buffer_len,sizeof(uint32_t));

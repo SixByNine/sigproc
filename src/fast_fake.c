@@ -77,6 +77,7 @@ int main (int argc, char *argv[])
    fch1=getF("--fch1","-F",argc,argv,fch1);
    foff=getF("--foff","-f",argc,argv,foff);
    nbits=getI("--nbits","-b",argc,argv,foff);
+   nchans=getI("--nchans","-c",argc,argv,nchans);
    seed=getI("--seed","-S",argc,argv,seed);
    char test_mode=getB("--test","-0",argc,argv,0);
    strcpy(outfile,getS("--out","-o",argc,argv,"stdout"));
