@@ -240,6 +240,8 @@ int main (int argc, char *argv[])
 			fflush(stderr);
 			percent+=1;
 		 }
+		 mjk_rand_gauss_atleast(rnd,nchans);
+#pragma omp paralelel for schedule(dynamic,1)
 		 for(uint64_t chan = 0; chan < nchans; chan++){
 			buffer[chan] = (unsigned char)(mjk_rand_gauss(rnd)*32.0+127.5);
 		 }
