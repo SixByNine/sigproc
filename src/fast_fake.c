@@ -20,15 +20,16 @@
 
 #define TWO_PI 6.2831853071795864769252866
 
+uint64_t NRAND=-1;
+float* RANDBUF;
+
 double gen_gauss(double variance)
 {
-   static char hasSpare = 0;
-   static double rand1, rand2;
-
-   if(hasSpare)
+   if(NRAND > 0)
    {
-	  hasSpare = 0;
+	  // @TODO: MAke this not crap
 	  return sqrt(variance * rand1) * sin(rand2);
+	  NRAND--;
    }
 
    hasSpare = 1;
