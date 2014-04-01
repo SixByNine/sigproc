@@ -11,23 +11,23 @@ extern "C" {
 
 
    typedef struct mjk_rand {
-	  uint32_t nthreadmax;
-	  uint32_t buffer_len;
-	  uint32_t *buffer;
-	  int32_t next;
-	  mjk_rand_alg_t alg;
-	  void* alg_state;
-	  uint32_t rmax;
-	  double gauss_next;
-	  uint32_t gauss_state;
+	   uint32_t nthreadmax;
+	   uint32_t buffer_len;
+	   uint32_t *buffer;
+	   int32_t next;
+	   mjk_rand_alg_t alg;
+	   void* alg_state;
+	   uint32_t rmax;
+	   int32_t gauss_next;
+	   float* gauss_buffer;
    } mjk_rand_t;
 
 
-double mjk_rand_double(mjk_rand_t *state);
-uint32_t mjk_rand(mjk_rand_t *state);
-double mjk_rand_gauss(mjk_rand_t *state);
-mjk_rand_t *mjk_rand_init(uint64_t seed);
-void mjk_rand_free(mjk_rand_t *state);
+   double mjk_rand_double(mjk_rand_t *state);
+   uint32_t mjk_rand(mjk_rand_t *state);
+   float mjk_rand_gauss(mjk_rand_t *state);
+   mjk_rand_t *mjk_rand_init(uint64_t seed);
+   void mjk_rand_free(mjk_rand_t *state);
 #ifdef __cplusplus
 }
 #endif

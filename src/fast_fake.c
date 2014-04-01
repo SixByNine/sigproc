@@ -18,9 +18,6 @@
 
 #define STREQ(a,b) (strcmp(a,b)==0)
 
-
-#define TWO_PI 6.2831853071795864769252866
-
 char* getS(char *lo, char* so, int argc, char** argv, char* val){
    int i;
    char* ret = val;
@@ -180,18 +177,19 @@ int main (int argc, char *argv[])
 
    logmsg("Generate %lld samples, %.3lf GiB",nsamples,nsamples*bytes_per_sample/pow(2,30));
 
-   uint64_t tenpercent = nsamples/10;
+   uint64_t onepercent = nsamples/100;
    int percent=0;
    unsigned char* buffer = (unsigned char*) malloc(sizeof(unsigned char)*bytes_per_sample);
 
    if (nbits==1){
 	  // we just want random bytes.
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%tenpercent ==0){
-			double t1=(double)(time(NULL)-t0);
+		 if (samp%onepercent ==0){
+			double t1=(double)(time(NULL)-t0)+1e-3;
 			double bytespersec = samp*bytes_per_sample/t1;
-			logmsg("Complete: %d%%. Sample: %lld Real time %.1lfs, Sim time %.1lfs. Writing %.2lfMiB/s",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			percent+=10;
+			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
+			fflush(stderr);
+			percent+=1;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan++){
 			unsigned char val = rand()&0xFF; // this is bad, but good enough for our crappy data.
@@ -201,11 +199,12 @@ int main (int argc, char *argv[])
 	  }
    } else if (nbits==2){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%tenpercent ==0){
-			double t1=(double)(time(NULL)-t0);
+		 if (samp%onepercent ==0){
+			double t1=(double)(time(NULL)-t0)+1e-3;
 			double bytespersec = samp*bytes_per_sample/t1;
-			logmsg("Complete: %d%%. Sample: %lld Real time %.1lfs, Sim time %.1lfs. Writing %.2lfMiB/s (2-bits)",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			percent+=10;
+			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
+			fflush(stderr);
+			percent+=1;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan+=4){
 			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8;
@@ -218,11 +217,12 @@ int main (int argc, char *argv[])
 	  }
    } else if (nbits==4){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%tenpercent ==0){
-			double t1=(double)(time(NULL)-t0);
+		 if (samp%onepercent ==0){
+			double t1=(double)(time(NULL)-t0)+1e-3;
 			double bytespersec = samp*bytes_per_sample/t1;
-			logmsg("Complete: %d%%. Sample: %lld Real time %.1lfs, Sim time %.1lfs. Writing %.2lfMiB/s",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			percent+=10;
+			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
+			fflush(stderr);
+			percent+=1;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan+=2){
 			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF;
@@ -233,11 +233,12 @@ int main (int argc, char *argv[])
 	  }
    } else if (nbits==8){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%tenpercent ==0){
-			double t1=(double)(time(NULL)-t0);
+		 if (samp%onepercent ==0){
+			double t1=(double)(time(NULL)-t0)+1e-3;
 			double bytespersec = samp*bytes_per_sample/t1;
-			logmsg("Complete: %d%%. Sample: %lld Real time %.1lfs, Sim time %.1lfs. Writing %.2lfMiB/s",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			percent+=10;
+			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
+			fflush(stderr);
+			percent+=1;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan++){
 			buffer[chan] = (unsigned char)(mjk_rand_gauss(rnd)*32.0+127.5);
@@ -247,11 +248,12 @@ int main (int argc, char *argv[])
    } else if (nbits==32){
 	  float* fbuf = (float*)buffer;
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%tenpercent ==0){
-			double t1=(double)(time(NULL)-t0);
+		 if (samp%onepercent ==0){
+			double t1=(double)(time(NULL)-t0)+1e-3;
 			double bytespersec = samp*bytes_per_sample/t1;
-			logmsg("Complete: %d%%. Sample: %lld Real time %.1lfs, Sim time %.1lfs. Writing %.2lfMiB/s",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			percent+=10;
+			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
+			fflush(stderr);
+			percent+=1;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan++){
 			fbuf[chan] = mjk_rand_gauss(rnd);
@@ -261,9 +263,10 @@ int main (int argc, char *argv[])
    }
 
 
+   fprintf(stderr,"\n");
    free(buffer);
    mjk_rand_free(rnd);
-   logmsg("Complete! 100%%");
+   logmsg("Done!");
    fclose(output);
 
    return 0;

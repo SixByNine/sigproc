@@ -1,4 +1,5 @@
 
+#include <stdio.h>
 /* define some functions for log message 
  * M.Keith 2012 - let me know if this fails to compile anywhere.
  * mkeith@pulsarastronomy.net
