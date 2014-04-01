@@ -128,7 +128,7 @@ int main (int argc, char** argv){
    float psr_freq = T2Predictor_GetFrequency(&pred,mjd,freq[0]);
 	
    sum/=nprof;
-   scale = A*in_snr / sqrt( nsamp)/sum;
+   scale = A*in_snr / sqrt(nchans*nsamp)/sum;
    logmsg("scale=%lg",scale);
 
    // normalise to pseudo-S/N in 1s.

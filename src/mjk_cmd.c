@@ -1,5 +1,6 @@
 #include "mjk_cmd.h"
 #include <stdlib.h>
+#include <string.h>
 
 char* getS(char *lo, char* so, int argc, char** argv, char* val){
    int i;
