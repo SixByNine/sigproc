@@ -28,6 +28,7 @@ extern "C" {
    float mjk_rand_gauss(mjk_rand_t *state);
    mjk_rand_t *mjk_rand_init(uint64_t seed);
    void mjk_rand_free(mjk_rand_t *state);
+void mjk_rand_gauss_atleast(mjk_rand_t *state, uint64_t n);
 #ifdef __cplusplus
 }
 #endif

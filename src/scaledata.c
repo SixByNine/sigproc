@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "sigproc.h"
 void float2int(float *f, int n, int b, float min, float max, int *i) /*includefile*/ 
 {
 	int j;

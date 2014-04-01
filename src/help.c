@@ -1,6 +1,8 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+#include <stdio.h>
+#include "sigproc.h"
 /* help.c - on-line synopsis for each program called via "programname help" */
 int help_required(char *string) /* includefile */
 {

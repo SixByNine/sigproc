@@ -19,7 +19,7 @@ void mjk_rand_fill_fallback(mjk_rand_t *state){
 	int64_t astateN;
 
 	const uint64_t buf_chunk = state->buffer_len/state->nthreadmax;
-	const uint64_t chunk=64;
+	const uint64_t chunk=16;
 
 #pragma omp parallel shared(state,astateN) private(iblk,ibuf,astateP)
 	{
@@ -48,7 +48,7 @@ int mjk_rand_gauss2(mjk_rand_t *state,double U1, double U2,double *o1,double *o2
 	u = 2. * U1 - 1.;
 	v = 2. * U2 - 1.;
 	S = u * u + v * v;
-	if (S < 1){
+	if (S >= 1){
 		fac = sqrt (-2. * log(S) / S);
 		*o1 = u * fac;
 		*o2 = v*fac;
@@ -59,6 +59,7 @@ int mjk_rand_gauss2(mjk_rand_t *state,double U1, double U2,double *o1,double *o2
 
 
 }
+
 
 void mjk_rand_fill_fallback_gauss(mjk_rand_t *state){
 	mjk_rand_fill_fallback(state);
@@ -116,7 +117,6 @@ float mjk_rand_gauss(mjk_rand_t *state){
 
 
 
-
 double mjk_rand_double(mjk_rand_t *state){
 	uint32_t r = mjk_rand(state);
 	return (double)r/(double)state->rmax;
@@ -139,30 +139,30 @@ uint32_t mjk_rand(mjk_rand_t *state){
 }
 
 void mjk_rand_gauss_atleast(mjk_rand_t *state, uint64_t n){
-   if (state->gauss_next < n){
+   if(state->gauss_next < n){
 	  mjk_rand_fill_fallback_gauss(state);
    }
 }
 
 mjk_rand_t *mjk_rand_init(uint64_t seed){
-	mjk_rand_t *state = calloc(1,sizeof(mjk_rand_t));
-	state->next=-1;
-	state->nthreadmax=1024*1024;
-	state->buffer_len=state->nthreadmax*8;
-	state->alg=FALLBACK;
-	state->alg_state=calloc(1,sizeof(int64_t));
-	state->buffer=calloc(state->buffer_len,sizeof(uint32_t));
-	state->rmax=INT32_MAX/2;
-	state->gauss_next=-1;
-	state->gauss_buffer=NULL;
-	*((int64_t*)(state->alg_state)) = seed;
-	return state;
+   mjk_rand_t *state = calloc(1,sizeof(mjk_rand_t));
+   state->next=-1;
+   state->nthreadmax=256;
+   state->buffer_len=1024*1024*64;
+   state->alg=FALLBACK;
+   state->alg_state=calloc(1,sizeof(int64_t));
+   state->buffer=calloc(state->buffer_len,sizeof(uint32_t));
+   state->rmax=INT32_MAX/2;
+   state->gauss_next=-1;
+   state->gauss_buffer=NULL;
+   *((int64_t*)(state->alg_state)) = seed;
+   return state;
 }
 
 
 void mjk_rand_free(mjk_rand_t *state){
-	free(state->buffer);
-	if(state->gauss_buffer!=NULL)free(state->gauss_buffer);
-	free(state->alg_state);
-	free(state);
+   free(state->buffer);
+   if(state->gauss_buffer!=NULL)free(state->gauss_buffer);
+   free(state->alg_state);
+   free(state);
 }

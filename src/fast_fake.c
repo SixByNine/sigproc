@@ -14,46 +14,9 @@
 #include "sigproc.h"
 #include "mjklog.h"
 #include "mjk_random.h"
+#include "mjk_cmd.h"
 
 
-#define STREQ(a,b) (strcmp(a,b)==0)
-
-char* getS(char *lo, char* so, int argc, char** argv, char* val){
-   int i;
-   char* ret = val;
-   for (i=1; i < argc; i++){
-	  if (STREQ(argv[i],lo) || STREQ(argv[i],so)){
-		 ret = *(argv+i+1);
-		 break;
-	  }
-   }
-   return ret;
-}
-
-char getB(char *lo, char* so, int argc, char** argv, char val){
-   int i;
-   char ret = val;
-   for (i=1; i < argc; i++){
-	  if (STREQ(argv[i],lo) || STREQ(argv[i],so)){
-		 ret = !val;
-		 break;
-	  }
-   }
-   return ret;
-}
-
-
-double getF(char *lo, char* so, int argc, char** argv, double val){
-   char* str = getS(lo,so,argc,argv,NULL);
-   if (str==NULL) return val;
-   else return atof(str);
-}
-
-int getI(char *lo, char* so, int argc, char** argv, int val){
-   char* str = getS(lo,so,argc,argv,NULL);
-   if (str==NULL) return val;
-   else return atoi(str);
-}
 
 void fastfake_help(){
    printf("fast fake\n");
@@ -114,7 +77,7 @@ int main (int argc, char *argv[])
    fch1=getF("--fch1","-F",argc,argv,fch1);
    foff=getF("--foff","-f",argc,argv,foff);
    nbits=getI("--nbits","-b",argc,argv,foff);
-   seed=getI("--seed","-R",argc,argv,seed);
+   seed=getI("--seed","-S",argc,argv,seed);
    char test_mode=getB("--test","-0",argc,argv,0);
    strcpy(outfile,getS("--out","-o",argc,argv,"stdout"));
    strcpy(source_name,getS("--name","-s",argc,argv,"FAKE"));

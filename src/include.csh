@@ -9,6 +9,7 @@ extern "C" {
 #include "polyco.h"
 #include "epn.h"
 #include "version.h"
+#include <stdio.h>
 END1
 grep includefile *.c | awk -F"/*" '{print $1";"}' \
 	| awk -F: '{print $2}' | sort >> sigproc.h
