@@ -13,34 +13,13 @@
 /* list of subroutines and functions */
 #include "sigproc.h"
 #include "mjklog.h"
+#include "mjk_random.h"
 
 
 #define STREQ(a,b) (strcmp(a,b)==0)
 
 
 #define TWO_PI 6.2831853071795864769252866
-
-uint64_t NRAND=-1;
-float* RANDBUF;
-
-double gen_gauss(double variance)
-{
-   if(NRAND > 0)
-   {
-	  // @TODO: MAke this not crap
-	  return sqrt(variance * rand1) * sin(rand2);
-	  NRAND--;
-   }
-
-   hasSpare = 1;
-
-   rand1 = rand() / ((double) RAND_MAX);
-   if(rand1 < 1e-100) rand1 = 1e-100;
-   rand1 = -2 * log(rand1);
-   rand2 = (rand() / ((double) RAND_MAX)) * TWO_PI;
-
-   return sqrt(variance * rand1) * cos(rand2);
-}
 
 char* getS(char *lo, char* so, int argc, char** argv, char* val){
    int i;
@@ -53,6 +32,19 @@ char* getS(char *lo, char* so, int argc, char** argv, char* val){
    }
    return ret;
 }
+
+char getB(char *lo, char* so, int argc, char** argv, char val){
+   int i;
+   char ret = val;
+   for (i=1; i < argc; i++){
+	  if (STREQ(argv[i],lo) || STREQ(argv[i],so)){
+		 ret = !val;
+		 break;
+	  }
+   }
+   return ret;
+}
+
 
 double getF(char *lo, char* so, int argc, char** argv, double val){
    char* str = getS(lo,so,argc,argv,NULL);
@@ -126,13 +118,14 @@ int main (int argc, char *argv[])
    foff=getF("--foff","-f",argc,argv,foff);
    nbits=getI("--nbits","-b",argc,argv,foff);
    seed=getI("--seed","-R",argc,argv,seed);
+   char test_mode=getB("--test","-0",argc,argv,0);
    strcpy(outfile,getS("--out","-o",argc,argv,"stdout"));
    strcpy(source_name,getS("--name","-s",argc,argv,"FAKE"));
 
 
    time_t t0 = time(NULL);
    if (seed<0)seed=t0;
-   srand(seed);
+   mjk_rand_t *rnd = mjk_rand_init(seed);
 
 
    logmsg("tobs          = %lfs",obstime);
@@ -187,14 +180,12 @@ int main (int argc, char *argv[])
 
    logmsg("Generate %lld samples, %.3lf GiB",nsamples,nsamples*bytes_per_sample/pow(2,30));
 
-   //std::default_random_engine rgen;
    uint64_t tenpercent = nsamples/10;
    int percent=0;
    unsigned char* buffer = (unsigned char*) malloc(sizeof(unsigned char)*bytes_per_sample);
 
    if (nbits==1){
 	  // we just want random bytes.
-	  // std::uniform_int_distribution<unsigned char> dist((unsigned char)0);
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
 		 if (samp%tenpercent ==0){
 			double t1=(double)(time(NULL)-t0);
@@ -206,7 +197,7 @@ int main (int argc, char *argv[])
 			unsigned char val = rand()&0xFF; // this is bad, but good enough for our crappy data.
 			buffer[chan] = val;
 		 }
-		 fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
+		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    } else if (nbits==2){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
@@ -217,13 +208,13 @@ int main (int argc, char *argv[])
 			percent+=10;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan+=4){
-			unsigned char A = (unsigned char)(gen_gauss(1)+1.5)&0x8;
-			unsigned char B = ((unsigned char)(gen_gauss(1)+1.5)&0x8)<<2;
-			unsigned char C = ((unsigned char)(gen_gauss(1)+1.5)&0x8)<<4;
-			unsigned char D = ((unsigned char)(gen_gauss(1)+1.5)&0x8)<<6;
+			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8;
+			unsigned char B = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<2;
+			unsigned char C = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<4;
+			unsigned char D = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<6;
 			buffer[chan/4]=A|B|C|D;
 		 }
-		 fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
+		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    } else if (nbits==4){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
@@ -234,11 +225,11 @@ int main (int argc, char *argv[])
 			percent+=10;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan+=2){
-			unsigned char A = (unsigned char)(gen_gauss(4)+8.5)&0xF;
-			unsigned char B = ((unsigned char)(gen_gauss(4)+8.5)&0xF)<<4;
+			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF;
+			unsigned char B = ((unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF)<<4;
 			buffer[chan/2]=A|B;
 		 }
-		 fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
+		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    } else if (nbits==8){
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
@@ -249,9 +240,9 @@ int main (int argc, char *argv[])
 			percent+=10;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan++){
-			buffer[chan] = (unsigned char)(gen_gauss(32)+127);
+			buffer[chan] = (unsigned char)(mjk_rand_gauss(rnd)*32.0+127.5);
 		 }
-		 fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
+		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    } else if (nbits==32){
 	  float* fbuf = (float*)buffer;
@@ -263,14 +254,15 @@ int main (int argc, char *argv[])
 			percent+=10;
 		 }
 		 for(uint64_t chan = 0; chan < nchans; chan++){
-			fbuf[chan] = gen_gauss(1e3);
+			fbuf[chan] = mjk_rand_gauss(rnd);
 		 }
-		 fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
+		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    }
 
 
    free(buffer);
+   mjk_rand_free(rnd);
    logmsg("Complete! 100%%");
    fclose(output);
 
