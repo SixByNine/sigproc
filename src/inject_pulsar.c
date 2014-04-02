@@ -143,9 +143,14 @@ int main (int argc, char** argv){
    mjk_rand_t *rnd = mjk_rand_init(seed);
 
    logmsg("m=%f t0=%f dt=%f dmjd=%f",(float)mjd,(float)tstart,(float)tsamp,(float)tsamp_mjd);
+   uint64_t count=0;
    while(!feof(input)){
 	  read_block(input,nbits,block,nchans);
 
+	  if(count%1024==0){
+		 fprintf(stderr,"%ld samples,  %.1fs\r",count,count*tsamp);
+	  }
+//#pragma omp parallel for private(ch,phase,pbin,frac,A) shared (block,sidx,nchans,nprof) 
 	  for(ch = 0; ch < nchans; ch++){
 		 phase = T2Predictor_GetPhase(&pred,mjd,freq[ch]);
 		 phase = phase-floor(phase);
@@ -157,6 +162,7 @@ int main (int argc, char** argv){
 	  }
 	  write_block(nbits,1,nchans,output,block);
 	  mjd+=tsamp_mjd;
+	  count++;
    }
 
 
