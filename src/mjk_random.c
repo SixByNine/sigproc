@@ -106,7 +106,6 @@ void mjk_rand_fill_gauss(mjk_rand_t *state){
 
 float mjk_rand_gauss(mjk_rand_t *state){
    float ret;
-#pragma omp critical (mjk_rand_gauss_CRITICAL)
    {
 	  if (state->gauss_next < 0){
 		 mjk_rand_fill_gauss(state);
@@ -128,7 +127,6 @@ uint32_t mjk_rand(mjk_rand_t *state){
 
 double mjk_rand_double(mjk_rand_t *state){
    double ret;
-#pragma omp critical (mjk_rand_CRITICAL)
    {
 	  if (state->next < 0){
 		 mjk_rand_fill(state);
@@ -154,7 +152,7 @@ mjk_rand_t *mjk_rand_init(uint64_t seed){
    state->gauss_next=-1;
    state->gauss_buffer=NULL;
    memcpy(state->xi,&seed,6);
-   logmsg("%x %x %x 0x%016Lx",state->xi[0],state->xi[1],state->xi[2],seed);
+   logdbg("%x %x %x 0x%016Lx",state->xi[0],state->xi[1],state->xi[2],seed);
    return state;
 }
 

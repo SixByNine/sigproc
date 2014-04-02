@@ -62,7 +62,7 @@ int main (int argc, char** argv){
    }
    int hdrsize = read_header(input);
    long long nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchans);
-   
+
 
    if(!hdrsize){
 	  fprintf(stderr,"error, could not read sigproc header\n");
@@ -126,7 +126,7 @@ int main (int argc, char** argv){
 
    double scale=1.0;
    float psr_freq = T2Predictor_GetFrequency(&pred,mjd,freq[0]);
-	
+
    sum/=nprof;
    scale = A*in_snr / sqrt(nchans*nsamp)/sum;
    logmsg("scale=%lg",scale);
@@ -140,25 +140,45 @@ int main (int argc, char** argv){
    }
    grads[nprof-1]=profile[0]-profile[nprof-1];
 
-   mjk_rand_t *rnd = mjk_rand_init(seed);
+   double poff[nchans];
+   double p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
+   int prevbin[nchans];
+   int dbin,ii;
+   mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchans);
+   for(ch = 0; ch < nchans; ch++){
+	  rnd[ch] = mjk_rand_init(seed+ch);
+	  poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
+	  prevbin[ch]=-1;
+   }
 
    logmsg("m=%f t0=%f dt=%f dmjd=%f",(float)mjd,(float)tstart,(float)tsamp,(float)tsamp_mjd);
    uint64_t count=0;
    while(!feof(input)){
-	  read_block(input,nbits,block,nchans);
-
 	  if(count%1024==0){
 		 fprintf(stderr,"%ld samples,  %.1fs\r",count,count*tsamp);
 	  }
-//#pragma omp parallel for private(ch,phase,pbin,frac,A) shared (block,sidx,nchans,nprof) 
+
+	  read_block(input,nbits,block,nchans);
+	  p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
 	  for(ch = 0; ch < nchans; ch++){
-		 phase = T2Predictor_GetPhase(&pred,mjd,freq[ch]);
+		 phase = p0+poff[ch];
 		 phase = phase-floor(phase);
 		 pbin = floor(phase*nprof);
 		 frac = phase*nprof-pbin;
-		 //if(ch==0 && profile[pbin] > 0)logmsg("%Lf %d %f %f %f",phase,pbin,frac,profile[pbin],grads[pbin]);
 		 A = profile[pbin] + frac*grads[pbin];
-		 block[ch]+=sidx[ch]*A*(mjk_rand_double(rnd)); // this makes it probabilistic that it will pass 1 for fractional amplitudes
+		 if(prevbin[ch]<0)prevbin[ch]=pbin;
+		 dbin=pbin-prevbin[ch];
+		 while(dbin<0)dbin+=nprof;
+		 while(dbin>1){
+			A += profile[prevbin[ch]];
+			prevbin[ch]+=1;
+			dbin=pbin-prevbin[ch];
+			while(dbin<0)dbin+=nprof;
+		 }
+		 if (A>0){
+			block[ch] += sidx[ch]*A + mjk_rand_double(rnd[0]);
+		 }
+		 prevbin[ch]=pbin;
 	  }
 	  write_block(nbits,1,nchans,output,block);
 	  mjd+=tsamp_mjd;
@@ -166,7 +186,10 @@ int main (int argc, char** argv){
    }
 
 
-   mjk_rand_free(rnd);
+   for(ch = 0; ch < nchans; ch++){
+	  mjk_rand_free(rnd[ch]);
+   }
+   free(rnd);
    return 0;
 }
 
