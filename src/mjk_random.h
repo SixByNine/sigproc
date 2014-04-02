@@ -1,25 +1,21 @@
 #include <inttypes.h>
+#include <stdlib.h>
 #ifndef _mjk_rand_h
 #define _mjk_rand_h
 #ifdef __cplusplus
 extern "C" {
 #endif
-   // the actual C header.
-   typedef enum mjk_rand_alg {
-	  FALLBACK,GNU48
-   } mjk_rand_alg_t;
 
 
    typedef struct mjk_rand {
 	   uint32_t nthreadmax;
 	   uint32_t buffer_len;
-	   uint32_t *buffer;
+	   double *buffer;
 	   int32_t next;
-	   mjk_rand_alg_t alg;
-	   void* alg_state;
 	   uint32_t rmax;
 	   int32_t gauss_next;
 	   float* gauss_buffer;
+	   unsigned short xi[3];
    } mjk_rand_t;
 
 
