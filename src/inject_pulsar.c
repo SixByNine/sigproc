@@ -104,7 +104,7 @@ int main (int argc, char** argv){
    switch(nbits){
 	  case 8:
 		 MX_val=pow(2,8)-1;
-		 A=32.0;
+		 A=24;
 		 break;
 	  case 4:
 		 MX_val=pow(2,4)-1;
@@ -116,7 +116,7 @@ int main (int argc, char** argv){
 		 break;
 	  case 1:
 		 MX_val=pow(2,1)-1;
-		 A=0.5;
+		 A=1;
 		 break;
    }
    float sum=0;

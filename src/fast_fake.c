@@ -36,6 +36,8 @@ int main (int argc, char *argv[])
 
    char string[80];
    long seed=-1;
+   float fval;
+   unsigned char A,B,C,D;
 
    logmsg("FASTFAKE - M.Keith 2014");
    logmsg("Starting up...");
@@ -145,57 +147,8 @@ int main (int argc, char *argv[])
    int percent=0;
    unsigned char* buffer = (unsigned char*) malloc(sizeof(unsigned char)*bytes_per_sample);
 
-   if (nbits==1){
-	  // we just want random bytes.
-	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%onepercent ==0){
-			double t1=(double)(time(NULL)-t0)+1e-3;
-			double bytespersec = samp*bytes_per_sample/t1;
-			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			fflush(stderr);
-			percent+=1;
-		 }
-		 for(uint64_t chan = 0; chan < nchans; chan++){
-			unsigned char val = rand()&0xFF; // this is bad, but good enough for our crappy data.
-			buffer[chan] = val;
-		 }
-		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
-	  }
-   } else if (nbits==2){
-	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%onepercent ==0){
-			double t1=(double)(time(NULL)-t0)+1e-3;
-			double bytespersec = samp*bytes_per_sample/t1;
-			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			fflush(stderr);
-			percent+=1;
-		 }
-		 for(uint64_t chan = 0; chan < nchans; chan+=4){
-			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8;
-			unsigned char B = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<2;
-			unsigned char C = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<4;
-			unsigned char D = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<6;
-			buffer[chan/4]=A|B|C|D;
-		 }
-		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
-	  }
-   } else if (nbits==4){
-	  for(uint64_t samp = 0; samp < nsamples; samp++){
-		 if (samp%onepercent ==0){
-			double t1=(double)(time(NULL)-t0)+1e-3;
-			double bytespersec = samp*bytes_per_sample/t1;
-			fprintf(stderr,"Complete: % 3d%%. Sample: % 9lld Real time % 6.1lfs, Sim time % 6.1lfs. Speed % 4.2lfMiB/s\r",percent,samp,t1,(double)samp*tsamp,bytespersec/pow(2,20));
-			fflush(stderr);
-			percent+=1;
-		 }
-		 for(uint64_t chan = 0; chan < nchans; chan+=2){
-			unsigned char A = (unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF;
-			unsigned char B = ((unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF)<<4;
-			buffer[chan/2]=A|B;
-		 }
-		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
-	  }
-   } else if (nbits==8){
+   if (nbits==1 || nbits==2 || nbits==4 | nbits==8){
+	  // integer samples
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
 		 if (samp%onepercent ==0){
 			double t1=(double)(time(NULL)-t0)+1e-3;
@@ -205,13 +158,55 @@ int main (int argc, char *argv[])
 			percent+=1;
 		 }
 		 mjk_rand_gauss_atleast(rnd,nchans);
+		 const int chanskip = 8/nbits;
 #pragma omp paralelel for schedule(dynamic,1)
-		 for(uint64_t chan = 0; chan < nchans; chan++){
-			buffer[chan] = (unsigned char)(mjk_rand_gauss(rnd)*32.0+127.5);
+		 for(uint64_t chan = 0; chan < nchans; chan+=chanskip){
+			switch(nbits){
+			   case 1:
+				  buffer[chan/8] = mjk_rand(rnd)&0xFF; 
+				  break;
+			   case 2:
+				  fval = (mjk_rand_gauss(rnd)+1.5);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  A = (unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8;
+				  fval = (mjk_rand_gauss(rnd)+1.5);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  B = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<2;
+				  fval = (mjk_rand_gauss(rnd)+1.5);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  C = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<4;
+				  fval = (mjk_rand_gauss(rnd)+1.5);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  D = ((unsigned char)(mjk_rand_gauss(rnd)+1.5)&0x8)<<6;
+				  buffer[chan/4]=A|B|C|D;
+				  break;
+			   case 4:
+				  fval = (mjk_rand_gauss(rnd)*24.0+64.0);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  A = (unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF;
+				  fval = (mjk_rand_gauss(rnd)*2.5+6);
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  B = ((unsigned char)(mjk_rand_gauss(rnd)*3+7.5)&0xF)<<4;
+				  buffer[chan/2] = A|B;
+				  break;
+			   case 8:
+				  fval = (mjk_rand_gauss(rnd)*24.0+96.0); // more headroom.
+				  fval = fmax(fval,0);
+				  fval = fmin(fval,255.0);
+				  buffer[chan] = (unsigned char)fval;
+				  break;
+			}
 		 }
 		 if(!test_mode)fwrite(buffer,sizeof(unsigned char),bytes_per_sample,output);
 	  }
    } else if (nbits==32){
+	  // float samples
 	  float* fbuf = (float*)buffer;
 	  for(uint64_t samp = 0; samp < nsamples; samp++){
 		 if (samp%onepercent ==0){
