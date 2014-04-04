@@ -1,3 +1,5 @@
+#include <complex.h>
+#include <fftw3.h>
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -13,8 +15,25 @@
 #include "mjk_cmd.h"
 #include "mjk_random.h"
 
+
+
 float MX_val;
 void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock);
+struct convolve_plan {
+   fftwf_plan fwda;
+   fftwf_plan fwdb;
+   fftwf_plan bwd;
+   float* a;
+   float* b;
+   float _Complex* c;
+   float _Complex* d;
+   float* output;
+   int npts;
+   float scale;
+};
+struct convolve_plan *setup_convolve(int npts, float* a, float* b,float* output);
+void convolve(struct convolve_plan *plan);
+void free_convolve_plan(struct convolve_plan *plan);
 
 int main (int argc, char** argv){
    FILE* input;
@@ -22,15 +41,16 @@ int main (int argc, char** argv){
    char pred_fname[1024];
    char fil_fname[1024];
    char prof_fname[1024];
+   char subprof_fname[1024];
    int res,i;
    float *block;
    float *profile;
-   float *grads;
    float spec_index=0;
    float in_snr=10; // S/N
    float ref_freq=1400.0;
    float frac;
    uint32_t seed;
+   uint32_t nsubpulse=5;
    FILE* prof_file;
    T2Predictor pred;
 
@@ -48,6 +68,8 @@ int main (int argc, char** argv){
    ref_freq=getF("--freq","-f",argc,argv,1400.0);
    spec_index=getF("--sidx","-i",argc,argv,-1.5);
    seed=getI("--seed","-S",argc,argv,seed);
+   //seed=getI("--dmsmear","-d",argc,argv,seed);
+   strcpy(subprof_fname,getS("--subprof","-b",argc,argv,""));
 
 
    input=fopen(argv[1],"r");
@@ -61,7 +83,8 @@ int main (int argc, char** argv){
 	  fprintf(stderr,"error, could not read predictor %d\n",res);
    }
    int hdrsize = read_header(input);
-   long long nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchans);
+   const int nchan_const = nchans;
+   const long long nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchan_const);
 
 
    if(!hdrsize){
@@ -69,36 +92,6 @@ int main (int argc, char** argv){
 	  exit(1);
    }
 
-   fclose(input);
-   input=fopen(argv[1],"r");
-   char* buf = malloc(sizeof(char)*hdrsize);
-   fread(buf,1,hdrsize,input);
-   fwrite(buf,1,hdrsize,output);
-
-   int nprof=0;
-   int MX_prof=512;
-   profile=malloc(sizeof(float)*MX_prof);
-   grads=malloc(sizeof(float)*MX_prof);
-   while(!feof(prof_file)){
-	  if(nprof >= MX_prof){
-		 MX_prof *= 2;
-		 profile=realloc(profile,sizeof(float)*MX_prof);
-	  }
-	  fscanf(prof_file,"%f\n",profile+nprof);
-	  nprof++;
-   }
-   block=malloc(sizeof(float)*nchans);
-   long double mjd = (long double)tstart;
-   long double tsamp_mjd = (long double)tsamp/86400.0L;
-   long double phase;
-   int pbin;
-   int ch=0;
-   float freq[nchans];
-   float sidx[nchans];
-   for(ch = 0; ch < nchans; ch++){
-	  freq[ch] = fch1 + foff*ch;
-	  sidx[ch] = pow(freq[ch]/1400.0,spec_index);
-   }
 
    float A;
    switch(nbits){
@@ -119,33 +112,110 @@ int main (int argc, char** argv){
 		 A=1;
 		 break;
    }
-   float sum=0;
+
+   fclose(input);
+   input=fopen(argv[1],"r");
+   char* buf = malloc(sizeof(char)*hdrsize);
+   fread(buf,1,hdrsize,input);
+   fwrite(buf,1,hdrsize,output);
+
+   int n=0;
+   while(!feof(prof_file)){
+	  fscanf(prof_file,"%f\n",&frac); // dummy value
+	  n++;
+   }
+   const int nprof=n;
+
+   profile=fftwf_alloc_real(nprof);
+   float *dm_conv = fftwf_alloc_real(nprof);
+   float *subpulse_map = fftwf_alloc_real(nprof);
+   float *subpulse_profile = fftwf_alloc_real(nprof);
+   float *unsmeared_prof = fftwf_alloc_real(nprof);
+   float *smeared_prof = fftwf_alloc_real(nprof);
+   logmsg("Initialising convolution plans...");
+   struct convolve_plan *dm_conv_plan = setup_convolve(nprof,unsmeared_prof,dm_conv,smeared_prof);
+   struct convolve_plan *subpulse_conv_plan = setup_convolve(nprof,subpulse_profile,subpulse_map,unsmeared_prof);
+
+   logmsg("%x",dm_conv_plan);
+   logmsg("Done.");
+
+  float  grads[nprof];
+
+  fseek(prof_file,0,SEEK_SET);
+   n=0;
+   while(!feof(prof_file)){
+	  fscanf(prof_file,"%f\n",profile+n);
+	  subpulse_profile[n]=1.0;
+	  n++;
+   }
+   fclose(prof_file);
+   if(strlen(subprof_fname)){
+	  prof_file=fopen(subprof_fname,"r");
+	  n=0;
+	  while(!feof(prof_file)){
+		 fscanf(prof_file,"%f\n",subpulse_profile+n);
+		 n++;
+	  }
+	  fclose(prof_file);
+   }
+
+
+   double sum=0;
    // normalise the profile
    for (i=0; i < nprof; i++)
 	  sum+=profile[i];
-
    double scale=1.0;
-   float psr_freq = T2Predictor_GetFrequency(&pred,mjd,freq[0]);
 
-   sum/=nprof;
-   scale = A*in_snr / sqrt(nchans*nsamp)/sum;
-   logmsg("scale=%lg",scale);
-
-   // normalise to pseudo-S/N in 1s.
+   sum/=(double)nprof;
+   scale = A*in_snr / sqrt(nchan_const*nsamp)/sum;
+   logmsg("mean=%lg scale=%lg",sum,scale);
+// normalise to pseudo-S/N in 1s.
    for (i=0; i < nprof; i++)
 	  profile[i]=profile[i]*scale;
 
-   for (i=0; i < nprof-1; i++){
-	  grads[i] = profile[i+1]-profile[i];
-   }
-   grads[nprof-1]=profile[0]-profile[nprof-1];
 
-   double poff[nchans];
+   sum=0;
+   // normalise the subpulse profile
+   for (i=0; i < nprof; i++)
+	  sum+=subpulse_profile[i];
+   double subpulse_scale;
+   sum/=(double)nprof;
+   scale = 1.0/sum;
+
+   for (i=0; i < nprof; i++)
+	  subpulse_profile[i]=subpulse_profile[i]*scale;
+
+
+   block=malloc(sizeof(float)*nchan_const);
+   long double mjd = (long double)tstart;
+   long double tsamp_mjd = (long double)tsamp/86400.0L;
+   long double phase;
+   int pbin;
+   int ch=0;
+   float freq[nchan_const];
+   float sidx[nchan_const];
+   float dmdly[nchan_const];
+
+   for(ch = 0; ch < nchan_const; ch++){
+	  freq[ch] = fch1 + foff*ch;
+	  sidx[ch] = pow(freq[ch]/1400.0,spec_index);
+   }
+
+   phase = T2Predictor_GetPhase(&pred,mjd,fch1) - T2Predictor_GetPhase(&pred,mjd,fch1+foff);
+   pbin = fabs(phase)*nprof;
+   if (pbin<1)pbin=1;
+   logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
+   float v = 1.0/pbin;
+   for(i=0;i<nprof;i++){
+	  if(i<pbin)dm_conv[(i-pbin/2+nprof)%nprof]=v;
+	  else dm_conv[(i-pbin/2+nprof)%nprof]=0;
+   }
+   double poff[nchan_const];
    double p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
-   int prevbin[nchans];
+   int prevbin[nchan_const];
    int dbin,ii;
-   mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchans);
-   for(ch = 0; ch < nchans; ch++){
+   mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
+   for(ch = 0; ch < nchan_const; ch++){
 	  rnd[ch] = mjk_rand_init(seed+ch);
 	  poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
 	  prevbin[ch]=-1;
@@ -153,24 +223,50 @@ int main (int argc, char** argv){
 
    logmsg("m=%f t0=%f dt=%f dmjd=%f",(float)mjd,(float)tstart,(float)tsamp,(float)tsamp_mjd);
    uint64_t count=0;
+   int64_t ip0;
+   int64_t prev_ip0=INT64_MAX;
    while(!feof(input)){
 	  if(count%1024==0){
 		 fprintf(stderr,"%ld samples,  %.1fs\r",count,count*tsamp);
 	  }
 
-	  read_block(input,nbits,block,nchans);
+	  read_block(input,nbits,block,nchan_const);
 	  p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
-	  for(ch = 0; ch < nchans; ch++){
+	  ip0 = (int64_t)floor(p0);
+	  if (ip0!=prev_ip0){
+		 //logmsg("new pulse");
+		 // need a new temp profile.
+
+		 for(i=0; i < nprof;i++){
+			subpulse_map[i]=0;
+		 }
+		 for(n=0; n < nsubpulse;n++){
+			i=floor(mjk_rand_double(rnd[0])*nprof);
+			subpulse_map[i]+=mjk_rand_double(rnd[0]);
+		 }
+		 convolve(subpulse_conv_plan);
+		 for(i=0; i < nprof;i++){
+			unsmeared_prof[i]*=profile[i];
+		 }
+		 convolve(dm_conv_plan);
+		 for (i=0; i < nprof-1; i++){
+			//logmsg("%f %f %f",profile[i],dm_conv[i],smeared_prof[i]);
+			grads[i] = smeared_prof[i+1]-smeared_prof[i];
+		 }
+		 grads[nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
+		 prev_ip0=ip0;
+	  }
+	  for(ch = 0; ch < nchan_const; ch++){
 		 phase = p0+poff[ch];
 		 phase = phase-floor(phase);
 		 pbin = floor(phase*nprof);
 		 frac = phase*nprof-pbin;
-		 A = profile[pbin] + frac*grads[pbin];
+		 A = smeared_prof[pbin] + frac*grads[pbin];
 		 if(prevbin[ch]<0)prevbin[ch]=pbin;
 		 dbin=pbin-prevbin[ch];
 		 while(dbin<0)dbin+=nprof;
 		 while(dbin>1){
-			A += profile[prevbin[ch]];
+			A += smeared_prof[prevbin[ch]];
 			prevbin[ch]+=1;
 			dbin=pbin-prevbin[ch];
 			while(dbin<0)dbin+=nprof;
@@ -180,16 +276,18 @@ int main (int argc, char** argv){
 		 }
 		 prevbin[ch]=pbin;
 	  }
-	  write_block(nbits,1,nchans,output,block);
+	  write_block(nbits,1,nchan_const,output,block);
 	  mjd+=tsamp_mjd;
 	  count++;
    }
 
 
-   for(ch = 0; ch < nchans; ch++){
+   for(ch = 0; ch < nchan_const; ch++){
 	  mjk_rand_free(rnd[ch]);
    }
    free(rnd);
+   fftwf_free(profile);
+
    return 0;
 }
 
@@ -246,7 +344,30 @@ void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock){
 		 error_message("requested output number of bits can only be 8, 16 or 32");
 		 break;
    }
-
-
-
 }
+struct convolve_plan *setup_convolve(int npts, float* a, float* b, float* output){
+   struct convolve_plan *plan = calloc(1,sizeof(struct convolve_plan));
+   plan->a=a;
+   plan->b=b;
+   plan->c = fftwf_alloc_complex(npts);
+   plan->d = fftwf_alloc_complex(npts);
+   plan->output = output;
+   plan->fwda = fftwf_plan_dft_r2c_1d(npts,plan->a,plan->c,FFTW_MEASURE);
+   plan->fwdb = fftwf_plan_dft_r2c_1d(npts,plan->b,plan->d,FFTW_MEASURE);
+   plan->bwd  = fftwf_plan_dft_c2r_1d(npts,plan->c,plan->output,FFTW_MEASURE);
+   plan->npts=npts;
+   plan->scale=(float)npts;
+   return plan;
+}
+void convolve(struct convolve_plan *plan){
+   int i;
+   fftwf_execute(plan->fwda);
+   fftwf_execute(plan->fwdb);
+   for(i=0; i < plan->npts;i++){
+	  plan->c[i] *= plan->d[i]/plan->scale;
+   }
+   fftwf_execute(plan->bwd);
+}
+void free_convolve_plan(struct convolve_plan *plan);
+
+
