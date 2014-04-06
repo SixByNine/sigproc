@@ -242,7 +242,7 @@ int main (int argc, char** argv){
 		 }
 		 for(n=0; n < nsubpulse;n++){
 			i=floor(mjk_rand_double(rnd[0])*nprof);
-			subpulse_map[i]+=mjk_rand_double(rnd[0]);
+			subpulse_map[i]+=2.*mjk_rand_double(rnd[0])/(float)nsubpulse;
 		 }
 		 convolve(subpulse_conv_plan);
 		 for(i=0; i < nprof;i++){
