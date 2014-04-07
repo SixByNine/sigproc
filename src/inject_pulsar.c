@@ -18,7 +18,7 @@
 
 
 float MX_val;
-void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock);
+void write_block(int_fast32_t nobits,int nsout,int nbands, FILE* output,float* outblock);
 struct convolve_plan {
    fftwf_plan fwda;
    fftwf_plan fwdb;
@@ -28,10 +28,10 @@ struct convolve_plan {
    float _Complex* c;
    float _Complex* d;
    float* output;
-   int npts;
+   int_fast32_t npts;
    float scale;
 };
-struct convolve_plan *setup_convolve(int npts, float* a, float* b,float* output);
+struct convolve_plan *setup_convolve(int_fast32_t npts, float* a, float* b,float* output);
 void convolve(struct convolve_plan *plan);
 void free_convolve_plan(struct convolve_plan *plan);
 
@@ -40,22 +40,24 @@ double sinc(double x){
    else return sin(x)/x;
 }
 
-int main (int argc, char** argv){
+int main (int_fast32_t argc, char** argv){
    FILE* input;
    FILE* output;
    char pred_fname[1024];
    char fil_fname[1024];
    char prof_fname[1024];
    char subprof_fname[1024];
-   int res,i;
+   int_fast32_t res,i;
    float *block;
    float *profile;
    float spec_index=0;
    float in_snr=10; // S/N
    float ref_freq=1400.0;
+   float t_scat=0;
+   float scat_idx=0;
    float frac;
    uint32_t seed;
-   uint32_t nsubpulse=5;
+   uint_fast32_t nsubpulse=5;
    FILE* prof_file;
    T2Predictor pred;
 
@@ -71,6 +73,8 @@ int main (int argc, char** argv){
 
    in_snr=getF("--snr","-s",argc,argv,in_snr);
    ref_freq=getF("--freq","-f",argc,argv,1400.0);
+   t_scat=getF("--scatter-time","-c",argc,argv,0.0);
+   scat_idx=getF("--scatter-index","-C",argc,argv,4.0);
    spec_index=getF("--sidx","-i",argc,argv,-1.5);
    seed=getI("--seed","-S",argc,argv,seed);
    //seed=getI("--dmsmear","-d",argc,argv,seed);
@@ -87,9 +91,9 @@ int main (int argc, char** argv){
    if(res!=0){
 	  fprintf(stderr,"error, could not read predictor %d\n",res);
    }
-   int hdrsize = read_header(input);
-   const int nchan_const = nchans;
-   const long long nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchan_const);
+   int_fast32_t hdrsize = read_header(input);
+   const uint_fast32_t nchan_const = nchans;
+   const uint64_t nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchan_const);
 
 
    if(!hdrsize){
@@ -124,12 +128,12 @@ int main (int argc, char** argv){
    fread(buf,1,hdrsize,input);
    fwrite(buf,1,hdrsize,output);
 
-   int n=0;
+   uint_fast32_t n=0;
    while(!feof(prof_file)){
 	  fscanf(prof_file,"%f\n",&frac); // dummy value
 	  n++;
    }
-   const int nprof=n;
+   const uint_fast32_t nprof=n;
 
    profile=fftwf_alloc_real(nprof);
    float *ism_conv = fftwf_alloc_real(nprof);
@@ -144,7 +148,6 @@ int main (int argc, char** argv){
    logmsg("%x",ism_conv_plan);
    logmsg("Done.");
 
-  float  grads[nprof];
 
   fseek(prof_file,0,SEEK_SET);
    n=0;
@@ -196,40 +199,101 @@ int main (int argc, char** argv){
    long double mjd = (long double)tstart;
    long double tsamp_mjd = (long double)tsamp/86400.0L;
    long double phase;
-   int pbin;
-   int ch=0;
+   int_fast32_t pbin;
+   uint_fast32_t ch=0;
    float freq[nchan_const];
    float sidx[nchan_const];
    float dmdly[nchan_const];
+   uint_fast32_t ism_idx[nchan_const];
+   float ism_models[nchan_const][nprof];
+   uint_fast32_t nism=0;
+   const uint_fast32_t NCOPY = nprof*sizeof(float);
+   const double psr_freq = (double)T2Predictor_GetFrequency(&pred,mjd,freq[0]);
+   logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
 
    for(ch = 0; ch < nchan_const; ch++){
 	  freq[ch] = fch1 + foff*ch;
-	  sidx[ch] = pow(freq[ch]/1400.0,spec_index);
+	  sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
    }
 
-   phase = T2Predictor_GetPhase(&pred,mjd,fch1) - T2Predictor_GetPhase(&pred,mjd,fch1+foff);
-   pbin = fabs(phase)*nprof;
-   if (pbin<1)pbin=1;
-   logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
-   sum=0;
-   for(i=0;i<nprof;i++){
-	  int x = (i-pbin/2+nprof)%nprof;
-	  double y = 2.*M_PI*(i-pbin/2.0+0.5)/pbin;
-	  if(i<pbin){
-	//	 logmsg("%d %g %g",x,y,sinc(y));
-		 ism_conv[x] = sinc(y);
-		 sum+=ism_conv[x];
+   // set up the ISM model
+   {
+	  int_fast32_t dm_bin=-1;
+	  int_fast32_t scatter_bin=-1;
+	  int_fast32_t sbin;
+	  float* dm_conv = ism_conv; // re-use an existing convolution function
+	  float* scatt_conv = unsmeared_prof;
+	  float* out_conv = smeared_prof;
+
+	  const float tscat0 = (t_scat*pow(fch1/ref_freq,-scat_idx));
+	  logmsg("Tscatter@%.1fMHz = %gs",ref_freq,t_scat);
+	  logmsg("Tscatter@%.1fMHz = %gs",fch1,tscat0);
+	  for(ch = 0; ch < nchan_const; ch++){
+		 phase = T2Predictor_GetPhase(&pred,mjd,freq[ch]) - T2Predictor_GetPhase(&pred,mjd,freq[ch]+foff);
+		 pbin = fabs(phase)*nprof;
+		 if (pbin<1)pbin=1;
+		 if (pbin%2==0)pbin-=1;
+
+		 sbin = (int_fast32_t)floor(psr_freq*(t_scat*pow(freq[ch]/ref_freq,-scat_idx))*nprof);
+
+		 if (pbin!=dm_bin || sbin != scatter_bin){
+			// make new ISM model
+			logmsg("New ISM Model...");
+			logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
+			sum=0;
+			for(i=0;i<nprof;i++){
+			   int_fast32_t x = (i-pbin/2+nprof)%nprof;
+			   double y = 2.*M_PI*(i-pbin/2.0+0.5)/pbin;
+			   if(i<pbin){
+				  //logmsg("%d %g %g",x,y,sinc(y));
+				  dm_conv[x] = sinc(y);
+				  sum+=dm_conv[x];
+			   }
+			   else dm_conv[x]=0;
+			}
+			for(i=0;i<nprof;i++){
+			   //logmsg("%g %g",dm_conv[i],sum);
+			   dm_conv[i]/=sum;
+			}
+
+
+			logmsg("Scattering. Exponential with phase bins=%d idx=%.1f",sbin,scat_idx);
+			if(sbin > 0){
+			   sum=0;
+			   for(i=0;i<nprof;i++){
+				  double y = i/(double)sbin;
+				  //logmsg("%d %g %g",i,y,exp(-y));
+				  scatt_conv[i] = exp(-y);
+				  sum+=scatt_conv[i];
+			   }
+			   for(i=0;i<nprof;i++){
+				  //logmsg("%g %g",ism_conv[i],sum);
+				  scatt_conv[i]/=sum;
+			   }
+			} else {
+			   scatt_conv[0]=1.0;
+			   for(i=1;i<nprof;i++){
+				  scatt_conv[i]=0;
+			   }
+			}
+
+			convolve(ism_conv_plan); // dm_conv*scatt_conv => out_conv
+
+			memcpy(ism_models[nism],out_conv,NCOPY);
+			nism++;
+			dm_bin=pbin;
+			scatter_bin=sbin;
+		 }
+		 ism_idx[ch]=nism-1;
 	  }
-	  else ism_conv[x]=0;
    }
-   for(i=0;i<nprof;i++){
-	  //logmsg("%g %g",ism_conv[i],sum);
-	  ism_conv[i]/=sum;
-   }
+
+   float  grads[nism][nprof];
+   float output_prof[nism][nprof];
    double poff[nchan_const];
    double p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
-   int prevbin[nchan_const];
-   int dbin,ii;
+   int_fast32_t prevbin[nchan_const];
+   int_fast32_t dbin,ii;
    mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
    for(ch = 0; ch < nchan_const; ch++){
 	  rnd[ch] = mjk_rand_init(seed+ch);
@@ -265,11 +329,15 @@ int main (int argc, char** argv){
 		 for(i=0; i < nprof;i++){
 			unsmeared_prof[i]*=profile[i];
 		 }
-		 convolve(ism_conv_plan);
-		 for (i=0; i < nprof-1; i++){
-			grads[i] = smeared_prof[i+1]-smeared_prof[i];
+		 for(i =0; i<nism; i++){
+			memcpy(ism_conv,ism_models[i],NCOPY);
+			convolve(ism_conv_plan);
+			memcpy(output_prof[i],smeared_prof,NCOPY);
+			for (n=0; n < nprof-1; n++){
+			   grads[i][n] = smeared_prof[n+1]-smeared_prof[n];
+			}
+			grads[i][nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
 		 }
-		 grads[nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
 		 prev_ip0=ip0;
 	  }
 	  for(ch = 0; ch < nchan_const; ch++){
@@ -277,12 +345,12 @@ int main (int argc, char** argv){
 		 phase = phase-floor(phase);
 		 pbin = floor(phase*nprof);
 		 frac = phase*nprof-pbin;
-		 A = smeared_prof[pbin] + frac*grads[pbin];
+		 A = output_prof[ism_idx[ch]][pbin] + frac*grads[ism_idx[ch]][pbin];
 		 if(prevbin[ch]<0)prevbin[ch]=pbin;
 		 dbin=pbin-prevbin[ch];
 		 while(dbin<0)dbin+=nprof;
 		 while(dbin>1){
-			A += smeared_prof[prevbin[ch]];
+			A += output_prof[ism_idx[ch]][prevbin[ch]];
 			prevbin[ch]+=1;
 			dbin=pbin-prevbin[ch];
 			while(dbin<0)dbin+=nprof;
@@ -308,11 +376,11 @@ int main (int argc, char** argv){
 }
 
 
-void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock){
+void write_block(int_fast32_t nobits,int nsout,int nbands, FILE* output,float* outblock){
    char *onebyte;
-   short *twobyte;
-   int nifs=1;
-   int i=0;
+   int16_t *twobyte;
+   int_fast32_t nifs=1;
+   int_fast32_t i=0;
 
    /* now write out samples and bat on */
    switch (nobits) {
@@ -348,10 +416,10 @@ void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock){
 #endif
 		 break;
 	  case 16:
-		 twobyte = (short *) malloc(nsout*nifs*nbands);
+		 twobyte = (int16_t *) malloc(nsout*nifs*nbands);
 		 for (i=0; i<nsout*nifs*nbands; i++) 
-			twobyte[i] = (short) outblock[i];
-		 fwrite(twobyte,sizeof(short),nsout*nifs*nbands,output);
+			twobyte[i] = (int16_t) outblock[i];
+		 fwrite(twobyte,sizeof(int16_t),nsout*nifs*nbands,output);
 		 break;
 	  case 32:
 		 fwrite(outblock,sizeof(float),nsout*nifs*nbands,output);
@@ -361,7 +429,7 @@ void write_block(int nobits,int nsout,int nbands, FILE* output,float* outblock){
 		 break;
    }
 }
-struct convolve_plan *setup_convolve(int npts, float* a, float* b, float* output){
+struct convolve_plan *setup_convolve(int_fast32_t npts, float* a, float* b, float* output){
    struct convolve_plan *plan = calloc(1,sizeof(struct convolve_plan));
    plan->a=a;
    plan->b=b;
@@ -376,7 +444,7 @@ struct convolve_plan *setup_convolve(int npts, float* a, float* b, float* output
    return plan;
 }
 void convolve(struct convolve_plan *plan){
-   int i;
+   int_fast32_t i;
    fftwf_execute(plan->fwda);
    fftwf_execute(plan->fwdb);
    for(i=0; i < plan->npts;i++){
