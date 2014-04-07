@@ -35,6 +35,11 @@ struct convolve_plan *setup_convolve(int npts, float* a, float* b,float* output)
 void convolve(struct convolve_plan *plan);
 void free_convolve_plan(struct convolve_plan *plan);
 
+double sinc(double x){
+   if(x==0)return 1.0;
+   else return sin(x)/x;
+}
+
 int main (int argc, char** argv){
    FILE* input;
    FILE* output;
@@ -127,16 +132,16 @@ int main (int argc, char** argv){
    const int nprof=n;
 
    profile=fftwf_alloc_real(nprof);
-   float *dm_conv = fftwf_alloc_real(nprof);
+   float *ism_conv = fftwf_alloc_real(nprof);
    float *subpulse_map = fftwf_alloc_real(nprof);
    float *subpulse_profile = fftwf_alloc_real(nprof);
    float *unsmeared_prof = fftwf_alloc_real(nprof);
    float *smeared_prof = fftwf_alloc_real(nprof);
    logmsg("Initialising convolution plans...");
-   struct convolve_plan *dm_conv_plan = setup_convolve(nprof,unsmeared_prof,dm_conv,smeared_prof);
+   struct convolve_plan *ism_conv_plan = setup_convolve(nprof,unsmeared_prof,ism_conv,smeared_prof);
    struct convolve_plan *subpulse_conv_plan = setup_convolve(nprof,subpulse_profile,subpulse_map,unsmeared_prof);
 
-   logmsg("%x",dm_conv_plan);
+   logmsg("%x",ism_conv_plan);
    logmsg("Done.");
 
   float  grads[nprof];
@@ -180,7 +185,8 @@ int main (int argc, char** argv){
 	  sum+=subpulse_profile[i];
    double subpulse_scale;
    sum/=(double)nprof;
-   scale = 1.0/sum;
+   // we also normalise by the number of subpulses so that the final subpulse profile will have an area of 1.
+   scale = 1.0/sum/(float)nsubpulse;
 
    for (i=0; i < nprof; i++)
 	  subpulse_profile[i]=subpulse_profile[i]*scale;
@@ -205,10 +211,20 @@ int main (int argc, char** argv){
    pbin = fabs(phase)*nprof;
    if (pbin<1)pbin=1;
    logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
-   float v = 1.0/pbin;
+   sum=0;
    for(i=0;i<nprof;i++){
-	  if(i<pbin)dm_conv[(i-pbin/2+nprof)%nprof]=v;
-	  else dm_conv[(i-pbin/2+nprof)%nprof]=0;
+	  int x = (i-pbin/2+nprof)%nprof;
+	  double y = 2.*M_PI*(i-pbin/2.0+0.5)/pbin;
+	  if(i<pbin){
+	//	 logmsg("%d %g %g",x,y,sinc(y));
+		 ism_conv[x] = sinc(y);
+		 sum+=ism_conv[x];
+	  }
+	  else ism_conv[x]=0;
+   }
+   for(i=0;i<nprof;i++){
+	  //logmsg("%g %g",ism_conv[i],sum);
+	  ism_conv[i]/=sum;
    }
    double poff[nchan_const];
    double p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
@@ -242,15 +258,15 @@ int main (int argc, char** argv){
 		 }
 		 for(n=0; n < nsubpulse;n++){
 			i=floor(mjk_rand_double(rnd[0])*nprof);
-			subpulse_map[i]+=2.*mjk_rand_double(rnd[0])/(float)nsubpulse;
+			subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0]))/1.6487212707;
+			//subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
 		 }
 		 convolve(subpulse_conv_plan);
 		 for(i=0; i < nprof;i++){
 			unsmeared_prof[i]*=profile[i];
 		 }
-		 convolve(dm_conv_plan);
+		 convolve(ism_conv_plan);
 		 for (i=0; i < nprof-1; i++){
-			//logmsg("%f %f %f",profile[i],dm_conv[i],smeared_prof[i]);
 			grads[i] = smeared_prof[i+1]-smeared_prof[i];
 		 }
 		 grads[nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
