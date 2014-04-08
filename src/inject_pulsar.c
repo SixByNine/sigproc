@@ -1,21 +1,27 @@
-#include <complex.h>
-#include <fftw3.h>
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
+
+// standard headers
 #include <stdlib.h>
 #include <stdio.h>
+#include <complex.h>
 #include <string.h>
+#include <math.h>
+#include <stdbool.h>
+#include <time.h>
+#include <omp.h>
+
+// external libraries
+#include <fftw3.h>
+#include <tempo2pred.h>
+
+// sigproc/mjk headers
 #include "sigproc.h"
 #include "header.h"
 #include "mjklog.h"
-#include <math.h>
-#include <time.h>
-#include <omp.h>
-#include <tempo2pred.h>
 #include "mjk_cmd.h"
 #include "mjk_random.h"
-
 
 
 void print_help(){
@@ -56,8 +62,8 @@ struct convolve_plan {
    fftwf_plan bwd;
    float* a;
    float* b;
-   float _Complex* c;
-   float _Complex* d;
+   float complex* c;
+   float complex* d;
    float* output;
    int_fast32_t npts;
    float scale;
@@ -89,28 +95,33 @@ int main (int_fast32_t argc, char** argv){
    float scat_idx=0;
    float pulse_energy_sigma;
    float frac;
+   double sum;
    uint32_t seed;
    uint_fast32_t nsubpulse;
+   uint_fast32_t n;
    FILE* prof_file;
    T2Predictor pred;
    mjk_clock_t *CLK_setup = init_clock();
    mjk_clock_t *CLK_process = init_clock();
    mjk_clock_t *CLK_inner = init_clock();
-   char help=0;
+   bool help=false;
+   float A;
 
+   // This is just a timer for the runtime computation.
    start_clock(CLK_setup);
 
+   // set up fftw to run in multi-threaded mode.
    fftwf_init_threads();
    fftwf_plan_with_nthreads(omp_get_max_threads());
-   seed=time(NULL);
 
+   // read command line parameters
    in_snr=getF("--snr","-s",argc,argv,in_snr);
    ref_freq=getF("--freq","-f",argc,argv,1400.0);
    t_scat=getF("--scatter-time","-c",argc,argv,-1);
    scint_bw=getF("--scint-bw","-C",argc,argv,-1);
    scat_idx=getF("--scatter-index","-X",argc,argv,4.0);
    spec_index=getF("--sidx","-i",argc,argv,-1.5);
-   seed=getI("--seed","-S",argc,argv,seed);
+   seed=getI("--seed","-S",argc,argv,time(NULL));
    strcpy(subprof_fname,getS("--subprof","-b",argc,argv,""));
    strcpy(prof_fname,getS("--prof","-p",argc,argv,"prof.asc"));
    strcpy(pred_fname,getS("--pred","-P",argc,argv,"t2pred.dat"));
@@ -119,6 +130,7 @@ int main (int_fast32_t argc, char** argv){
    help=getB("--help","-h",argc,argv,0);
    getArgs(&argc,argv);
 
+   
    if (argc!=2)help=1;
    if (help){
 	  print_help();
@@ -143,6 +155,7 @@ int main (int_fast32_t argc, char** argv){
 	  t_scat = 1e-6/(2*M_PI*scint_bw);
    }
 
+   // double-check by printing values back to user.
 
 
    logmsg("input .fil file \t= '%s'",argv[1]);
@@ -160,6 +173,7 @@ int main (int_fast32_t argc, char** argv){
    logmsg("scint_bw     \t= %.2g MHz",scint_bw);
    logmsg("Random Seed  \t= 0x%"PRIx64,seed);
 
+   // try and open the input files.
    input=fopen(argv[1],"r");
    if(!input){
 	  logerr("Could not open input .fil file '%s'",argv[1]);
@@ -176,49 +190,31 @@ int main (int_fast32_t argc, char** argv){
 
    output=stdout;
 
+   // read the tempo2 predictor.
    res = T2Predictor_Read(&pred, pred_fname);
    if(res!=0){
 	  fprintf(stderr,"error, could not read predictor %d\n",res);
 	  exit(4);
    }
+
    int_fast32_t hdrsize = read_header(input);
    const uint_fast32_t nchan_const = nchans;
    const uint64_t nsamp = nsamples(argv[1],hdrsize,nbits,nifs,nchan_const);
-
 
    if(!hdrsize){
 	  fprintf(stderr,"error, could not read sigproc header\n");
 	  exit(255);
    }
 
-
-   float A;
-   switch(nbits){
-	  case 8:
-		 MX_val=pow(2,8)-1;
-		 A=24;
-		 break;
-	  case 4:
-		 MX_val=pow(2,4)-1;
-		 A=3;
-		 break;
-	  case 2:
-		 MX_val=pow(2,2)-1;
-		 A=1;
-		 break;
-	  case 1:
-		 MX_val=pow(2,1)-1;
-		 A=1;
-		 break;
-   }
-
-   fclose(input);
-   input=fopen(argv[1],"r");
-   char* buf = malloc(sizeof(char)*hdrsize);
+   fseek(input,0,SEEK_SET);
+   // read/write the sigproc header.
+   char* buf = malloc(sizeof(char)*hdrsize); // alloc buf
    fread(buf,1,hdrsize,input);
    fwrite(buf,1,hdrsize,output);
+   free(buf);
 
-   uint_fast32_t n=0;
+   fclose(input);
+   n=0;
    while(!feof(prof_file)){
 	  fscanf(prof_file,"%f\n",&frac); // dummy value
 	  n++;
@@ -231,12 +227,11 @@ int main (int_fast32_t argc, char** argv){
    float *subpulse_profile = fftwf_alloc_real(nprof);
    float *unsmeared_prof = fftwf_alloc_real(nprof);
    float *smeared_prof = fftwf_alloc_real(nprof);
-   float _Complex *scint_model = fftwf_alloc_complex(nchan_const*2);
-   float *scint_out = fftwf_alloc_real(nchan_const*2);
    logmsg("Initialising convolution plans.");
    struct convolve_plan *ism_conv_plan = setup_convolve(nprof,unsmeared_prof,ism_conv,smeared_prof);
    struct convolve_plan *subpulse_conv_plan = setup_convolve(nprof,subpulse_profile,subpulse_map,unsmeared_prof);
 
+   // reread the profile
    fseek(prof_file,0,SEEK_SET);
    n=0;
    while(!feof(prof_file)){
@@ -255,15 +250,35 @@ int main (int_fast32_t argc, char** argv){
 	  fclose(prof_file);
    }
 
+   switch(nbits){
+	  case 8:
+		 MX_val=pow(2,8)-1;
+		 A=24;
+		 break;
+	  case 4:
+		 MX_val=pow(2,4)-1;
+		 A=3;
+		 break;
+	  case 2:
+		 MX_val=pow(2,2)-1;
+		 A=1;
+		 break;
+	  case 1:
+		 MX_val=pow(2,1)-1;
+		 A=1;
+		 break;
+   }
+   const double noiseAmp = A;
 
-   double sum=0;
+
+   sum=0;
    // normalise the profile
    for (i=0; i < nprof; i++)
 	  sum+=profile[i];
    double scale=1.0;
 
    sum/=(double)nprof;
-   scale = A*in_snr / sqrt(nchan_const*nsamp)/sum;
+   scale = noiseAmp*in_snr / sqrt(nchan_const*nsamp)/sum;
    logmsg("mean=%lg scale=%lg",sum,scale);
    // normalise to pseudo-S/N in 1s.
    for (i=0; i < nprof; i++)
@@ -274,7 +289,6 @@ int main (int_fast32_t argc, char** argv){
    // normalise the subpulse profile
    for (i=0; i < nprof; i++)
 	  sum+=subpulse_profile[i];
-   double subpulse_scale;
    sum/=(double)nprof;
    // we also normalise by the number of subpulses so that the final subpulse profile will have an area of 1.
    scale = 1.0/sum/(float)nsubpulse;
@@ -304,7 +318,6 @@ int main (int_fast32_t argc, char** argv){
    int_fast32_t dbin,ii;
 
 
-   fftwf_plan fft_plan = fftwf_plan_dft_c2r_1d(nchan_const*2,scint_model,scint_out,FFTW_MEASURE);
    logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
    mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
    for(ch = 0; ch < nchan_const; ch++){
@@ -315,28 +328,34 @@ int main (int_fast32_t argc, char** argv){
 	  sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
    }
 
-   double t = 0;
-   for(ch = 0; ch < nchan_const*2; ch++){
-	  A = exp(-t/t_scat);
-	  //logmsg("%g %g",t,A);
-	  scint_model[ch] = A*mjk_rand_gauss(rnd[0]) + _Complex_I*A*mjk_rand_gauss(rnd[0]);
-	  t += 1.0/fabs(foff*1e6*nchan_const*2);
-   }
+   if(t_scat > 0){
+	  float complex *scint_model = fftwf_alloc_complex(nchan_const*2);
+	  float *scint_out = fftwf_alloc_real(nchan_const*2);
+	  fftwf_plan fft_plan = fftwf_plan_dft_c2r_1d(nchan_const*2,scint_model,scint_out,FFTW_MEASURE);
+	  double t = 0;
+	  for(ch = 0; ch < nchan_const*2; ch++){
+		 A = exp(-t/t_scat);
+		 scint_model[ch] = A*mjk_rand_gauss(rnd[0]) + I*A*mjk_rand_gauss(rnd[0]);
+		 t += 1.0/fabs(foff*1e6*nchan_const*2);
+	  }
 
-   fftwf_execute(fft_plan);
+	  fftwf_execute(fft_plan);
 
-   sum=0;
-   for(ch = 0; ch < nchan_const; ch++){
-	  scint_out[ch]*=scint_out[ch];
-	  sum+=scint_out[ch];
-   }
-   //exit(1);
-   sum/=(double)nchan_const;
-   for(ch = 0; ch < nchan_const; ch++){
-	  sidx[ch]*=scint_out[ch]/sum;
-   }
+	  sum=0;
+	  for(ch = 0; ch < nchan_const; ch++){
+		 scint_out[ch]*=scint_out[ch];
+		 sum+=scint_out[ch];
+	  }
+	  sum/=(double)nchan_const;
+	  for(ch = 0; ch < nchan_const; ch++){
+		 sidx[ch]*=scint_out[ch]/sum;
+	  }
 
-   fftwf_destroy_plan(fft_plan);
+	  fftwf_destroy_plan(fft_plan);
+	  fftwf_free(scint_out);
+	  fftwf_free(scint_model);
+
+   }
 
 
    // set up the ISM model
