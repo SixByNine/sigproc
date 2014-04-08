@@ -11,6 +11,7 @@
 #include "mjklog.h"
 #include <math.h>
 #include <time.h>
+#include <omp.h>
 #include <tempo2pred.h>
 #include "mjk_cmd.h"
 #include "mjk_random.h"
@@ -54,36 +55,77 @@ int main (int_fast32_t argc, char** argv){
    float in_snr=10; // S/N
    float ref_freq=1400.0;
    float t_scat=0;
+   float scint_bw;
    float scat_idx=0;
+   float pulse_energy_sigma;
    float frac;
    uint32_t seed;
-   uint_fast32_t nsubpulse=5;
+   uint_fast32_t nsubpulse;
    FILE* prof_file;
    T2Predictor pred;
+   mjk_clock_t *CLK_setup = init_clock();
+   mjk_clock_t *CLK_process = init_clock();
+   mjk_clock_t *CLK_inner = init_clock();
 
+   start_clock(CLK_setup);
    if(argc < 3){
-	  fprintf(stderr,"%s [.fil] [t2pred.dat] [prof.asc]\n\n",argv[0]);
+	  fprintf(stderr,"%s [.fil] -P [t2pred.dat] -p [prof.asc] (options)\n\n",argv[0]);
 	  fprintf(stderr,"Pulsar insertion tool. M. Keith 2014.\n");
 	  fprintf(stderr,"Use tempo2 -f [.par] -pred \"...\" to generate the predictor\n");
 	  exit(0);
    }
 
 
+   fftwf_init_threads();
+   fftwf_plan_with_nthreads(omp_get_max_threads());
    seed=time(NULL);
 
    in_snr=getF("--snr","-s",argc,argv,in_snr);
    ref_freq=getF("--freq","-f",argc,argv,1400.0);
-   t_scat=getF("--scatter-time","-c",argc,argv,0.0);
-   scat_idx=getF("--scatter-index","-C",argc,argv,4.0);
+   t_scat=getF("--scatter-time","-c",argc,argv,-1);
+   scint_bw=getF("--scint-bw","-C",argc,argv,-1);
+   scat_idx=getF("--scatter-index","-X",argc,argv,4.0);
    spec_index=getF("--sidx","-i",argc,argv,-1.5);
    seed=getI("--seed","-S",argc,argv,seed);
-   //seed=getI("--dmsmear","-d",argc,argv,seed);
    strcpy(subprof_fname,getS("--subprof","-b",argc,argv,""));
+   strcpy(prof_fname,getS("--prof","-p",argc,argv,"prof.asc"));
+   strcpy(pred_fname,getS("--pred","-P",argc,argv,"t2pred.dat"));
+   nsubpulse=getI("--nsub","-n",argc,argv,5);
+   pulse_energy_sigma=getF("--pulse-sigma","-E",argc,argv,0.2);
+   getArgs(&argc,argv);
 
+   if(scint_bw < 0 && t_scat<0){
+	  scint_bw=0;
+	  t_scat=0;
+	  logmsg("Disable scattering/scintillation");
+   }
+   if(scint_bw < 0){
+	  scint_bw = 1e-6/(2*M_PI*t_scat);
+   }
+
+   if(t_scat < 0){
+	  t_scat = 1e-6/(2*M_PI*scint_bw);
+   }
+
+
+
+   logmsg("input .fil file \t= '%s'",argv[1]);
+   logmsg("Predicor     \t= '%s'",pred_fname);
+   logmsg("Profile      \t= '%s'",prof_fname);
+   if(strlen(subprof_fname)>0){
+	  logmsg("SubProfile   \t= '%s'",subprof_fname);
+	  logmsg("Nsubpulse    \t= %d",nsubpulse);
+	  logmsg("Pulse energy sig\t= %.1g",pulse_energy_sigma);
+   }
+   logmsg("Target S/N   \t= %.2f",in_snr);
+   logmsg("Ref Freq     \t= %.2f MHz",ref_freq);
+   logmsg("Spectrum     \t= f^(%.2f)",spec_index);
+   logmsg("t_scatter    \t= (%.2g s) * f^(%.2f)",t_scat,-scat_idx);
+   logmsg("scint_bw     \t= %.2g MHz",scint_bw);
+   logmsg("Random Seed  \t= 0x%"PRIx64,seed);
 
    input=fopen(argv[1],"r");
-   strcpy(pred_fname,argv[2]);
-   prof_file=fopen(argv[3],"r");
+   prof_file=fopen(prof_fname,"r");
 
    output=stdout;
 
@@ -98,7 +140,7 @@ int main (int_fast32_t argc, char** argv){
 
    if(!hdrsize){
 	  fprintf(stderr,"error, could not read sigproc header\n");
-	  exit(1);
+	  exit(255);
    }
 
 
@@ -141,15 +183,13 @@ int main (int_fast32_t argc, char** argv){
    float *subpulse_profile = fftwf_alloc_real(nprof);
    float *unsmeared_prof = fftwf_alloc_real(nprof);
    float *smeared_prof = fftwf_alloc_real(nprof);
-   logmsg("Initialising convolution plans...");
+   float _Complex *scint_model = fftwf_alloc_complex(nchan_const*2);
+   float *scint_out = fftwf_alloc_real(nchan_const*2);
+   logmsg("Initialising convolution plans.");
    struct convolve_plan *ism_conv_plan = setup_convolve(nprof,unsmeared_prof,ism_conv,smeared_prof);
    struct convolve_plan *subpulse_conv_plan = setup_convolve(nprof,subpulse_profile,subpulse_map,unsmeared_prof);
 
-   logmsg("%x",ism_conv_plan);
-   logmsg("Done.");
-
-
-  fseek(prof_file,0,SEEK_SET);
+   fseek(prof_file,0,SEEK_SET);
    n=0;
    while(!feof(prof_file)){
 	  fscanf(prof_file,"%f\n",profile+n);
@@ -177,7 +217,7 @@ int main (int_fast32_t argc, char** argv){
    sum/=(double)nprof;
    scale = A*in_snr / sqrt(nchan_const*nsamp)/sum;
    logmsg("mean=%lg scale=%lg",sum,scale);
-// normalise to pseudo-S/N in 1s.
+   // normalise to pseudo-S/N in 1s.
    for (i=0; i < nprof; i++)
 	  profile[i]=profile[i]*scale;
 
@@ -194,7 +234,6 @@ int main (int_fast32_t argc, char** argv){
    for (i=0; i < nprof; i++)
 	  subpulse_profile[i]=subpulse_profile[i]*scale;
 
-
    block=malloc(sizeof(float)*nchan_const);
    long double mjd = (long double)tstart;
    long double tsamp_mjd = (long double)tsamp/86400.0L;
@@ -209,12 +248,48 @@ int main (int_fast32_t argc, char** argv){
    uint_fast32_t nism=0;
    const uint_fast32_t NCOPY = nprof*sizeof(float);
    const double psr_freq = (double)T2Predictor_GetFrequency(&pred,mjd,freq[0]);
-   logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
+   double poff[nchan_const];
 
+   const double pulse_energy_norm = exp(pow(pulse_energy_sigma,2)/2.0);
+   double p0 = T2Predictor_GetPhase(&pred,mjd,fch1);
+   int_fast32_t prevbin[nchan_const];
+   int_fast32_t dbin,ii;
+
+
+   fftwf_plan fft_plan = fftwf_plan_dft_c2r_1d(nchan_const*2,scint_model,scint_out,FFTW_MEASURE);
+   logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
+   mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
    for(ch = 0; ch < nchan_const; ch++){
 	  freq[ch] = fch1 + foff*ch;
+	  rnd[ch] = mjk_rand_init(seed+ch);
+	  poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
+	  prevbin[ch]=-1;
 	  sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
    }
+
+   double t = 0;
+   for(ch = 0; ch < nchan_const*2; ch++){
+	  A = exp(-t/t_scat);
+	  //logmsg("%g %g",t,A);
+	  scint_model[ch] = A*mjk_rand_gauss(rnd[0]) + _Complex_I*A*mjk_rand_gauss(rnd[0]);
+	  t += 1.0/fabs(foff*1e6*nchan_const*2);
+   }
+
+   fftwf_execute(fft_plan);
+
+   sum=0;
+   for(ch = 0; ch < nchan_const; ch++){
+	  scint_out[ch]*=scint_out[ch];
+	  sum+=scint_out[ch];
+   }
+   //exit(1);
+   sum/=(double)nchan_const;
+   for(ch = 0; ch < nchan_const; ch++){
+	  sidx[ch]*=scint_out[ch]/sum;
+   }
+
+   fftwf_destroy_plan(fft_plan);
+
 
    // set up the ISM model
    {
@@ -226,8 +301,10 @@ int main (int_fast32_t argc, char** argv){
 	  float* out_conv = smeared_prof;
 
 	  const float tscat0 = (t_scat*pow(fch1/ref_freq,-scat_idx));
+	  const float tscatN = (t_scat*pow(freq[nchan_const-1]/ref_freq,-scat_idx));
 	  logmsg("Tscatter@%.1fMHz = %gs",ref_freq,t_scat);
-	  logmsg("Tscatter@%.1fMHz = %gs",fch1,tscat0);
+	  logmsg("Tscatter@%.1fMHz = %gs",freq[0],tscat0);
+	  logmsg("Tscatter@%.1fMHz = %gs",freq[nchan_const-1],tscatN);
 	  for(ch = 0; ch < nchan_const; ch++){
 		 phase = T2Predictor_GetPhase(&pred,mjd,freq[ch]) - T2Predictor_GetPhase(&pred,mjd,freq[ch]+foff);
 		 pbin = fabs(phase)*nprof;
@@ -238,8 +315,8 @@ int main (int_fast32_t argc, char** argv){
 
 		 if (pbin!=dm_bin || sbin != scatter_bin){
 			// make new ISM model
-			logmsg("New ISM Model...");
-			logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
+			//logmsg("New ISM Model...");
+			//logmsg("DM smearing. df=%lg dt=%lLg phase bins=%d",foff,phase,pbin);
 			sum=0;
 			for(i=0;i<nprof;i++){
 			   int_fast32_t x = (i-pbin/2+nprof)%nprof;
@@ -257,7 +334,7 @@ int main (int_fast32_t argc, char** argv){
 			}
 
 
-			logmsg("Scattering. Exponential with phase bins=%d idx=%.1f",sbin,scat_idx);
+			//logmsg("Scattering. Exponential with phase bins=%d idx=%.1f",sbin,scat_idx);
 			if(sbin > 0){
 			   sum=0;
 			   for(i=0;i<nprof;i++){
@@ -287,89 +364,115 @@ int main (int_fast32_t argc, char** argv){
 		 ism_idx[ch]=nism-1;
 	  }
    }
+   logmsg("Generated %d ISM models",nism);
 
    float  grads[nism][nprof];
    float output_prof[nism][nprof];
-   double poff[nchan_const];
-   double p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
-   int_fast32_t prevbin[nchan_const];
-   int_fast32_t dbin,ii;
-   mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
-   for(ch = 0; ch < nchan_const; ch++){
-	  rnd[ch] = mjk_rand_init(seed+ch);
-	  poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
-	  prevbin[ch]=-1;
-   }
-
-   logmsg("m=%f t0=%f dt=%f dmjd=%f",(float)mjd,(float)tstart,(float)tsamp,(float)tsamp_mjd);
+   stop_clock(CLK_setup);
+   start_clock(CLK_process);
+   logmsg("Starting simulation");
    uint64_t count=0;
    int64_t ip0;
    int64_t prev_ip0=INT64_MAX;
+   float rands[nchan_const];
    while(!feof(input)){
 	  if(count%1024==0){
 		 fprintf(stderr,"%ld samples,  %.1fs\r",count,count*tsamp);
 	  }
 
+	  for(ch = 0; ch < nchan_const; ch++){
+		 rands[ch]=mjk_rand_double(rnd[0]);
+	  }
 	  read_block(input,nbits,block,nchan_const);
 	  p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
 	  ip0 = (int64_t)floor(p0);
-	  if (ip0!=prev_ip0){
-		 //logmsg("new pulse");
-		 // need a new temp profile.
+	  //pragma omp paralell private(i,n,ch,phase,frac,pbin,A,dbin) shared(ip0,prev_ip0)
+	  {
+		 if (ip0!=prev_ip0){
+			//logmsg("new pulse");
+			// need a new temp profile.
 
-		 for(i=0; i < nprof;i++){
-			subpulse_map[i]=0;
-		 }
-		 for(n=0; n < nsubpulse;n++){
-			i=floor(mjk_rand_double(rnd[0])*nprof);
-			subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0]))/1.6487212707;
-			//subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
-		 }
-		 convolve(subpulse_conv_plan);
-		 for(i=0; i < nprof;i++){
-			unsmeared_prof[i]*=profile[i];
-		 }
-		 for(i =0; i<nism; i++){
-			memcpy(ism_conv,ism_models[i],NCOPY);
-			convolve(ism_conv_plan);
-			memcpy(output_prof[i],smeared_prof,NCOPY);
-			for (n=0; n < nprof-1; n++){
-			   grads[i][n] = smeared_prof[n+1]-smeared_prof[n];
+			//pragma omp  for 
+			for(i=0; i < nprof;i++){
+			   subpulse_map[i]=0;
 			}
-			grads[i][nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
+			//pragma omp single
+			for(n=0; n < nsubpulse;n++){
+			   i=floor(mjk_rand_double(rnd[0])*nprof);
+			   subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0])*pulse_energy_sigma)/pulse_energy_norm;
+			   //subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
+			}
+
+			//pragma omp single
+			{
+			   convolve(subpulse_conv_plan);
+			}
+			//pragma omp  for 
+			for(i=0; i < nprof;i++){
+			   unsmeared_prof[i]*=profile[i];
+			}
+
+			//pragma omp single
+			{
+			   for(i =0; i<nism; i++){
+				  memcpy(ism_conv,ism_models[i],NCOPY);
+				  convolve(ism_conv_plan);
+				  memcpy(output_prof[i],smeared_prof,NCOPY);
+				  for (n=0; n < nprof-1; n++){
+					 grads[i][n] = smeared_prof[n+1]-smeared_prof[n];
+				  }
+				  grads[i][nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
+			   }
+			   prev_ip0=ip0;
+			}
 		 }
-		 prev_ip0=ip0;
-	  }
-	  for(ch = 0; ch < nchan_const; ch++){
-		 phase = p0+poff[ch];
-		 phase = phase-floor(phase);
-		 pbin = floor(phase*nprof);
-		 frac = phase*nprof-pbin;
-		 A = output_prof[ism_idx[ch]][pbin] + frac*grads[ism_idx[ch]][pbin];
-		 if(prevbin[ch]<0)prevbin[ch]=pbin;
-		 dbin=pbin-prevbin[ch];
-		 while(dbin<0)dbin+=nprof;
-		 while(dbin>1){
-			A += output_prof[ism_idx[ch]][prevbin[ch]];
-			prevbin[ch]+=1;
+		 start_clock(CLK_inner);
+		 //pragma omp  for  schedule(dynamic,128)
+		 for(ch = 0; ch < nchan_const; ch++){
+			phase = p0+poff[ch];
+			phase = phase-floor(phase);
+			pbin = floor(phase*nprof);
+			frac = phase*nprof-pbin;
+			A = output_prof[ism_idx[ch]][pbin] + frac*grads[ism_idx[ch]][pbin];
+			if(prevbin[ch]<0)prevbin[ch]=pbin;
 			dbin=pbin-prevbin[ch];
 			while(dbin<0)dbin+=nprof;
+			while(dbin>1){
+			   A += output_prof[ism_idx[ch]][prevbin[ch]];
+			   prevbin[ch]+=1;
+			   dbin=pbin-prevbin[ch];
+			   while(dbin<0)dbin+=nprof;
+			}
+			if (A>0){
+			   block[ch] += sidx[ch]*A + rands[ch];
+			}
+			prevbin[ch]=pbin;
+
 		 }
-		 if (A>0){
-			block[ch] += sidx[ch]*A + mjk_rand_double(rnd[0]);
-		 }
-		 prevbin[ch]=pbin;
+
+		 stop_clock(CLK_inner);
 	  }
 	  write_block(nbits,1,nchan_const,output,block);
 	  mjd+=tsamp_mjd;
 	  count++;
    }
+   fprintf(stderr,"\n");
+
+   stop_clock(CLK_process);
+   logmsg("Simulation ended.");
+   logmsg("Setup took   %.2f s",read_clock(CLK_setup));
+   logmsg("Process took %.2f s",read_clock(CLK_process));
+   logmsg("Inner took  %.2f s",read_clock(CLK_inner));
+   logmsg("Total was  %0.2g times 'real' time",(read_clock(CLK_setup)+read_clock(CLK_process))/(count*tsamp));
+   logmsg("Check last Random %"PRIx32,mjk_rand(rnd[0]));
 
 
    for(ch = 0; ch < nchan_const; ch++){
 	  mjk_rand_free(rnd[ch]);
    }
    free(rnd);
+   free_convolve_plan(ism_conv_plan);
+   free_convolve_plan(subpulse_conv_plan);
    fftwf_free(profile);
 
    return 0;
@@ -452,6 +555,13 @@ void convolve(struct convolve_plan *plan){
    }
    fftwf_execute(plan->bwd);
 }
-void free_convolve_plan(struct convolve_plan *plan);
+void free_convolve_plan(struct convolve_plan *plan){
+   fftwf_free(plan->c);
+   fftwf_free(plan->d);
+   fftwf_destroy_plan(plan->fwda);
+   fftwf_destroy_plan(plan->fwdb);
+   fftwf_destroy_plan(plan->bwd);
+   free(plan);
+}
 
 
