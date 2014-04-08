@@ -18,6 +18,36 @@
 
 
 
+void print_help(){
+   fprintf(stderr,\
+		 "\ninject_pulsar [options] --pred t2pred.dat --prof prof.asc file.fil > output.fil\n"\
+		 "\n"\
+		 "Inject a simulated pulsar into the input .fil file. Writes to stdout.\n"\
+		 "\n"\
+		 "INPUTS:\n"\
+		 "   t2pred.dat - A tempo2 predictor file (generate with tempo2 -f x.par -pred ...\n"\
+		 "   prof.asc   - Pulse profile in single-column text format. 2^n bins is best\n"\
+		 "   file.fil   - Input filterbank file. Can be a real file, or from fast_fake\n"\
+		 "\n"\
+		 "OPTIONS:\n"\
+		 "   --help, -h          This help text\n"\
+		 "   --snr,-s            Target signal-to-noise ratio (phase average S/N). (def=15)\n"\
+		 "   --subprof,-b        Profile for sub-profile structure. Same format as prof.asc\n"\
+		 "   --nsub,-n           Number of sub-pulses per profile, over full pulse phase (def=5).\n"\
+		 "   --sidx,-i           Spectral index of pulsar. (def=-1.5)\n"\
+		 "   --scatter-time,-c   Scattering timescale at ref freq, s. (def=no scattering).\n"\
+		 "   --scint-bw,-C       Scintilation bandwidth, MHz. Cannot use in conjunction with -c\n"\
+		 "   --scatter-index,-X  Index of scattering. (def=4.0).\n"\
+		 "   --freq,-f           Reference frequency for scattering/spectral index, MHz. (def=1500)\n"\
+		 "   --pulse-sigma,-E    'sigma' for log-normal pulse intensity distribution. (def=0.2)\n"\
+		 "   --seed,-S           Random seed for simulation. (def=time())\n"\
+		 "\n"\
+		 "Note that the scint bandwidth is derived from the scatter time, so only one can be specified.\n"\
+		 "\n");
+
+}
+
+
 float MX_val;
 void write_block(int_fast32_t nobits,int nsout,int nbands, FILE* output,float* outblock);
 struct convolve_plan {
@@ -52,7 +82,7 @@ int main (int_fast32_t argc, char** argv){
    float *block;
    float *profile;
    float spec_index=0;
-   float in_snr=10; // S/N
+   float in_snr=15; // S/N
    float ref_freq=1400.0;
    float t_scat=0;
    float scint_bw;
@@ -66,15 +96,9 @@ int main (int_fast32_t argc, char** argv){
    mjk_clock_t *CLK_setup = init_clock();
    mjk_clock_t *CLK_process = init_clock();
    mjk_clock_t *CLK_inner = init_clock();
+   char help=0;
 
    start_clock(CLK_setup);
-   if(argc < 3){
-	  fprintf(stderr,"%s [.fil] -P [t2pred.dat] -p [prof.asc] (options)\n\n",argv[0]);
-	  fprintf(stderr,"Pulsar insertion tool. M. Keith 2014.\n");
-	  fprintf(stderr,"Use tempo2 -f [.par] -pred \"...\" to generate the predictor\n");
-	  exit(0);
-   }
-
 
    fftwf_init_threads();
    fftwf_plan_with_nthreads(omp_get_max_threads());
@@ -92,8 +116,20 @@ int main (int_fast32_t argc, char** argv){
    strcpy(pred_fname,getS("--pred","-P",argc,argv,"t2pred.dat"));
    nsubpulse=getI("--nsub","-n",argc,argv,5);
    pulse_energy_sigma=getF("--pulse-sigma","-E",argc,argv,0.2);
+   help=getB("--help","-h",argc,argv,0);
    getArgs(&argc,argv);
 
+   if (argc!=2)help=1;
+   if (help){
+	  print_help();
+	  exit(1);
+   }
+
+
+   if(scint_bw > 0 && t_scat>0){
+	  logmsg("Note: ignoring scint_bw, using scattering time instead");
+	  scint_bw=-1;
+   }
    if(scint_bw < 0 && t_scat<0){
 	  scint_bw=0;
 	  t_scat=0;
@@ -125,13 +161,25 @@ int main (int_fast32_t argc, char** argv){
    logmsg("Random Seed  \t= 0x%"PRIx64,seed);
 
    input=fopen(argv[1],"r");
+   if(!input){
+	  logerr("Could not open input .fil file '%s'",argv[1]);
+	  print_help();
+	  exit(2);
+   }
    prof_file=fopen(prof_fname,"r");
+   if(!prof_file){
+	  logmsg("Could not open input profile file '%s'",prof_fname);
+	  print_help();
+	  exit(3);
+   }
+
 
    output=stdout;
 
    res = T2Predictor_Read(&pred, pred_fname);
    if(res!=0){
 	  fprintf(stderr,"error, could not read predictor %d\n",res);
+	  exit(4);
    }
    int_fast32_t hdrsize = read_header(input);
    const uint_fast32_t nchan_const = nchans;
