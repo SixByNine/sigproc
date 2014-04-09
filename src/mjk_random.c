@@ -16,17 +16,21 @@ void mjk_rand_fill(mjk_rand_t *state){
    logdbg("fill random buffer");
    uint64_t iblk,ibuf;
 
-   unsigned short astateP[3];
    const uint64_t buf_chunk = state->buffer_len/state->nthreadmax;
    const uint64_t chunk=64;
+   // need a copy of xi for the threads
+   const unsigned short xi[] = {state->xi[0],state->xi[1],state->xi[2]};
 
-#pragma omp parallel shared(state) private(iblk,ibuf,astateP)
+#pragma omp parallel shared(state) private(iblk,ibuf)
    {
 #pragma omp for schedule(dynamic,chunk)
 	  for(iblk=0; iblk < state->nthreadmax; iblk++){
-		 astateP[0]+=iblk;
-		 astateP[1]+=2*iblk;
-		 astateP[2]-=3*iblk;
+
+		 // the thread private state
+		 unsigned short astateP[3];
+		 astateP[0]=xi[0]+iblk;
+		 astateP[1]=xi[1]+2*iblk;
+		 astateP[2]=xi[2]+3*iblk;
 		 for(ibuf=0; ibuf < buf_chunk; ibuf++){
 			state->buffer[ibuf + iblk*buf_chunk] = erand48(astateP);
 		 }

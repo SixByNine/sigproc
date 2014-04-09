@@ -205,6 +205,9 @@ int main (int_fast32_t argc, char** argv){
 	  fprintf(stderr,"error, could not read sigproc header\n");
 	  exit(255);
    }
+   logmsg("Input Nsamples  \t= %"PRIu64,nsamp);
+   logmsg("Input Tobs      \t= %f",nsamp*tsamp);
+   logmsg("Input Nchans    \t= %"PRIuFAST32,nchan_const);
 
    fseek(input,0,SEEK_SET);
    // read/write the sigproc header.
@@ -213,7 +216,6 @@ int main (int_fast32_t argc, char** argv){
    fwrite(buf,1,hdrsize,output);
    free(buf);
 
-   fclose(input);
    n=0;
    while(!feof(prof_file)){
 	  fscanf(prof_file,"%f\n",&frac); // dummy value
@@ -541,6 +543,7 @@ int main (int_fast32_t argc, char** argv){
    free_convolve_plan(ism_conv_plan);
    free_convolve_plan(subpulse_conv_plan);
    fftwf_free(profile);
+   fclose(input);
 
    return 0;
 }
