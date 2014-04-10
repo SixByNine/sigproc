@@ -16,10 +16,27 @@
 #include "mjk_random.h"
 #include "mjk_cmd.h"
 
-
-
 void fastfake_help(){
-   printf("fast fake\n");
+      fprintf(stderr,\
+		 "\nfast_fake [options] > output.fil\n"\
+		 "\n"\
+		 "Create a gausian noise fake filterbank file. Writes to stdout.\n"\
+		 "\n"\
+		 "OPTIONS:\n"\
+		 "   --help, -h          This help text\n"\
+		 "   --tobs,-T           Total observation time, s (def=270)\n"\
+		 "   --tsamp,-t          Sampling interval, us (def=64)\n"\
+		 "   --mjd,-m            MJD of first sample (def=56000.0)\n"\
+		 "   --fch1,-F           Frequency of channel 1, MHz (def=1581.804688)\n"\
+		 "   --foff,-f           Channel bandwidth, MHz (def=-0.390625)\n"\
+		 "   --nbits,-b          Output number of bits, 1,2,4,8,32 (def=2)\n"\
+		 "   --nchans,-c         Output number of channels (def=1024)\n"\
+		 "   --seed,-S           Random seed (def=time())\n"\
+		 "   --name,-s           Source name for header (def=FAKE)\n"\
+		 "\n"\
+		 "Default parameters make a HTRU-style data file.\n"\
+		 "\n");
+	  exit(1);
 }
 
 
@@ -38,20 +55,12 @@ int main (int argc, char *argv[])
    long seed=-1;
    float fval;
    unsigned char A,B,C,D;
+   char help=0;
+   uint_fast32_t i;
 
    logmsg("FASTFAKE - M.Keith 2014");
    logmsg("Starting up...");
 
-
-   if (argc < 2){
-	  fastfake_help();
-	  exit(0);
-   }
-   /* print help if necessary */
-   if (help_required(argv[1])) {
-	  fastfake_help();
-	  exit(0);
-   }
 
    /* set up default variables */
    strcpy(inpfile,"stdin");
@@ -73,6 +82,7 @@ int main (int argc, char *argv[])
    output=stdout;
 
    logmsg("Parse command line");
+   help=getB("--help","-h",argc,argv,0);
    obstime=getF("--tobs","-T",argc,argv,obstime);
    tsamp=getF("--tsamp","-t",argc,argv,tsamp);
    tstart=getF("--mjd","-m",argc,argv,tstart);
@@ -84,6 +94,11 @@ int main (int argc, char *argv[])
    char test_mode=getB("--test","-0",argc,argv,0);
    strcpy(outfile,getS("--out","-o",argc,argv,"stdout"));
    strcpy(source_name,getS("--name","-s",argc,argv,"FAKE"));
+   getArgs(&argc,argv);
+   if (help || argc > 1){
+	  for(i=1; i < argc; i++)logerr("Unknown argument '%s'",argv[i]);
+	  fastfake_help();
+   }
 
 
    time_t t0 = time(NULL);
