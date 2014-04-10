@@ -29,6 +29,7 @@ void print_help(){
 		 "\ninject_pulsar [options] --pred t2pred.dat --prof prof.asc file.fil > output.fil\n"\
 		 "\n"\
 		 "Inject a simulated pulsar into the input .fil file. Writes to stdout.\n"\
+		 "Michael Keith (2014) - mkeith@pulsarastronomy.net\n"\
 		 "\n"\
 		 "INPUTS:\n"\
 		 "   t2pred.dat - A tempo2 predictor file (generate with tempo2 -f x.par -pred ...\n"\

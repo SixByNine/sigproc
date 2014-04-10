@@ -21,6 +21,7 @@ void fastfake_help(){
 		 "\nfast_fake [options] > output.fil\n"\
 		 "\n"\
 		 "Create a gausian noise fake filterbank file. Writes to stdout.\n"\
+		 "Michael Keith (2014) - mkeith@pulsarastronomy.net\n"\
 		 "\n"\
 		 "OPTIONS:\n"\
 		 "   --help, -h          This help text\n"\
@@ -58,9 +59,6 @@ int main (int argc, char *argv[])
    char help=0;
    uint_fast32_t i;
 
-   logmsg("FASTFAKE - M.Keith 2014");
-   logmsg("Starting up...");
-
 
    /* set up default variables */
    strcpy(inpfile,"stdin");
@@ -81,14 +79,13 @@ int main (int argc, char *argv[])
    obstime=270.0;
    output=stdout;
 
-   logmsg("Parse command line");
    help=getB("--help","-h",argc,argv,0);
    obstime=getF("--tobs","-T",argc,argv,obstime);
    tsamp=getF("--tsamp","-t",argc,argv,tsamp);
    tstart=getF("--mjd","-m",argc,argv,tstart);
    fch1=getF("--fch1","-F",argc,argv,fch1);
    foff=getF("--foff","-f",argc,argv,foff);
-   nbits=getI("--nbits","-b",argc,argv,foff);
+   nbits=getI("--nbits","-b",argc,argv,nbits);
    nchans=getI("--nchans","-c",argc,argv,nchans);
    seed=getI("--seed","-S",argc,argv,seed);
    char test_mode=getB("--test","-0",argc,argv,0);
@@ -100,6 +97,8 @@ int main (int argc, char *argv[])
 	  fastfake_help();
    }
 
+   logmsg("FASTFAKE - M.Keith 2014");
+   
 
    time_t t0 = time(NULL);
    if (seed<0)seed=t0;
