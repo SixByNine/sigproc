@@ -11,7 +11,7 @@ endif
 BUILT_SOURCES=sigproc.h
 
 fast_fake_SOURCES=fast_fake.c
-fast_fake_CPPFLAGS=-std=c99
+fast_fake_CPPFLAGS=-std=gnu99
 
 AM_FFLAGS=-fno-second-underscore
 AM_CPPFLAGS=.

@@ -1,6 +1,7 @@
 #include "mjk_cmd.h"
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifdef __MACH__
 #include <sys/time.h>
