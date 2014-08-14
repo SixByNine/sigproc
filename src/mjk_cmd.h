@@ -31,6 +31,7 @@ void stop_clock(mjk_clock_t* clock);
 void reset_clock(mjk_clock_t* clock);
 double read_clock(mjk_clock_t* clock);
 
+char* trim_string(char* str);
 
 
 #endif

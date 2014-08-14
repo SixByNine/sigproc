@@ -113,4 +113,20 @@ double read_clock(mjk_clock_t* clock){
 
 
 
+char* trim_string(char* str){
+	int l = strlen(str)-1;
+	while(l > 0){
+		if(str[l]==' ')str[l]='\0';
+		else break;
+		l-=1;
+	}
+	int i=0;
+	while (i < l){
+		if(str[0]==' ')str++;
+		else break;
+		i+=1;
+	}
+	return str;
+}
+
 

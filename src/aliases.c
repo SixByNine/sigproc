@@ -116,6 +116,10 @@ char *backend_name (int machine_id) /*includefile*/
     break;
   case 10:
     strcpy(string,"BPSR");
+    break;
+  case 14:
+    strcpy(string,"GMRTNEW");
+    break;
   default:
     strcpy(string,"?????");
     break;

@@ -20,6 +20,7 @@ int compute_spectra, do_vanvleck, hanning, hamming, zerolagdump;
 int headeronly;
 char ifstream[8];
 char flip_band;
+unsigned char *gmrtzap;
 
 /* library of subroutines and functions */
 #include "sigproc.h"

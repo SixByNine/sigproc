@@ -277,6 +277,9 @@ main (int argc, char *argv[])
       psrfits2fb(input,output,inpfile);
       break;
 #endif
+    case 14:
+      newgmrt2fb(input,output);
+      break;
     }
     fileidx++;
     if (inputdata!=12) fclose(input);
