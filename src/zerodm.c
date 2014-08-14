@@ -149,7 +149,13 @@ main(int argc, char *argv[])
 		exit(1);
 	}
 	free(block_array);
-	mjk_rand_t * random = mjk_rand_init(time());
+
+	fprintf(stderr,"Allocating memory...\n");
+	block_array = (char*)malloc(blocksize);
+
+	fprintf(stderr,"Setting up random seed...\n");
+	mjk_rand_t * random = mjk_rand_init(time(NULL));
+
 
 	fprintf(stderr,"Applying zerodm filter...\n");
 	count = 0;
@@ -188,6 +194,7 @@ main(int argc, char *argv[])
 }
 
 void zerodm(char* block, unsigned int blocksize, mjk_rand_t* random){
+
    unsigned int ich = 0;
    float sum;
    for(ich=0; ich < blocksize; ich++){

@@ -23,7 +23,7 @@ libsigproc_a_SOURCES=sigproc.h $(c_headers) add_channels.c add_samples.c aliases
 
 if HAVE_T2PRED
 inject_pulsar_LDADD=-ltempo2pred libsigproc.a @FFTW_LIBS@
-inject_pulsar_CFLAGS=-std=c99
+inject_pulsar_CFLAGS=-std=gnu99
 inject_pulsar_SOURCES=inject_pulsar.c 
 endif
 

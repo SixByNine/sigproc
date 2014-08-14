@@ -2,6 +2,7 @@
 #include <config.h>
 #endif
 
+
 // standard headers
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,6 +23,15 @@
 #include "mjklog.h"
 #include "mjk_cmd.h"
 #include "mjk_random.h"
+
+#ifndef fftwf_alloc_real
+#define fftwf_alloc_real(A) (float*)fftwf_malloc(A*sizeof(float))
+#endif
+
+#ifndef fftwf_alloc_complex
+#define fftwf_alloc_complex(A) (fftwf_complex*)fftwf_malloc(A*sizeof(fftwf_complex*))
+#endif
+
 
 
 void print_help(){
@@ -78,7 +88,7 @@ double sinc(double x){
    else return sin(x)/x;
 }
 
-int main (int_fast32_t argc, char** argv){
+int main (int argc, char** argv){
    FILE* input;
    FILE* output;
    char pred_fname[1024];
