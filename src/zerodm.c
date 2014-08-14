@@ -192,31 +192,30 @@ main(int argc, char *argv[])
 
 	exit(0);
 }
-
 void zerodm(char* block, unsigned int blocksize, mjk_rand_t* random){
-
-   unsigned int ich = 0;
-   float sum;
-   for(ich=0; ich < blocksize; ich++){
-	  sum+=block[ich];
-   }
-   float mean = sum/(float)blocksize;
-   mean -= 64; // set new mean to 64.
-   int isub = (int)mean;
-   int fsub = mean - isub;
-   for(ich=0; ich < blocksize; ich++){
-	  int x = block[ich];
-	  x -= isub;
-	  if(mjk_rand_double(random) < fsub){
-		 x -= 1;
-	  }
-	  if(x < 0)x=0;
-	  if(x > 255)x=255;
-	  block[ich] = (unsigned char)x;
-   }
+	
+	unsigned int ich = 0;
+	int isign;
+	int sum=0;
+	for(ich=0; ich < blocksize; ich++){
+		sum+=block[ich];
+	}
+	float mean = (float)sum/(float)blocksize;
+	int isub = (int)mean;
+	float fsub = mean - isub;
+	for(ich=0; ich < blocksize; ich++){
+		int x = block[ich];
+		x -= isub;
+		if(mjk_rand_double(random) < fsub){
+			x -= 1;
+		}
+		// set new mean to 64
+		x+=64;
+		if(x < 0)x=0;
+		if(x > 255)x=255;
+		block[ich] = (unsigned char)x;
+	}
 }
-
-
 
 
 
