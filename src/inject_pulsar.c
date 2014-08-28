@@ -333,9 +333,9 @@ int main (int argc, char** argv){
 
    logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
    mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
+   rnd[0] = mjk_rand_init(seed);
    for(ch = 0; ch < nchan_const; ch++){
 	  freq[ch] = fch1 + foff*ch;
-	  rnd[ch] = mjk_rand_init(seed+ch);
 	  poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
 	  prevbin[ch]=-1;
 	  sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
@@ -547,9 +547,9 @@ int main (int argc, char** argv){
    logmsg("Check last Random %"PRIx32,mjk_rand(rnd[0]));
 
 
-   for(ch = 0; ch < nchan_const; ch++){
-	  mjk_rand_free(rnd[ch]);
-   }
+	  mjk_rand_free(rnd[0]);
+   //for(ch = 0; ch < nchan_const; ch++){
+   //}
    free(rnd);
    free_convolve_plan(ism_conv_plan);
    free_convolve_plan(subpulse_conv_plan);

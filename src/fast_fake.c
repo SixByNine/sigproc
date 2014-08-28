@@ -173,7 +173,7 @@ int main (int argc, char *argv[])
 		 }
 		 mjk_rand_gauss_atleast(rnd,nchans);
 		 const int chanskip = 8/nbits;
-#pragma omp paralelel for schedule(dynamic,1)
+//#pragma omp parallel for schedule(dynamic,1)
 		 for(uint64_t chan = 0; chan < nchans; chan+=chanskip){
 			switch(nbits){
 			   case 1:

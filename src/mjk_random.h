@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #ifndef _mjk_rand_h
 #define _mjk_rand_h
+#define MJK_RAND_R1279_SZ 2048
+#define MJK_RAND_R1279_SZ1 2047
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 
    typedef struct mjk_rand {
@@ -15,7 +18,8 @@ extern "C" {
 	   uint32_t rmax;
 	   int32_t gauss_next;
 	   float* gauss_buffer;
-	   unsigned short xi[3];
+	   uint64_t* seed;
+	   int32_t* ir;
    } mjk_rand_t;
 
 
