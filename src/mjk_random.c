@@ -11,34 +11,32 @@ uint32_t mjk_fallback_rand(int64_t *state){
    return ((uint32_t)(*state/INT32_MAX)%(INT32_MAX/2));
 }
 
+double r1279 (uint64_t seed[MJK_RAND_R1279_SZ], int *i){
+   const int i1 = (*i - 1279) & MJK_RAND_R1279_SZ1;
+   const int i2 = (*i - 418) & MJK_RAND_R1279_SZ1;
+   seed[*i] = seed[i1] * seed[i2]+1279;
+   double ret = seed[*i] / (double)UINT64_MAX;
+   //fprintf(stderr,"%lu %lu %lu %lg\n",seed[*i],seed[i1],seed[i2],ret);
+   (*i) = (*i + 1)&MJK_RAND_R1279_SZ1;
+   return ret;
+}
+
+
 void mjk_rand_fill(mjk_rand_t *state){
    time_t t0=time(NULL);
    logdbg("fill random buffer");
-   uint64_t iblk,ibuf;
-
-   const uint64_t buf_chunk = state->buffer_len/state->nthreadmax;
-   const uint64_t chunk=64;
-   // need a copy of xi for the threads
-   const unsigned short xi[] = {state->xi[0],state->xi[1],state->xi[2]};
-
-#pragma omp parallel shared(state) private(iblk,ibuf)
-   {
-#pragma omp for schedule(dynamic,chunk)
-	  for(iblk=0; iblk < state->nthreadmax; iblk++){
-
-		 // the thread private state
-		 unsigned short astateP[3];
-		 astateP[0]=xi[0]+iblk;
-		 astateP[1]=xi[1]+2*iblk;
-		 astateP[2]=xi[2]+3*iblk;
-		 for(ibuf=0; ibuf < buf_chunk; ibuf++){
-			state->buffer[ibuf + iblk*buf_chunk] = erand48(astateP);
-		 }
-		 if (iblk==state->nthreadmax-1){
-			state->xi[0]=astateP[0];
-			state->xi[1]=astateP[1];
-			state->xi[2]=astateP[2];
-		 }
+   uint64_t ibuf,iblk;
+   const int blksize = state->buffer_len / state->nthreadmax;
+#pragma omp parallel private(ibuf,iblk) shared(state)
+#pragma omp for schedule(static,1)
+   for(iblk=0; iblk < state->nthreadmax; iblk++){
+	  for(ibuf=0; ibuf < blksize; ibuf++){
+		 state->buffer[ibuf + iblk*blksize] = 
+			r1279(
+				  state->seed+iblk*MJK_RAND_R1279_SZ,
+				  &(state->ir)[iblk]
+				  );
+		 //fprintf(stderr,"ttt %lg\n",state->buffer[ibuf]);
 	  }
    }
    state->next=state->buffer_len-1;
@@ -47,28 +45,11 @@ void mjk_rand_fill(mjk_rand_t *state){
 }
 
 
-int mjk_rand_gauss2_old(mjk_rand_t *state,double U1, double U2,double *o1,double *o2) {
-   double S, Z, u,v;
-   double fac;
 
-   u = 2. * U1 - 1.;
-   v = 2. * U2 - 1.;
-   S = u * u + v * v;
-   if (S < 1){
-	  fac = sqrt (-2. * log(S) / S);
-	  *o1 = u * fac;
-	  *o2 = v * fac;
-	  return 0;
-   } else {
-	  return 1;
-   }
-
-
-}
 
 #define TWO_PI 6.2831853071795864769252866
 
-void mjk_rand_gauss2(mjk_rand_t *state,double rand1, double rand2,double *o1,double *o2) {
+void mjk_rand_gauss2(double rand1, double rand2,double *o1,double *o2) {
 
    if(rand1 < 1e-100) rand1 = 1e-100;
    rand1 = -2 * log(rand1);
@@ -90,21 +71,26 @@ void mjk_rand_fill_gauss(mjk_rand_t *state){
    if (state->gauss_buffer==NULL){
 	  state->gauss_buffer = (float*)calloc(state->buffer_len,sizeof(float));
    }
-#pragma omp parallel shared(state) private(i,o1,o2,i1,i2)
-#pragma omp for  schedule(dynamic,chunk)
+#pragma omp parallel private(i,o1,o2,i1,i2)
+#pragma omp for schedule(dynamic,chunk)
    for (i=0; i < state->buffer_len; i+=2){
 	  i1=state->buffer[i];
 	  i2=state->buffer[i+1];
-	  mjk_rand_gauss2(state,i1,i2,&o1,&o2);
+	  mjk_rand_gauss2(i1,i2,&o1,&o2);
 	  state->gauss_buffer[i]=o1;
 	  state->gauss_buffer[i+1]=o2;
    }
+   /*
+	  for (i=1620; i < state->buffer_len; i++){ // =4096){
+	  fprintf(stderr,"%d %g %lg\n",i,state->gauss_buffer[i],state->buffer[i]);
+	  }
+	  exit(1);
+	  */
+state->gauss_next=state->buffer_len-1;
+state->next=-1;
 
-   state->gauss_next=state->buffer_len-1;
-   state->next=-1;
-
-   time_t t1=time(NULL);
-   logdbg("buffer filled %ds",t1-t0);
+time_t t1=time(NULL);
+logdbg("buffer filled %ds",t1-t0);
 }
 
 
@@ -149,20 +135,29 @@ void mjk_rand_gauss_atleast(mjk_rand_t *state, uint64_t n){
 mjk_rand_t *mjk_rand_init(uint64_t seed){
    mjk_rand_t *state = calloc(1,sizeof(mjk_rand_t));
    state->next=-1;
-   state->nthreadmax=1024*1024;
-   state->buffer_len=state->nthreadmax*16;
+   state->nthreadmax=8;
+   state->buffer_len=1024*16*state->nthreadmax;
    state->buffer=calloc(state->buffer_len,sizeof(double));
    state->rmax=INT32_MAX/2;
    state->gauss_next=-1;
    state->gauss_buffer=NULL;
-   memcpy(state->xi,&seed,6);
-   logdbg("%x %x %x 0x%016Lx",state->xi[0],state->xi[1],state->xi[2],seed);
+   srand(seed);
+   state->ir = calloc(state->nthreadmax,sizeof(int));
+   state->seed = calloc(MJK_RAND_R1279_SZ*state->nthreadmax,sizeof(uint64_t));
+   int i;
+   for(i=0; i < MJK_RAND_R1279_SZ*state->nthreadmax; i++){
+	  state->seed[i] = rand()+1;
+   }
+   for(i=0; i < state->nthreadmax; i++){
+   mjk_rand_fill(state);
+   }
    return state;
 }
 
 
 void mjk_rand_free(mjk_rand_t *state){
    free(state->buffer);
+   free(state->seed);
    if(state->gauss_buffer!=NULL)free(state->gauss_buffer);
    free(state);
 }
