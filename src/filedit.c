@@ -11,7 +11,7 @@
 #include "header.h"
 
 int read_header(FILE *inputfile);
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff);
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff,float newtsamp);
 void zap_em(FILE* file, int* tzaps[2], int ntzaps, int fzaps[1024], int nfzaps,float mean, float sigma,char zap_mode);
 float get_random_value(float mean, float sigma);
 
@@ -48,7 +48,7 @@ void print_usage(){
 int main (int argc, char** argv){
 
 	struct option long_opt[256];
-	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSGf:F:c:i:";
+	const char* args = "d:hn:t:T:r:m:s:k:B:b:ZSGf:F:c:i:p:";
 	int opt_flag = 0;
 	int long_opt_idx = 0;
 	int* timezaps[2];
@@ -59,6 +59,7 @@ int main (int argc, char** argv){
 	double newtstart=-1;
 	int newibeam=-1;
 	int newnbeams=-1;
+	float newtsamp=-1;
 	float mean,sigma;
 	char newname[1024];
 	int c;
@@ -175,6 +176,12 @@ int main (int argc, char** argv){
 	long_opt[long_opt_idx].flag = NULL;
 	long_opt[long_opt_idx++].val = 'i';
 
+	long_opt[long_opt_idx].name = "tsamp";
+	long_opt[long_opt_idx].has_arg = required_argument;
+	long_opt[long_opt_idx].flag = NULL;
+	long_opt[long_opt_idx++].val = 'p';
+
+
 
 
 	long_opt[long_opt_idx].name = 0;
@@ -247,6 +254,10 @@ int main (int argc, char** argv){
 					case 'i':
 						newnbits = atoi(optarg);
 						break;
+					case 'p':
+						newtsamp = atoi(optarg);
+						break;
+
 				}
 		}
 	}
@@ -314,7 +325,7 @@ int main (int argc, char** argv){
 		exit(-5);
 	}
 
-	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000 || newnbits || newnchan || newfch1 != 0 || newfoff != 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart,newnchan,newnbits,newfch1,newfoff);
+	if ( newname[0]!='\0' || newra < 900000000 || newdec < 900000000 || newibeam >= 0 || newnbeams >= 0 || newtstart < 900000000 || newtsamp > 0 || newnbits || newnchan || newfch1 != 0 || newfoff != 0)fix_header(file,newname,newra,newdec,newibeam,newnbeams,newtstart,newnchan,newnbits,newfch1,newfoff,newtsamp);
 
 	if(ntimezaps > 0 || nfreqzaps > 0)zap_em(file,timezaps,ntimezaps,fzaps,nfreqzaps,mean,sigma,zap_mode);
 
@@ -322,7 +333,7 @@ int main (int argc, char** argv){
 }
 
 
-void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff){
+void fix_header(FILE* file, char* newname, double newra, double newdec, int newibeam, int newnbeams, double newtstart,int newnchan, int newnbits, float newfch1, float newfoff, float newtsamp){
 	int newlen;
 	int hdr_len;
 	char* hdr_arr;
@@ -429,6 +440,17 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 			printf("new nbits = '%d'\n",newnbits);
 			*((int*)(ptr)) = newnbits;
 		}
+
+		memcpy(buf,ptr,5);
+		buf[5]='\0';
+		if(newnbits && strcmp(buf,"tsamp")==0){
+			ptr+=5;
+			a_double = *((double*)(ptr));
+			printf("old tsamp = '%lf'\n",a_double);
+			printf("new tsamp = '%f'\n",newtsamp);
+			*((double*)(ptr)) = newnbits;
+		}
+
 
 		memcpy(buf,ptr,6);
 		buf[6]='\0';
