@@ -61,14 +61,6 @@ int getI(char *lo, char* so, int argc, char** argv, int val){
 
 mjk_clock_t *init_clock(){
    mjk_clock_t *ret =  calloc(1,sizeof(mjk_clock_t));
-
-#ifndef __MACH__
-   if(sysconf(_SC_MONOTONIC_CLOCK)){
-	  ret->spec =CLOCK_MONOTONIC;
-   }else{
-	  ret->spec =CLOCK_REALTIME;
-   }
-#endif
    return ret;
 }
 
