@@ -3,19 +3,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#ifdef __MACH__
-#include <sys/time.h>
-//clock_gettime is not implemented on OSX
-int clock_gettime(int clk_id, struct timespec* t) {
-    struct timeval now;
-    int rv = gettimeofday(&now, NULL);
-    if (rv) return rv;
-    t->tv_sec  = now.tv_sec;
-    t->tv_nsec = now.tv_usec * 1000;
-    return 0;
-}
-#endif
-
 void getArgs(int *argc, char** argv){
    int i;
    int n=1;
@@ -87,28 +74,23 @@ mjk_clock_t *init_clock(){
 
 void start_clock(mjk_clock_t* clock){
    if(!clock->running){
-	  clock_gettime(clock->spec,&clock->last_time);
+	  clock->stt = omp_get_wtime();
 	  clock->running=1;
    }
 }
 void stop_clock(mjk_clock_t* clock){
    if(clock->running){
-	  long n = clock->last_time.tv_nsec;
-	  time_t s = clock->last_time.tv_sec;
-	  clock_gettime(clock->spec,&clock->last_time);
 	  clock->running=0;
-	  clock->n += (clock->last_time.tv_nsec-n);
-	  clock->s += (clock->last_time.tv_sec-s);
+	  clock->time += omp_get_wtime() - clock->stt;
    }
 }
 void reset_clock(mjk_clock_t* clock){
    clock->running=0;
-   clock->n=0;
-   clock->s=0;
-   clock_gettime(clock->spec,&clock->last_time);
+   clock->time=0;
+   clock->stt=0;
 }
 double read_clock(mjk_clock_t* clock){
-   return clock->s + clock->n/1e9L;
+   return clock->time;
 }
 
 
