@@ -1,12 +1,9 @@
-#include <time.h>
+#include <omp.h>
 #ifndef _mjk_cmd_h
 #define _mjk_cmd_h
 #define STREQ(a,b) (strcmp(a,b)==0)
 
 
-#ifdef __MACH__
-#define clockid_t int
-#endif
 
 char* getS(char *lo, char* so, int argc, char** argv, char* val);
 
@@ -18,11 +15,9 @@ int getI(char *lo, char* so, int argc, char** argv, int val);
 void getArgs(int *argc, char** argv);
 
 typedef struct mjk_clock{
-   time_t s;
-   long n;
-   struct timespec last_time;
    char running;
-   clockid_t spec;
+   double time;
+   double stt;
 } mjk_clock_t;
 
 mjk_clock_t *init_clock();
