@@ -146,12 +146,15 @@ mjk_rand_t *mjk_rand_init(uint64_t seed){
    state->seed = calloc(MJK_RAND_R1279_SZ*state->nthreadmax,sizeof(uint64_t));
    long nseed = -(long)seed;
    int i;
+   uint64_t j,k;
    for(i=0; i < MJK_RAND_R1279_SZ*state->nthreadmax; i++){
-	  state->seed[i] = UINT64_MAX * nrran2(&nseed);
+	  j = (uint64_t) (UINT32_MAX * (double)nrran2(&nseed));
+	  j = j << 8*sizeof(uint32_t);
+	  k = (uint64_t) (UINT32_MAX * (double)nrran2(&nseed));
+	  state->seed[i] = j+k;
    }
-   for(i=0; i < state->nthreadmax; i++){
    mjk_rand_fill(state);
-   }
+   mjk_rand_fill(state);
    return state;
 }
 
