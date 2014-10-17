@@ -144,9 +144,10 @@ mjk_rand_t *mjk_rand_init(uint64_t seed){
    srand(seed);
    state->ir = calloc(state->nthreadmax,sizeof(int));
    state->seed = calloc(MJK_RAND_R1279_SZ*state->nthreadmax,sizeof(uint64_t));
+   long nseed = -(long)seed;
    int i;
    for(i=0; i < MJK_RAND_R1279_SZ*state->nthreadmax; i++){
-	  state->seed[i] = rand()+1;
+	  state->seed[i] = nrran2(&nseed);
    }
    for(i=0; i < state->nthreadmax; i++){
    mjk_rand_fill(state);

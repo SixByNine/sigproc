@@ -123,7 +123,8 @@ int main (int argc, char** argv){
 
    // set up fftw to run in multi-threaded mode.
    fftwf_init_threads();
-   fftwf_plan_with_nthreads(omp_get_max_threads());
+   //fftwf_plan_with_nthreads(omp_get_max_threads());
+   fftwf_plan_with_nthreads(1);
 
    // read command line parameters
    in_snr=getF("--snr","-s",argc,argv,in_snr);
@@ -245,6 +246,7 @@ int main (int argc, char** argv){
    struct convolve_plan *subpulse_conv_plan = setup_convolve(nprof,subpulse_profile,subpulse_map,unsmeared_prof);
 
    // reread the profile
+   logmsg("read profile file");
    fseek(prof_file,0,SEEK_SET);
    n=0;
    while(!feof(prof_file)){
@@ -254,6 +256,8 @@ int main (int argc, char** argv){
    }
    fclose(prof_file);
    if(strlen(subprof_fname)){
+
+	  logmsg("read subprofile file");
 	  prof_file=fopen(subprof_fname,"r");
 	  n=0;
 	  while(!feof(prof_file)){
@@ -309,6 +313,7 @@ int main (int argc, char** argv){
    for (i=0; i < nprof; i++)
 	  subpulse_profile[i]=subpulse_profile[i]*scale;
 
+   i=0;
    block=malloc(sizeof(float)*nchan_const);
    long double mjd = (long double)tstart;
    long double tsamp_mjd = (long double)tsamp/86400.0L;
@@ -319,7 +324,10 @@ int main (int argc, char** argv){
    float sidx[nchan_const];
    float dmdly[nchan_const];
    uint_fast32_t ism_idx[nchan_const];
-   float ism_models[nchan_const][nprof];
+   float **ism_models= (float**)malloc(sizeof(float*)*nchan_const);
+   for (i=0; i < nchan_const; i++){
+	  ism_models[i] = (float*)malloc(sizeof(float)*nprof);
+   }
    uint_fast32_t nism=0;
    const uint_fast32_t NCOPY = nprof*sizeof(float);
    const double psr_freq = (double)T2Predictor_GetFrequency(&pred,mjd,freq[0]);
@@ -450,6 +458,7 @@ int main (int argc, char** argv){
    float output_prof[nism][nprof];
    stop_clock(CLK_setup);
    start_clock(CLK_process);
+
    logmsg("Starting simulation");
    uint64_t count=0;
    int64_t ip0;
@@ -523,8 +532,9 @@ int main (int argc, char** argv){
 			   dbin=pbin-prevbin[ch];
 			   while(dbin<0)dbin+=nprof;
 			}
+
 			if (A>0){
-			   block[ch] += sidx[ch]*A + rands[ch];
+			   block[ch] += floor(sidx[ch]*A+rands[ch]);
 			}
 			prevbin[ch]=pbin;
 
@@ -546,8 +556,12 @@ int main (int argc, char** argv){
    logmsg("Total was  %0.2g times 'real' time",(read_clock(CLK_setup)+read_clock(CLK_process))/(count*tsamp));
    logmsg("Check last Random %"PRIx32,mjk_rand(rnd[0]));
 
+   for (i=0; i < nchan_const; i++){
+	  free(ism_models[i]);
+   }
+   free(ism_models);
 
-	  mjk_rand_free(rnd[0]);
+   mjk_rand_free(rnd[0]);
    //for(ch = 0; ch < nchan_const; ch++){
    //}
    free(rnd);
