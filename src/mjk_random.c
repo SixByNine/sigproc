@@ -147,7 +147,7 @@ mjk_rand_t *mjk_rand_init(uint64_t seed){
    long nseed = -(long)seed;
    int i;
    for(i=0; i < MJK_RAND_R1279_SZ*state->nthreadmax; i++){
-	  state->seed[i] = nrran2(&nseed);
+	  state->seed[i] = UINT64_MAX * nrran2(&nseed);
    }
    for(i=0; i < state->nthreadmax; i++){
    mjk_rand_fill(state);
