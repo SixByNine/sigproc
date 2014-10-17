@@ -20,3 +20,17 @@ int ssm(void) /*includefile*/
   return (atoi(hours)*3600 + atoi(minutes)*60 + atoi(seconds));
 }
 
+
+long startseed(void) /*includefile*/
+{
+  long seed;
+  int i, nits;
+
+  nits = ssm();
+  seed = (long) nits;
+  for (i=0; i<nits; i++) nrran2(&seed);
+
+  return (seed);
+}
+
+

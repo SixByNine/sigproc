@@ -184,16 +184,3 @@ float flat(float min, float max, long *seed) /*includefile*/
   return(min+(max-min)*nrran2(seed));
 }
 
-long startseed(void) /*includefile*/
-{
-  long seed;
-  int i, nits;
-
-  nits = ssm();
-  seed = (long) nits;
-  for (i=0; i<nits; i++) nrran2(&seed);
-
-  return (seed);
-}
-
-
