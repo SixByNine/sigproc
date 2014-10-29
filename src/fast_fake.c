@@ -54,6 +54,7 @@ int main (int argc, char *argv[])
 
    char string[80];
    long seed=-1;
+   
    float fval;
    unsigned char A,B,C,D;
    char help=0;
@@ -102,6 +103,7 @@ int main (int argc, char *argv[])
 
    time_t t0 = time(NULL);
    if (seed<0)seed=t0;
+
    mjk_rand_t *rnd = mjk_rand_init(seed);
 
 

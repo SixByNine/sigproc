@@ -129,7 +129,9 @@ float nrran2(long *idum) /*includefile*/
 	iy=iv[j]-idum2;
 	iv[j] = *idum;
 	if (iy < 1) iy += IMM1;
-	if ((temp=AM*iy) > RNMX) return RNMX;
+	temp=AM*iy;
+	//fprintf(stderr,"%g %g\n",temp,RNMX);
+	if (temp > RNMX) return RNMX;
 	else return temp;
 }
 #undef IM1

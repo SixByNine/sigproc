@@ -1,4 +1,5 @@
 #include "mjk_random.h"
+#include "sigproc.h"
 #include <stdlib.h>
 #include <math.h>
 #include "mjklog.h"
@@ -133,6 +134,7 @@ void mjk_rand_gauss_atleast(mjk_rand_t *state, uint64_t n){
 }
 
 mjk_rand_t *mjk_rand_init(uint64_t seed){
+   long nseed = -(long)seed;
    mjk_rand_t *state = calloc(1,sizeof(mjk_rand_t));
    state->next=-1;
    state->nthreadmax=8;
@@ -144,13 +146,13 @@ mjk_rand_t *mjk_rand_init(uint64_t seed){
    srand(seed);
    state->ir = calloc(state->nthreadmax,sizeof(int));
    state->seed = calloc(MJK_RAND_R1279_SZ*state->nthreadmax,sizeof(uint64_t));
-   long nseed = -(long)seed;
    int i;
    uint64_t j,k;
    for(i=0; i < MJK_RAND_R1279_SZ*state->nthreadmax; i++){
 	  j = (uint64_t) (UINT32_MAX * (double)nrran2(&nseed));
 	  j = j << 8*sizeof(uint32_t);
 	  k = (uint64_t) (UINT32_MAX * (double)nrran2(&nseed));
+	  //fprintf(stderr,"j=%016llx k=%016llx r=%016llx  %g\n",j,k,j+k,nrran2(&nseed));
 	  state->seed[i] = j+k;
    }
    mjk_rand_fill(state);
