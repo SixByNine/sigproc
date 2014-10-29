@@ -12,6 +12,17 @@ uint32_t mjk_fallback_rand(int64_t *state){
    return ((uint32_t)(*state/INT32_MAX)%(INT32_MAX/2));
 }
 
+
+double a2281 (uint64_t seed[MJK_RAND_R1279_SZ], int *i){
+   const int i1 = (*i - 2281) & MJK_RAND_R1279_SZ1;
+   const int i2 = (*i - 1252) & MJK_RAND_R1279_SZ1;
+   seed[*i] = seed[i1] + seed[i2];
+   double ret = seed[*i] / (double)UINT64_MAX;
+   //fprintf(stderr,"%lu %lu %lu %lg\n",seed[*i],seed[i1],seed[i2],ret);
+   (*i) = (*i + 1)&MJK_RAND_R1279_SZ1;
+   return ret;
+}
+
 double r1279 (uint64_t seed[MJK_RAND_R1279_SZ], int *i){
    const int i1 = (*i - 1279) & MJK_RAND_R1279_SZ1;
    const int i2 = (*i - 418) & MJK_RAND_R1279_SZ1;
@@ -33,10 +44,10 @@ void mjk_rand_fill(mjk_rand_t *state){
    for(iblk=0; iblk < state->nthreadmax; iblk++){
 	  for(ibuf=0; ibuf < blksize; ibuf++){
 		 state->buffer[ibuf + iblk*blksize] = 
-			r1279(
+			a2281(
 				  state->seed+iblk*MJK_RAND_R1279_SZ,
 				  &(state->ir)[iblk]
-				  );
+				 );
 		 //fprintf(stderr,"ttt %lg\n",state->buffer[ibuf]);
 	  }
    }
