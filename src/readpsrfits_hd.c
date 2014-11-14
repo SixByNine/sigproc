@@ -117,11 +117,16 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   fits_read_col( fp, TFLOAT, ncol, row, firstelem, nelem, &nulval,
 		  ch_freq, &anynul, &status );
 
-  *fch1 = ch_freq[0] > ch_freq[nelem-1] ? ch_freq[0] : ch_freq[nelem-1];
+  //*fch1 = ch_freq[0] > ch_freq[nelem-1] ? ch_freq[0] : ch_freq[nelem-1];
   //*fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
-  //*fch1 = fc - (*nchans / 2 - 1)*chanbw;
+  *fch1 = fc - ((*nchans-1)/ 2.0)*chanbw;
+  //*fch1=ch_freq[0];
   *foff = chanbw;
 
+  fprintf(stderr,"Native fch1=%f, foff=%f\n",*fch1,*foff);
+  if(ch_freq > 0){
+	 fprintf(stderr,"Will flip the band!\n",*fch1,*foff);
+  }
   
   fits_close_file(fp,&status);
   fits_report_error(stderr,status);
