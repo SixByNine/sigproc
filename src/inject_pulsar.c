@@ -4,11 +4,11 @@
 
 
 // standard headers
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <complex.h>
 #include <string.h>
-#include <math.h>
 #include <stdbool.h>
 #include <time.h>
 #include <omp.h>
@@ -32,6 +32,7 @@
 #define fftwf_alloc_complex(A) (fftwf_complex*)fftwf_malloc(A*sizeof(fftwf_complex*))
 #endif
 
+#define M_PI        3.14159265358979323846264338327950288
 
 
 void print_help(){

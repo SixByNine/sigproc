@@ -48,6 +48,7 @@ AM_PATH_XML2
 SWIN_LIB_CFITSIO
 SWIN_LIB_PGPLOT
 MJK_LIB_PSRXML
+SWIN_LIB_TEMPO2
 
 AX_OPENMP([have_openmp=yes],[have_openmp=no])
 if test X$have_openmp == Xyes; then
@@ -67,11 +68,14 @@ if test X$have_openmp == Xno; then
 fi
 
 
-
-AC_CHECK_HEADER(tempo2pred.h,have_tempo2=yes, have_tempo2=no)
-if test X$have_tempo2 == Xyes; then
-   AC_CHECK_LIB(tempo2pred,T2Predictor_GetPhase,have_tempo2=yes, have_tempo2=no)
+if test x"$have_tempo2" != xyes; then
+	AC_WARN("No TEMPO2 found... Cannot build software that depends on T2toolkit or tempo2")
 fi
+
+#AC_CHECK_HEADER(tempo2pred.h,have_tempo2=yes, have_tempo2=no)
+#if test X$have_tempo2 == Xyes; then
+#   AC_CHECK_LIB(tempo2pred,T2Predictor_GetPhase,have_tempo2=yes, have_tempo2=no)
+#fi
 
 AM_CONDITIONAL(HAVE_T2PRED, [test x"$have_tempo2" = xyes])
 

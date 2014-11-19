@@ -1,4 +1,4 @@
-bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit chop_fil dedisperse_all shredder filterbank fast_fake zerodm
+bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit chop_fil dedisperse_all shredder filterbank fast_fake zerodm 
 bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
 EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh spsearch.pl dmsampdelay.pl
 MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
@@ -6,6 +6,9 @@ noinst_LIBRARIES=libsigproc.a
 
 if HAVE_T2PRED
 bin_PROGRAMS += inject_pulsar
+if HAVE_PGPLOT
+bin_PROGRAMS += rfi_analyse
+endif
 endif
 
 BUILT_SOURCES=sigproc.h
@@ -25,6 +28,11 @@ if HAVE_T2PRED
 inject_pulsar_LDADD=-ltempo2pred libsigproc.a @FFTW_LIBS@
 inject_pulsar_CFLAGS=-std=gnu99
 inject_pulsar_SOURCES=inject_pulsar.c 
+if HAVE_PGPLOT
+rfi_analyse_LDADD=-lt2toolkit libsigproc.a @FFTW_LIBS@ @PGPLOT_LIBS@
+rfi_analyse_CFLAGS=-std=gnu99
+rfi_analyse_SOURCES=rfi_analyse.c
+endif
 endif
 
 LDADD=libsigproc.a -lm
