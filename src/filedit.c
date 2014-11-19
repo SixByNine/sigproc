@@ -255,7 +255,7 @@ int main (int argc, char** argv){
 						newnbits = atoi(optarg);
 						break;
 					case 'p':
-						newtsamp = atoi(optarg);
+						newtsamp = atof(optarg);
 						break;
 
 				}
@@ -443,12 +443,12 @@ void fix_header(FILE* file, char* newname, double newra, double newdec, int newi
 
 		memcpy(buf,ptr,5);
 		buf[5]='\0';
-		if(newnbits && strcmp(buf,"tsamp")==0){
+		if(newtsamp > 0 && strcmp(buf,"tsamp")==0){
 			ptr+=5;
 			a_double = *((double*)(ptr));
 			printf("old tsamp = '%lf'\n",a_double);
 			printf("new tsamp = '%f'\n",newtsamp);
-			*((double*)(ptr)) = newnbits;
+			*((double*)(ptr)) = newtsamp;
 		}
 
 
