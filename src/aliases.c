@@ -31,6 +31,9 @@ char tempo_site(int telescope_id) /*includefile*/
   case 9:
     return('a'); /*140ft*/
     break;
+  case 10:
+    return('z'); /*SRT*/
+    break;
   default:
     return('?'); /*unknown*/
     /*error_message("tempo_site: unknown telescope!");*/
@@ -72,6 +75,9 @@ char *telescope_name (int telescope_id) /*includefile*/
   case 9: 
     strcpy(string,"140ft");
     break;
+  case 10: 
+    strcpy(string,"SRT");
+	break;
   default: 
     strcpy(string,"???????"); 
     break;

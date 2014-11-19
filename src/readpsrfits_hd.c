@@ -77,6 +77,8 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
     *telescope_id=6;
   else if (strcasecmp(telescope,"EFFELSBERG")==0)
     *telescope_id=8;
+  else if (strcasecmp(telescope,"SRT")==0)
+    *telescope_id=10;
   else 
     *telescope_id = -1;
 
@@ -115,11 +117,16 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   fits_read_col( fp, TFLOAT, ncol, row, firstelem, nelem, &nulval,
 		  ch_freq, &anynul, &status );
 
-  *fch1 = ch_freq[0] > ch_freq[nelem-1] ? ch_freq[0] : ch_freq[nelem-1];
+  //*fch1 = ch_freq[0] > ch_freq[nelem-1] ? ch_freq[0] : ch_freq[nelem-1];
   //*fch1 = fc-obsbw/2.0 + obsbw/(*nchans)/2.0;
-  //*fch1 = fc - (*nchans / 2 - 1)*chanbw;
+  //*fch1 = fc - ((*nchans-1)/ 2.0)*chanbw;
+  *fch1=ch_freq[0];
   *foff = chanbw;
 
+  fprintf(stderr,"Native fch1=%f, foff=%f\n",*fch1,*foff);
+  if(chanbw > 0){
+	 fprintf(stderr,"Will flip the band!\n");
+  }
   
   fits_close_file(fp,&status);
   fits_report_error(stderr,status);

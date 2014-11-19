@@ -34,7 +34,7 @@ void filterbank_header(FILE *outptr) /* includefile */
       if (foff>0) {
 	flip_band=1;
 	/* send a signal to the conversion signals to invert the band */
-        send_double("fch1",fch1+foff*nchans);
+        send_double("fch1",fch1+foff*(nchans-1));
         send_double("foff",-1.0*foff);
       } else {
 	/* no inversion necessary */
