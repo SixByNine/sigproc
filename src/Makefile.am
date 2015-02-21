@@ -110,10 +110,10 @@ else
 seek_SOURCES+=fftwdummy.f
 endif
 
-sigproc.h: include.csh
-	./include.csh
-
 src=@top_srcdir@/src
+
+sigproc.h: include.csh
+	$(src)/include.csh
 
 monitor : mkmonitor.csh
 	$(src)/mkmonitor.csh >monitor
