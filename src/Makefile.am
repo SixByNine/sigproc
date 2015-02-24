@@ -4,6 +4,8 @@ EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.cs
 MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
 noinst_LIBRARIES=libsigproc.a
 
+EXTRA_PROGRAMS=fddtw
+
 if HAVE_T2PRED
 bin_PROGRAMS += inject_pulsar
 if HAVE_PGPLOT
@@ -101,6 +103,10 @@ dedisperse_all_SOURCES=dedisperse_all.C dedisperse_all.h getDMtable.C getDMtable
 
 shredder_SOURCES=shredder.C dedisperse_all.h getDMtable.C getDMtable.h gtools.C
 
+
+fddtw_SOURCES=fddtw.C
+
+fddtw_CPPFLAGS=-std=gnu++11 -Wno-write-strings
 
 if HAVE_FFTW
 seek_SOURCES+=fftwdata.f

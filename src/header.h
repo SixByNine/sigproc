@@ -1,4 +1,8 @@
 /* global variables describing the data */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char rawdatafile[80], source_name[80];
 int machine_id, telescope_id, data_type, nchans, nbits, nifs, scan_number,
   barycentric,pulsarcentric; /* these two added Aug 20, 2004 DRL */
@@ -17,7 +21,9 @@ double analog_power[2];
 /* added frequency table for use with non-contiguous data */
 double frequency_table[4096]; /* note limited number of channels */
 long int npuls; /* added for binary pulse profile format */
-
+#ifdef __cplusplus
+}
+#endif
 
 // define the signedness for the 8-bit data type
 #define OSIGN 1

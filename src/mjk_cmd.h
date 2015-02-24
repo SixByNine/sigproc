@@ -3,6 +3,10 @@
 #define _mjk_cmd_h
 #define STREQ(a,b) (strcmp(a,b)==0)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 
 char* getS(char *lo, char* so, int argc, char** argv, char* val);
@@ -27,6 +31,10 @@ void reset_clock(mjk_clock_t* clock);
 double read_clock(mjk_clock_t* clock);
 
 char* trim_string(char* str);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
