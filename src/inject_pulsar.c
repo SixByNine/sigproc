@@ -317,7 +317,9 @@ int main (int argc, char** argv){
    i=0;
    block=malloc(sizeof(float)*nchan_const);
    long double mjd = (long double)tstart;
-   long double tsamp_mjd = (long double)tsamp/86400.0L;
+   const long double start_mjd = (long double)tstart;
+   //long double tsamp_mjd = (long double)tsamp/86400.0L;
+   const long double tsamp_ld = tsamp;
    long double phase;
    int_fast32_t pbin;
    uint_fast32_t ch=0;
@@ -544,13 +546,15 @@ int main (int argc, char** argv){
 		 stop_clock(CLK_inner);
 	  }
 	  write_block(nbits,1,nchan_const,output,block);
-	  mjd+=tsamp_mjd;
+	  //mjd+=tsamp_mjd;
+      mjd = (count*tsamp)/86400.0L + start_mjd;
 	  count++;
    }
    fprintf(stderr,"\n");
 
    stop_clock(CLK_process);
    logmsg("Simulation ended.");
+   logmsg("last sample=%.14Lf",mjd);
    logmsg("Setup took   %.2f s",read_clock(CLK_setup));
    logmsg("Process took %.2f s",read_clock(CLK_process));
    logmsg("Inner took  %.2f s",read_clock(CLK_inner));

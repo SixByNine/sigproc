@@ -1,4 +1,5 @@
 *.o
+*.dSYM
 config.h.in
 Makefile.in
 autoconf/*
