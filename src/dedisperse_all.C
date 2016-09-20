@@ -170,7 +170,7 @@ void do_dedispersion(unsigned short int ** storage, unsigned short int * unpacke
 	    if(randomise)chan=rand()%(end_chan-start_chan)+start_chan;
 	    idelay = DM_shift(DMtrial,chan,tsamp,fch1_subband,foff);
 	    int stride = k*ntoload+idelay;
-#pragma omp parallel for private(j)
+#pragma omp parallel for 
 	    for (int j=0;j<ntodedisp/4;j++){
 		casted_times[j]+=*((LONG64BIT*) (unpackeddata+(j*4+stride)));
 	    }
