@@ -2,6 +2,7 @@
 #include <config.h>
 #endif
 
+#define time_detail
 
 // standard headers
 #include <math.h>
@@ -116,6 +117,7 @@ int main (int argc, char** argv){
     mjk_clock_t *CLK_setup = init_clock();
     mjk_clock_t *CLK_process = init_clock();
     mjk_clock_t *CLK_write = init_clock();
+    mjk_clock_t *CLK_read = init_clock();
     mjk_clock_t *CLK_inner = init_clock();
     bool help=false;
     float A;
@@ -290,16 +292,39 @@ int main (int argc, char** argv){
     const double noiseAmp = A;
 
 
-    sum=0;
-    // normalise the profile
-    for (i=0; i < nprof; i++)
-        sum+=profile[i];
-    double scale=1.0;
+    double best_sum=0;
+    double best_width=0;
+    double min=0;
 
-    sum/=(double)nprof;
-    scale = noiseAmp*in_snr / sqrt(nchan_const*nsamp)/sum;
-    logmsg("mean=%lg scale=%lg",sum,scale);
-    // normalise to pseudo-S/N in 1s.
+    for (int i=0; i < nprof; i++){
+        if (profile[i] < min){
+            min=profile[i];
+        }
+    }
+
+    for (int i=0; i < nprof; i++){
+        profile[i]-=min;
+    }
+    for (int bw = 1; bw < nprof/2; bw++){
+        double sum=0;
+        double nn = 1.0/sqrt((double)bw);
+        for (int i=0; i < bw; i++){
+            sum+=profile[i];
+        }
+        for (int i=bw; i < nprof; i++){
+            sum+=profile[i];
+            sum-=profile[i-bw];
+            if (sum*nn > best_sum){
+                best_sum=sum*nn;
+                best_width=bw;
+            }
+        }
+    }
+
+    double scale = noiseAmp*in_snr / sqrt(nchan_const*nsamp)/best_sum;
+
+    logmsg("best_sum=%lg scale=%lg, width=%d",best_sum,scale,best_width);
+    // normalise to pseudo-S/N
     for (i=0; i < nprof; i++)
         profile[i]=profile[i]*scale;
 
@@ -475,7 +500,14 @@ int main (int argc, char** argv){
         for(ch = 0; ch < nchan_const; ch++){
             rands[ch]=mjk_rand_double(rnd[0]);
         }
+
+#ifdef time_detail
+        start_clock(CLK_read);
+#endif
         read_block(input,nbits,block,nchan_const);
+#ifdef time_detail
+        stop_clock(CLK_read);
+#endif
         p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
         ip0 = (int64_t)floor(p0);
         //pragma omp paralell private(i,n,ch,phase,frac,pbin,A,dbin) shared(ip0,prev_ip0)
@@ -485,11 +517,11 @@ int main (int argc, char** argv){
                 // need a new temp profile.
 
                 //pragma omp  for 
-                for(i=0; i < nprof;i++){
+#pragma omp parallel for  default(none) shared(subpulse_map)
+                for(unsigned i=0; i < nprof;i++){
                     subpulse_map[i]=0;
                 }
-                //pragma omp single
-                for(n=0; n < nsubpulse;n++){
+                for(unsigned n=0; n < nsubpulse;n++){
                     i=floor(mjk_rand_double(rnd[0])*nprof);
                     subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0])*pulse_energy_sigma)/pulse_energy_norm;
                     //subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
@@ -499,8 +531,8 @@ int main (int argc, char** argv){
                 {
                     convolve(subpulse_conv_plan);
                 }
-                //pragma omp  for 
-                for(i=0; i < nprof;i++){
+#pragma omp parallel for  default(none) shared(profile,unsmeared_prof)
+                for(unsigned i=0; i < nprof;i++){
                     unsmeared_prof[i]*=profile[i];
                 }
 
@@ -518,7 +550,9 @@ int main (int argc, char** argv){
                     prev_ip0=ip0;
                 }
             }
+#ifdef time_detail
             start_clock(CLK_inner);
+#endif
             const double const_p0 = p0;
 #pragma omp parallel for default(none) shared(poff,ism_idx,sidx,rands,grads,prevbin,dbin,output_prof,block) schedule(static,32)
             for(int ch = 0; ch < nchan_const; ch++){
@@ -542,12 +576,18 @@ int main (int argc, char** argv){
                 }
                 prevbin[ch]=pbin;
             }
+#ifdef time_detail
             stop_clock(CLK_inner);
+#endif
         }
 
+#ifdef time_detail
         start_clock(CLK_write);
+#endif
         write_block(nbits,1,nchan_const,output,block);
+#ifdef time_detail
         stop_clock(CLK_write);
+#endif
         //mjd+=tsamp_mjd;
         mjd = ((long double)count)*(tsamp_mjd) + start_mjd;
         count++;
@@ -559,8 +599,9 @@ int main (int argc, char** argv){
     logmsg("last sample=%.14Lf",mjd);
     logmsg("Setup took   %.2f s",read_clock(CLK_setup));
     logmsg("Process took %.2f s",read_clock(CLK_process));
-    logmsg("Inner took  %.2f s",read_clock(CLK_inner));
-    logmsg("Write took  %.2f s",read_clock(CLK_write));
+    logmsg(">> Inner took  %.2f s",read_clock(CLK_inner));
+    logmsg(">> Read took  %.2f s",read_clock(CLK_write));
+    logmsg(">> Write took  %.2f s",read_clock(CLK_read));
     logmsg("Total was  %0.2g times 'real' time",(read_clock(CLK_setup)+read_clock(CLK_process))/(count*tsamp));
     logmsg("Check last Random %"PRIx32,mjk_rand(rnd[0]));
 
