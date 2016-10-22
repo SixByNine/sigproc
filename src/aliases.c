@@ -34,6 +34,12 @@ char tempo_site(int telescope_id) /*includefile*/
   case 10:
     return('z'); /*SRT*/
     break;
+  case 64:
+    return('m'); /*MeerKAT*/
+    break;
+  case 65:
+    return('k'); /*KAT-7*/
+    break;
   default:
     return('?'); /*unknown*/
     /*error_message("tempo_site: unknown telescope!");*/
@@ -77,7 +83,13 @@ char *telescope_name (int telescope_id) /*includefile*/
     break;
   case 10: 
     strcpy(string,"SRT");
-	break;
+    break;
+  case 64:
+    strcpy(string,"MeerKAT");
+    break;
+  case 65:
+    strcpy(string,"KAT-7");
+    break;
   default: 
     strcpy(string,"???????"); 
     break;
@@ -125,6 +137,12 @@ char *backend_name (int machine_id) /*includefile*/
     break;
   case 14:
     strcpy(string,"GMRTNEW");
+    break;
+  case 64:
+    strcpy(string,"KAT");
+    break;
+  case 65:
+    strcpy(string,"KAT-DC2");
     break;
   default:
     strcpy(string,"?????");
