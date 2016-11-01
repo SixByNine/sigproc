@@ -79,7 +79,11 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
     *telescope_id=8;
   else if (strcasecmp(telescope,"SRT")==0)
     *telescope_id=10;
-  else 
+  else if (strcasecmp(telescope,"MEERKAT")==0)
+    *telescope_id=64;
+  else if (strcasecmp(telescope,"KAT-7")==0)
+    *telescope_id=65;
+   else 
     *telescope_id = -1;
 
   // Start time
