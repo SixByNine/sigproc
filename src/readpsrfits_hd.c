@@ -19,7 +19,7 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   int status;
   float obsbw,fc;
   char sobsbw[100],sfc[100],ras[100],decs[100];
-  char name[100],telescope[100];
+  char name[100],telescope[100],machine[100];
   double h,m,sec,chanbw,smjd,offs;
   int imjd;
 
@@ -85,6 +85,18 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
     *telescope_id=65;
    else 
     *telescope_id = -1;
+
+  // Parse machine_id
+  fits_read_key(fp, TSTRING, "BACKEND", machine, NULL, &status);
+  fits_report_error(stderr,status);
+  if (strcasecmp(machine,"PSPM")==0)
+    *machine_id=1;
+  else if (strcasecmp(machine,"KAT")==0)
+    *machine_id=64;
+  else if (strcasecmp(machine,"KAT-DC2")==0)
+    *machine_id=65;
+  else
+    *machine_id = -1;
 
   // Start time
   *tstart = imjd+(smjd+offs)/86400.0;
