@@ -293,7 +293,7 @@ int main (int argc, char** argv){
 
 
     double best_sum=0;
-    double best_width=0;
+    int best_width=0;
     double min=0;
 
     for (int i=0; i < nprof; i++){
