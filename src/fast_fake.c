@@ -35,6 +35,9 @@ void fastfake_help(){
             "   --seed,-S           Random seed (def=time())\n"\
             "   --name,-s           Source name for header (def=FAKE)\n"\
             "\n"\
+            "   --tid               Telescope ID in header (def=4, Parkes)\n"\
+            "   --bid               Backend ID in header (def=10, BPSR)\n"\
+            "\n"\
             "Default parameters make a HTRU-style data file.\n"\
             "\n");
     exit(1);
@@ -82,6 +85,8 @@ int main (int argc, char *argv[])
 
     help=getB("--help","-h",argc,argv,0);
     obstime=getF("--tobs","-T",argc,argv,obstime);
+    telescope_id=getI("--tid","",argc,argv,telescope_id);
+    machine_id=getI("--bid","",argc,argv,machine_id);
     tsamp=getF("--tsamp","-t",argc,argv,tsamp);
     tstart=getF("--mjd","-m",argc,argv,tstart);
     fch1=getF("--fch1","-F",argc,argv,fch1);
