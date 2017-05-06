@@ -141,7 +141,7 @@ int main (int argc, char** argv){
     strcpy(subprof_fname,getS("--subprof","-b",argc,argv,""));
     strcpy(prof_fname,getS("--prof","-p",argc,argv,"prof.asc"));
     strcpy(pred_fname,getS("--pred","-P",argc,argv,"t2pred.dat"));
-    nsubpulse=getI("--nsub","-n",argc,argv,5);
+    nsubpulse=getI("--nsub","-n",argc,argv,0);
     pulse_energy_sigma=getF("--pulse-sigma","-E",argc,argv,0.2);
     help=getB("--help","-h",argc,argv,0);
     getArgs(&argc,argv);
@@ -260,6 +260,7 @@ int main (int argc, char** argv){
     }
     fclose(prof_file);
     if(strlen(subprof_fname)){
+        if(nsubpulse==0)nsubpulse=5;
 
         logmsg("read subprofile file");
         prof_file=fopen(subprof_fname,"r");
@@ -291,55 +292,6 @@ int main (int argc, char** argv){
     }
     const double noiseAmp = A;
 
-
-    double best_sum=0;
-    double best_width=0;
-    double min=0;
-
-    for (int i=0; i < nprof; i++){
-        if (profile[i] < min){
-            min=profile[i];
-        }
-    }
-
-    for (int i=0; i < nprof; i++){
-        profile[i]-=min;
-    }
-    for (int bw = 1; bw < nprof/2; bw++){
-        double sum=0;
-        double nn = 1.0/sqrt((double)bw);
-        for (int i=0; i < bw; i++){
-            sum+=profile[i];
-        }
-        for (int i=bw; i < nprof; i++){
-            sum+=profile[i];
-            sum-=profile[i-bw];
-            if (sum*nn > best_sum){
-                best_sum=sum*nn;
-                best_width=bw;
-            }
-        }
-    }
-
-    double scale = noiseAmp*in_snr / sqrt(nchan_const*nsamp)/best_sum;
-
-    logmsg("best_sum=%lg scale=%lg, width=%d",best_sum,scale,best_width);
-    // normalise to pseudo-S/N
-    for (i=0; i < nprof; i++)
-        profile[i]=profile[i]*scale;
-
-
-    sum=0;
-    // normalise the subpulse profile
-    for (i=0; i < nprof; i++)
-        sum+=subpulse_profile[i];
-    sum/=(double)nprof;
-    // we also normalise by the number of subpulses so that the final subpulse profile will have an area of 1.
-    scale = 1.0/sum/(float)nsubpulse;
-
-    for (i=0; i < nprof; i++)
-        subpulse_profile[i]=subpulse_profile[i]*scale;
-
     i=0;
     block=malloc(sizeof(float)*nchan_const);
     long double mjd = (long double)tstart;
@@ -359,6 +311,7 @@ int main (int argc, char** argv){
     uint_fast32_t nism=0;
     const uint_fast32_t NCOPY = nprof*sizeof(float);
     const double psr_freq = (double)T2Predictor_GetFrequency(&pred,mjd,freq[0]);
+    const double approx_npulse = nsamp*tsamp*psr_freq;
     double poff[nchan_const];
 
     const double pulse_energy_norm = exp(pow(pulse_energy_sigma,2)/2.0);
@@ -368,6 +321,70 @@ int main (int argc, char** argv){
 
 
     logmsg("Pulsar period ~%.2lfms",1000.0/psr_freq);
+
+
+    double best_sum=0;
+    int best_width=0;
+    double min=0;
+
+    for (int i=0; i < nprof; i++){
+        if (profile[i] < min){
+            min=profile[i];
+        }
+    }
+
+    for (int i=0; i < nprof; i++){
+        profile[i]-=min;
+    }
+
+    for (int bw = 1; bw <= nprof/2; bw++){
+        double sum=0;
+        double nn = 1.0/sqrt((double)bw);
+        for (int i=0; i < bw; i++){
+            sum+=profile[i];
+        }
+        if (sum*nn > best_sum){
+            best_sum=sum*nn;
+            best_width=bw;
+        }
+        for (int i=bw; i < nprof; i++){
+            sum+=profile[i];
+            sum-=profile[i-bw];
+            if (sum*nn > best_sum){
+                best_sum=sum*nn;
+                best_width=bw;
+            }
+        }
+    }
+
+    
+    double bin_conversion_factor = sqrt((double)nprof*psr_freq*tsamp);
+
+    logmsg("bin conversion factor = %lf",bin_conversion_factor);
+
+    double profile_scale = noiseAmp*in_snr / (sqrt(nchan_const*approx_npulse)*best_sum*bin_conversion_factor);
+
+    logmsg("best_sum=%lg scale=%lg, width=%d",best_sum,profile_scale,best_width);
+    // normalise to pseudo-S/N
+    for (i=0; i < nprof; i++)
+        profile[i]=profile[i]*profile_scale;
+
+
+    sum=0;
+    // normalise the subpulse profile
+    for (i=0; i < nprof; i++)
+        sum+=subpulse_profile[i];
+    sum/=(double)nprof;
+    // we also normalise by the number of subpulses so that the final subpulse profile will have an area of 1.
+    double scale = 1.0/sum/(float)nsubpulse;
+
+    for (i=0; i < nprof; i++)
+        subpulse_profile[i]=subpulse_profile[i]*scale;
+
+
+
+
+
     mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
     rnd[0] = mjk_rand_init(seed);
     for(ch = 0; ch < nchan_const; ch++){
@@ -508,7 +525,11 @@ int main (int argc, char** argv){
 #ifdef time_detail
         stop_clock(CLK_read);
 #endif
+
+        double mjd_bin_end = ((long double)(count))*(tsamp_mjd) + start_mjd; // this is the next sample
         p0 = T2Predictor_GetPhase(&pred,mjd,freq[0]);
+        double p0end = T2Predictor_GetPhase(&pred,mjd_bin_end,freq[0]);
+
         ip0 = (int64_t)floor(p0);
         //pragma omp paralell private(i,n,ch,phase,frac,pbin,A,dbin) shared(ip0,prev_ip0)
         {
@@ -521,19 +542,27 @@ int main (int argc, char** argv){
                 for(unsigned i=0; i < nprof;i++){
                     subpulse_map[i]=0;
                 }
-                for(unsigned n=0; n < nsubpulse;n++){
-                    i=floor(mjk_rand_double(rnd[0])*nprof);
-                    subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0])*pulse_energy_sigma)/pulse_energy_norm;
-                    //subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
-                }
+                if (nsubpulse==0){
+                    // we are not using sub-pulses, so skip all that.
+                    for(unsigned i=0; i < nprof;i++){
+                        unsmeared_prof[i]=profile[i];
+                    }
+                } else {
+                    // we are using sub-pulses, so we have to do extra convolution.
+                    for(unsigned n=0; n < nsubpulse;n++){
+                        i=floor(mjk_rand_double(rnd[0])*nprof);
+                        subpulse_map[i]+=exp(mjk_rand_gauss(rnd[0])*pulse_energy_sigma)/pulse_energy_norm;
+                        //subpulse_map[i]+=(mjk_rand_double(rnd[0]))*2;
+                    }
 
-                //pragma omp single
-                {
-                    convolve(subpulse_conv_plan);
-                }
+                    //pragma omp single
+                    {
+                        convolve(subpulse_conv_plan);
+                    }
 #pragma omp parallel for  default(none) shared(profile,unsmeared_prof)
-                for(unsigned i=0; i < nprof;i++){
-                    unsmeared_prof[i]*=profile[i];
+                    for(unsigned i=0; i < nprof;i++){
+                        unsmeared_prof[i]*=profile[i];
+                    }
                 }
 
                 //pragma omp single
@@ -543,9 +572,12 @@ int main (int argc, char** argv){
                         convolve(ism_conv_plan);
                         memcpy(output_prof[i],smeared_prof,NCOPY);
                         for (n=0; n < nprof-1; n++){
-                            grads[i][n] = smeared_prof[n+1]-smeared_prof[n];
+                            grads[i][n] = output_prof[i][n+1]-output_prof[i][n];
                         }
-                        grads[i][nprof-1]=smeared_prof[0]-smeared_prof[nprof-1];
+                        grads[i][nprof-1]=output_prof[i][0]-output_prof[i][nprof-1];
+//                        for (n=0; n < nprof; n++){
+//                          output_prof[i][n] -= 0.5*grads[i][n];
+//                        }
                     }
                     prev_ip0=ip0;
                 }
@@ -554,27 +586,49 @@ int main (int argc, char** argv){
             start_clock(CLK_inner);
 #endif
             const double const_p0 = p0;
+            const double const_p0end = p0end;
 #pragma omp parallel for default(none) shared(poff,ism_idx,sidx,rands,grads,prevbin,dbin,output_prof,block) schedule(static,32)
+//            logmsg("phase %lf ->%lf",const_p0,const_p0end);
             for(int ch = 0; ch < nchan_const; ch++){
-                double phase = const_p0+poff[ch];
-                phase = phase-floor(phase);
-                int pbin = floor(phase*nprof);
-                double frac = phase*nprof-pbin;
-                double A = output_prof[ism_idx[ch]][pbin] + frac*grads[ism_idx[ch]][pbin];
-                if(prevbin[ch]<0)prevbin[ch]=pbin;
-                double dbin=pbin-prevbin[ch];
-                while(dbin<0)dbin+=nprof;
-                while(dbin>1){
-                    A += output_prof[ism_idx[ch]][prevbin[ch]];
-                    prevbin[ch]+=1;
-                    dbin=pbin-prevbin[ch];
-                    while(dbin<0)dbin+=nprof;
-                }
+                double phase_start = const_p0+poff[ch];
+                double phase_end = const_p0end+poff[ch];
+                phase_end = phase_end-floor(phase_start);
 
+                phase_start = phase_start-floor(phase_start);
+
+                int firstbin = floor(phase_start*nprof);
+                double frac_start = phase_start*nprof-firstbin;
+
+                int lastbin = floor(phase_end*nprof);
+                double frac_end = phase_end*nprof-lastbin;
+
+                double A=0;
+                if (firstbin==lastbin){
+                    // integrate between frac_start and frac_end in first (only) bin.
+                    A  = (frac_end-frac_start)*output_prof[ism_idx[ch]][firstbin%nprof] +
+                        0.5*(frac_end*frac_end - frac_start*frac_start)*grads[ism_idx[ch]][firstbin%nprof];
+                } else {
+                    // we go over more than 1 bin.
+                    // for first bin, we integrate from frac_start to 1.
+                    A  = (1-frac_start)*output_prof[ism_idx[ch]][firstbin%nprof] +
+                        0.5*(1 - frac_start*frac_start)*grads[ism_idx[ch]][firstbin%nprof];
+                    int cur_bin = firstbin+1;
+                    while(cur_bin < lastbin){
+                        A += output_prof[ism_idx[ch]][cur_bin%nprof] +
+                        0.5*grads[ism_idx[ch]][cur_bin%nprof];
+                        ++cur_bin;
+                    }
+                    // for last bin integrate from zero to frac_end
+                    A  += (frac_end)*output_prof[ism_idx[ch]][lastbin%nprof] +
+                        0.5*(frac_end*frac_end)*grads[ism_idx[ch]][lastbin%nprof];
+                }
+                
+//                if(ch==0)logmsg("A=%lf %lg t=%lg ",A,firstbin+frac_start-(lastbin+frac_end),(phase_end-phase_start)/psr_freq);
+//               if(ch==0) logmsg("phase %lf -> %lf   %d -> %d  A=%lf  op=%lf g=%lf",phase_start,phase_end,firstbin,lastbin,A,output_prof[ism_idx[ch]][firstbin%nprof],grads[ism_idx[ch]][firstbin%nprof]);
                 if (A>0){
                     block[ch] += floor(sidx[ch]*A+rands[ch]);
                 }
-                prevbin[ch]=pbin;
+                    //block[ch] = floor(sidx[ch]*A+rands[ch]);
             }
 #ifdef time_detail
             stop_clock(CLK_inner);
