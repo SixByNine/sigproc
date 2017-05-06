@@ -206,6 +206,7 @@ int main (int argc, char** argv){
 
     output=stdout;
 
+    logmsg("Read predictor '%s'",pred_fname);
     // read the tempo2 predictor.
     res = T2Predictor_Read(&pred, pred_fname);
     if(res!=0){
@@ -304,6 +305,20 @@ int main (int argc, char** argv){
     float sidx[nchan_const];
     float dmdly[nchan_const];
     uint_fast32_t ism_idx[nchan_const];
+
+    int_fast32_t prevbin[nchan_const];
+    double poff[nchan_const];
+    double p0 = T2Predictor_GetPhase(&pred,mjd,fch1);
+    double sidx_avg=0;
+    for(ch = 0; ch < nchan_const; ch++){
+        freq[ch] = fch1 + foff*ch;
+        poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
+        prevbin[ch]=-1;
+        sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
+        sidx_avg+=sidx[ch];
+    }
+    sidx_avg/=(double)nchan_const;
+
     float **ism_models= (float**)malloc(sizeof(float*)*nchan_const);
     for (i=0; i < nchan_const; i++){
         ism_models[i] = (float*)malloc(sizeof(float)*nprof);
@@ -312,11 +327,8 @@ int main (int argc, char** argv){
     const uint_fast32_t NCOPY = nprof*sizeof(float);
     const double psr_freq = (double)T2Predictor_GetFrequency(&pred,mjd,freq[0]);
     const double approx_npulse = nsamp*tsamp*psr_freq;
-    double poff[nchan_const];
 
     const double pulse_energy_norm = exp(pow(pulse_energy_sigma,2)/2.0);
-    double p0 = T2Predictor_GetPhase(&pred,mjd,fch1);
-    int_fast32_t prevbin[nchan_const];
     int_fast32_t dbin,ii;
 
 
@@ -362,7 +374,7 @@ int main (int argc, char** argv){
 
     logmsg("bin conversion factor = %lf",bin_conversion_factor);
 
-    double profile_scale = noiseAmp*in_snr / (sqrt(nchan_const*approx_npulse)*best_sum*bin_conversion_factor);
+    double profile_scale = noiseAmp*in_snr / (sqrt(nchan_const*approx_npulse)*best_sum*bin_conversion_factor*sidx_avg);
 
     logmsg("best_sum=%lg scale=%lg, width=%d",best_sum,profile_scale,best_width);
     // normalise to pseudo-S/N
@@ -387,13 +399,7 @@ int main (int argc, char** argv){
 
     mjk_rand_t **rnd = malloc(sizeof(mjk_rand_t*)*nchan_const);
     rnd[0] = mjk_rand_init(seed);
-    for(ch = 0; ch < nchan_const; ch++){
-        freq[ch] = fch1 + foff*ch;
-        poff[ch] = T2Predictor_GetPhase(&pred,mjd,freq[ch])-p0;
-        prevbin[ch]=-1;
-        sidx[ch] = pow(freq[ch]/ref_freq,spec_index);
-    }
-
+    
     if(t_scat > 0){
         float complex *scint_model = fftwf_alloc_complex(nchan_const*2);
         float *scint_out = fftwf_alloc_real(nchan_const*2);
