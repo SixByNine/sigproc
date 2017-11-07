@@ -7,12 +7,12 @@ void getArgs(int *argc, char** argv){
    int i;
    int n=1;
    for (i=1;i< *argc; i++){
-	  if(argv[i][0]<5){
-		 i+=argv[i][0];
-		 continue;
-	  }
-	  argv[n]=argv[i];
-	  n++;
+       if(argv[i][0]<5){
+           i+=argv[i][0];
+           continue;
+       }
+       argv[n]=argv[i];
+       n++;
    }
    *argc=n;
 }

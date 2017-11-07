@@ -1,4 +1,4 @@
-bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit chop_fil dedisperse_all shredder filterbank fast_fake zerodm 
+bin_PROGRAMS=seek header dedisperse extract fake flatten clip downsample fold profile flux header bandpass reader readchunk splitter snrdm decimate splice dice depolyco blanker barycentre tree polyco2period makePsrXml ffa grey chaninfo step postproc filedit chop_fil dedisperse_all shredder filterbank fast_fake zerodm filmerge
 bin_SCRIPTS=accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
 EXTRA_DIST=accn.csh ahunt.csh csearch.csh differ.csh exporter.csh foldsignals.csh help.csh hunt.csh include.csh makedummy.csh mkmonitor.csh quicklook.csh subint2prf.csh spsearch.pl dmsampdelay.pl
 MOSTLYCLEANFILES=sigproc.h accn  ahunt  csearch  foldsignals  hunt makedummy  monitor  quicklook spsearch dmsampdelay
@@ -13,6 +13,8 @@ bin_PROGRAMS += rfi_analyse
 endif
 endif
 
+
+
 BUILT_SOURCES=sigproc.h
 
 fast_fake_SOURCES=fast_fake.c
@@ -24,7 +26,11 @@ AM_CPPFLAGS=.
 f_headers=birdies.inc csamp.inc epnhdr.inc find_summary.inc folds.inc head.inc npts.inc peak.inc pulse.inc seek.inc time.inc vers.inc 
 c_headers=bacspin.h bpp.h bpphdr.h cpgplot.h decimate.h dedisperse.h dialog.h epn.h filterbank.h find_baseline.h find.h fold.h gtools.h header.h key.h libplotfil.h longnam.h nr.h nrutil.h older_wapp_header.h old_wapp_header.h ooty.h polyco.h prec_proto.h profile.h pspmhdr.h pulse.h scamp_header.h slalib.h slamac.h version.h wapp_header.h y.tab.h mjklog.h mjk_random.h mjk_cmd.h
 
-libsigproc_a_SOURCES=sigproc.h $(c_headers) add_channels.c add_samples.c aliases.c angle_split.c aoftm.c bandfactors.c bit.c cel2gal.c chan_freqs.c close_log.c cprofc.c decimate_data.c decimate_header.c deg2dms.c dmdelay.c dmshift.c eraseDP.c error_message.c fetch_hdrval.c ffreq.c file_exists.c filterbank_header.c fold_data.c fold_header.c fshift_prof.c gmrt2fb.c head_parse.c help.c ignored_channels.c indexx.c inputclip.c inv_cerf.c lookup.c mjd.c mkheader.c norm_prof.c np2.c nrselect.c nrsort.c nrutil.c nsamples.c ooty2fb.c open_file.c open_files.c open_log.c pack_unpack.c phcalc.c print_version.c process.c prof_adds.c prof_cent.c prof_ddis.c prof_sbas.c prof_sumc.c prof_sumifs.c pspm2fb.c pspm_decode.c pspm_prof.c pspm_tstart.c pulsar2k2fb.c pulse.c put.c random.c read_aoscan.c read_block.c read_blocksubzero.c read_header.c read_polyco.c readtim.c recipes.c reverse_baseline_normalise.c scaledata.c scale_prof.c scamp2fb.c select.c send_stuff.c shift_prof.c single_ch.c sizeof_file.c slalib.c smooth.c ssm.c strings_equal.c submean.c submedian.c subzero.c swap_bytes.c thresh_1d.c typeof_inputdata.c update_log.c uttime.c vanvleck.c vmax.c vmin.c wapp2fb.c wappcorrect.c wapp_prof.c whiten.c write_epn.c write_profiles.c write_pulses.c ffft.f dedisperse_data.c dedisperse_header.c machine2prf.c mkheaderlex.c alfa_position.c bpp2fb.c mjk_random.c mjk_cmd.c newgmrt2fb.c
+cpp_headers=sigproc/filfile.hpp sigproc/outputfilfile.hpp
+
+filmerge_SOURCES=filmerge.cpp filfile.cpp outputfilfile.cpp
+
+libsigproc_a_SOURCES=sigproc.h $(c_headers) add_channels.c add_samples.c aliases.c angle_split.c aoftm.c bandfactors.c bit.c cel2gal.c chan_freqs.c close_log.c cprofc.c decimate_data.c decimate_header.c deg2dms.c dmdelay.c dmshift.c eraseDP.c error_message.c fetch_hdrval.c ffreq.c file_exists.c filterbank_header.c fold_data.c fold_header.c fshift_prof.c gmrt2fb.c head_parse.c help.c ignored_channels.c indexx.c inputclip.c inv_cerf.c lookup.c mjd.c mkheader.c norm_prof.c np2.c nrselect.c nrsort.c nrutil.c nsamples.c ooty2fb.c open_file.c open_files.c open_log.c pack_unpack.c phcalc.c print_version.c process.c prof_adds.c prof_cent.c prof_ddis.c prof_sbas.c prof_sumc.c prof_sumifs.c pspm2fb.c pspm_decode.c pspm_prof.c pspm_tstart.c pulsar2k2fb.c pulse.c put.c random.c read_aoscan.c read_block.c read_blocksubzero.c read_header.c read_polyco.c readtim.c recipes.c reverse_baseline_normalise.c scaledata.c scale_prof.c scamp2fb.c select.c send_stuff.c shift_prof.c single_ch.c sizeof_file.c slalib.c smooth.c ssm.c strings_equal.c submean.c submedian.c subzero.c swap_bytes.c thresh_1d.c typeof_inputdata.c update_log.c uttime.c vanvleck.c vmax.c vmin.c wapp2fb.c wappcorrect.c wapp_prof.c whiten.c write_epn.c write_profiles.c write_pulses.c ffft.f dedisperse_data.c dedisperse_header.c machine2prf.c mkheaderlex.c alfa_position.c bpp2fb.c mjk_random.c mjk_cmd.c newgmrt2fb.c 
 
 if HAVE_T2PRED
 inject_pulsar_LDADD=-ltempo2pred libsigproc.a @FFTW_LIBS@
@@ -102,6 +108,8 @@ postproc_SOURCES=postproc.f
 dedisperse_all_SOURCES=dedisperse_all.C dedisperse_all.h getDMtable.C getDMtable.h gtools.C
 
 shredder_SOURCES=shredder.C dedisperse_all.h getDMtable.C getDMtable.h gtools.C
+
+
 
 
 fddtw_SOURCES=fddtw.C
