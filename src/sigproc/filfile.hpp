@@ -1,9 +1,11 @@
 #pragma once
 #include <cstdio>
+#include <cstdint>
 
 
 namespace sigproc {
 class OutputFilFile;
+class FilterbankBlock;
 
 class FilFile {
 
@@ -16,7 +18,11 @@ class FilFile {
 
         virtual void initialise();
 
+        FilterbankBlock *readBlock(int start_sample, int length);
 
+        bool eof() const;
+
+        int getChanOffset(const FilFile &other) const;
         /**
          * Is the file readable?
          */
@@ -28,12 +34,18 @@ class FilFile {
             return _filename;
         }
 
+        double sample_interval() const {
+            return _tsamp;
+        }
+
     protected:
 
         /**
          * Get the sigproc global parameters into this file
          */
         void globalToThis();
+
+        void thisToGlobal();
 
         char _source_name[80];
         int _machine_id, _telescope_id, _data_type, _nchans, _nbits, _nifs, _scan_number,
@@ -44,12 +56,12 @@ class FilFile {
         bool _valid;
         int _header_length;
 
-
         const char* _filename;
         FILE* _rawfile;
 
 
         friend class OutputFilFile;
+        friend class FilterbankBlock;
 
 } ; // class Filfile
 } // namespace sigproc

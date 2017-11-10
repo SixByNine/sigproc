@@ -9,9 +9,14 @@ class OutputFilFile : public FilFile {
 
         virtual void initialise();
 
+        void writeBlock(const FilterbankBlock *block);
+        FilterbankBlock *createBlock(int length);
+
         bool expandTo(const FilFile& other);
 
     private:
+
+        int _current_sample;
 
 }; // class OutputFilFile
 }

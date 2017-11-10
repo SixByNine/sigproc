@@ -1,10 +1,15 @@
 #include <cstdlib>
 #include <vector>
+#include <cmath>
+#include <cstdint>
 #include "mjklog.h"
 #include "mjk_cmd.h"
 
 #include "sigproc/filfile.hpp"
 #include "sigproc/outputfilfile.hpp"
+#include "sigproc/filterbankblock.hpp"
+
+void merge_blocks(std::vector<sigproc::FilterbankBlock*> input_blocks, sigproc::FilterbankBlock *output_block);
 
 void print_usage(){
     printf("Merge .fil files\n");
@@ -55,9 +60,55 @@ int main(int argc, char** argv) {
         }
     }
     output.debug();
+    logmsg("Initialise");
     output.initialise();
 
+    int blocklength = 8192;
+
+    uint64_t sample = 0;
+    while (!input_files[0].eof()){
+        logmsg("%lf s",sample*output.sample_interval());
+        std::vector<sigproc::FilterbankBlock*> inputblocks;
+        for (int i=0; i < input_files.size(); ++i){
+            logmsg("Readblock: %s",input_files[i].filename());
+            sigproc::FilterbankBlock* block = input_files[i].readBlock(sample,blocklength);
+//            logmsg("Push block");
+            inputblocks.push_back(block);
+//            logmsg("Pushed block");
+        }
+//        logmsg("make output block");
+        sigproc::FilterbankBlock* outblock = output.createBlock(blocklength);
+//        logmsg("merge blocks");
+        merge_blocks(inputblocks,outblock);
+//        logmsg("write blocks");
+        output.writeBlock(outblock);
+        //logmsg("zz %lg %lg",inputblocks[0]->_data[0],outblock->_data[0]);
+        sample += blocklength;
+        delete outblock;
+        for (int i=0; i < input_files.size(); ++i){
+            delete (inputblocks[i]);
+        }
+    }
 
 
     return 0;
 }
+
+void merge_blocks(std::vector<sigproc::FilterbankBlock*> input_blocks, sigproc::FilterbankBlock *output_block){
+    float* weights=static_cast<float*>(calloc(sizeof(float),output_block->_raw_length));
+    int nifs=output_block->_nifs;
+    for (int ib=0; ib < input_blocks.size(); ++ib){
+        int chanoffset = output_block->_filfile->getChanOffset(*input_blocks[ib]->_filfile);
+//        logmsg("Chan offset %d",chanoffset);
+        for(int isamp=0; isamp < input_blocks[ib]->_length; ++isamp){
+            float* out = output_block->_data + output_block->_nchans*nifs*isamp + chanoffset;
+            float* in = input_blocks[ib]->_data + input_blocks[ib]->_nchans*nifs*isamp;
+            //logmsg(" isamp: %d  %d   %d   %d %d",isamp,in-input_blocks[ib]->_data,out-output_block->_data,nifs,input_blocks[ib]->_nchans);
+            for(int ich=0; ich < input_blocks[ib]->_nchans; ++ich){
+                out[ich] += in[ich];
+            }
+        }
+    }
+
+}
+
