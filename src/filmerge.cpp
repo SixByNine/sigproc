@@ -1,7 +1,7 @@
 #include <cstdlib>
 #include <vector>
 #include <cmath>
-#include <cstdint>
+#include <stdint.h>
 #include "mjklog.h"
 #include "mjk_cmd.h"
 

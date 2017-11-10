@@ -1,6 +1,6 @@
 #pragma once
 #include <sigproc/filfile.hpp>
-#include <cstdint>
+#include <stdint.h>
 
 
 namespace sigproc {
