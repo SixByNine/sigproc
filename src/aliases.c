@@ -90,6 +90,10 @@ char *telescope_name (int telescope_id) /*includefile*/
   case 65:
     strcpy(string,"KAT-7");
     break;
+  case 82:
+    strcpy(string,"eMerlin");
+    break;
+ 
   default: 
     strcpy(string,"???????"); 
     break;
@@ -143,6 +147,9 @@ char *backend_name (int machine_id) /*includefile*/
     break;
   case 65:
     strcpy(string,"KAT-DC2");
+    break;
+  case 82:
+    strcpy(string,"loft-e");
     break;
   default:
     strcpy(string,"?????");
