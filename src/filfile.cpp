@@ -55,7 +55,7 @@ sigproc::FilterbankBlock *sigproc::FilFile::readBlock(int start_sample, int leng
 
 
 void sigproc::FilFile::debug() const {
-    logmsg("'%s' '%s' %lf %lf %ld %d",_filename,_source_name,_fch1,_foff,_nchans,_nifs);
+    logmsg("'%s' '%s' %lf %lf %ld %d nbits:%d",_filename,_source_name,_fch1,_foff,_nchans,_nifs,_nbits);
 }
 
 

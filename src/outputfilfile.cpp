@@ -27,7 +27,7 @@ void sigproc::OutputFilFile::writeBlock(const sigproc::FilterbankBlock *block){
             fwrite(block->_data,sizeof(float),block->_raw_length,_rawfile);
             break;
         default:
-            logerr("Unfortunately writing %d data not compatible with this code");
+            logerr("Unfortunately writing %d data not compatible with this code",_nbits);
             std::exit(1);
             break;
     }

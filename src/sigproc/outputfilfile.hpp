@@ -12,6 +12,10 @@ class OutputFilFile : public FilFile {
         void writeBlock(const FilterbankBlock *block);
         FilterbankBlock *createBlock(int length);
 
+        void setNbits(int nb) {
+            _nbits=nb;
+        }
+
         bool expandTo(const FilFile& other);
 
     private:

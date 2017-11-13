@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
             logerr("Cannot merge %s",input_files[i].filename());
         }
     }
+    output.setNbits(32);
     output.debug();
     logmsg("Initialise");
     output.initialise();
