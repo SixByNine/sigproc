@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string>
 #include <cstdio>
+#include <cstdlib>
 #include <cmath>
 #include <iostream>
 
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
         std::cout << "M.Malenta's filterbank code." << std::endl << std::endl;
         std::cout << "Example Usage:" << std::endl;
         std::cout << argv[0] << " out.fil in*.fil" << std::endl;
-        exit(1);
+        std::exit(1);
     }
 
 

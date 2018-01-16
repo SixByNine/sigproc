@@ -9,7 +9,9 @@ EXTRA_PROGRAMS=fddtw
 if HAVE_T2PRED
 bin_PROGRAMS += inject_pulsar
 if HAVE_PGPLOT
+if HAVE_FFTW
 bin_PROGRAMS += rfi_analyse
+endif
 endif
 endif
 
