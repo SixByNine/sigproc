@@ -52,6 +52,7 @@ int main(int argc, char** argv) {
     // pointer is passed by reference here. We have to delete it later.
     int nsamp = read_fil_to_buf(argv[2],inbuf);
 
+    double current_time = tstart;
 
     // these arrays are used to store the per-channel mean and variance.
     double means[output_nchan];
@@ -102,6 +103,11 @@ int main(int argc, char** argv) {
     logfname += ".scale"; // weights file is outfile.fil.scale
     FILE* logfile = fopen(logfname.c_str(), "w");
 
+    std::string filesfname(outfilname);
+    filesfname += ".files"; // log of which files were succefully merged goes to outfile.fil.files
+    FILE* filesfile = fopen(filesfname.c_str(), "w");
+    fprintf(filesfile, "%s\n", argv[2]);
+
     double offset[nchans];
     double scale[nchans];
     for (int ichan = 0; ichan < output_nchan ; ++ichan) {
@@ -133,6 +139,8 @@ int main(int argc, char** argv) {
     // this writes the header
     filterbank_header(outfilptr);
     fwrite(outbuf,1,nchans*nsamp,outfilptr);
+    current_time += (tsamp*(double)nsamp)/86400.0;
+
 
     delete[] inbuf;
     delete[] outbuf;
@@ -143,13 +151,25 @@ int main(int argc, char** argv) {
         std::cout << argv[ifile] << std::endl;
         // read the rest of the data...
         int nsamp = read_fil_to_buf(argv[ifile],inbuf);
+        // check if the file is contiguous
+        if (std::abs(tstart - current_time)*86400.0 > 1e-6){
+            std::cout << "Error - file " << argv[ifile] << " is not contiguous" << std::endl;
+            std::cout << "deltaT = "<<std::abs(tstart - current_time)*86400.0e6 << " microseconds" << std::endl;
+            delete[] inbuf;
+            break;
+        }
+
+
         unsigned char *outbuf = new unsigned char[output_nchan*nsamp];
         rescale_and_trim(inbuf, outbuf, scale, offset, raw_nchan, output_nchan, skip_chans,nsamp);
         fwrite(outbuf,1,output_nchan*nsamp,outfilptr);
+        fprintf(filesfile, "%s\n", argv[2]);
+        current_time += (tsamp*(double)nsamp)/86400.0;
         delete[] inbuf;
         delete[] outbuf;
     }
 
+    fclose(filesfile);
     fclose(outfilptr);
     return 0;
 }
