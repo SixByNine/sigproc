@@ -6,6 +6,8 @@
 #include <cmath>
 #include <iostream>
 
+#include <stdint.h>
+
 
 #include <sigproc.h>
 #include <header.h>
@@ -53,7 +55,7 @@ int main(int argc, char** argv) {
     // pointer is passed by reference here. We have to delete it later.
     int nsamp = read_fil_to_buf(argv[2],inbuf);
 
-    double current_time = tstart;
+    double start_time = tstart;
 
     // these arrays are used to store the per-channel mean and variance.
     double means[output_nchan];
@@ -140,7 +142,10 @@ int main(int argc, char** argv) {
     // this writes the header
     filterbank_header(outfilptr);
     fwrite(outbuf,1,nchans*nsamp,outfilptr);
-    current_time += (tsamp*(double)nsamp)/86400.0;
+
+    const double sample_int_days=tsamp/86400.0;
+    uint64_t total_samples = nsamp;
+    double current_time = start_time + sample_int_days*(double)(total_samples);
 
 
     delete[] inbuf;
@@ -165,7 +170,9 @@ int main(int argc, char** argv) {
         rescale_and_trim(inbuf, outbuf, scale, offset, raw_nchan, output_nchan, skip_chans,nsamp);
         fwrite(outbuf,1,output_nchan*nsamp,outfilptr);
         fprintf(filesfile, "%s\n", argv[ifile]);
-        current_time += (tsamp*(double)nsamp)/86400.0;
+	total_samples += nsamp;
+	current_time = start_time + sample_int_days*(double)(total_samples);
+
         delete[] inbuf;
         delete[] outbuf;
     }
