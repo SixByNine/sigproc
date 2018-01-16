@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
         unsigned char *outbuf = new unsigned char[output_nchan*nsamp];
         rescale_and_trim(inbuf, outbuf, scale, offset, raw_nchan, output_nchan, skip_chans,nsamp);
         fwrite(outbuf,1,output_nchan*nsamp,outfilptr);
-        fprintf(filesfile, "%s\n", argv[2]);
+        fprintf(filesfile, "%s\n", argv[ifile]);
         current_time += (tsamp*(double)nsamp)/86400.0;
         delete[] inbuf;
         delete[] outbuf;
