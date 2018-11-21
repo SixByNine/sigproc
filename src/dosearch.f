@@ -1,6 +1,6 @@
 c=============================================================================
       subroutine dosearch(llog,dump,rspc,oldwhite,pmzap,mmzap,
-     &                    recon,prdh,sfile,pmax)
+     &                    recon,prdh,sfile,pmax,wsize)
 c=============================================================================
 c
 c     Does the search for the pulsars in the Frequency domain.
@@ -49,6 +49,7 @@ c      parameter(snfact=1.1284) ! = sqrt(4/pi)
       integer nav,ntot,fbin,blo,bhi,nharm
       character*80 pfile,ffile,hsum,hsums
       integer kk,lhsums,length
+      integer wsize
 
       fold=0
       if (rspc) then
@@ -115,7 +116,7 @@ c
 
       write(llog,*) 'Whitening spectrum...'
 
-      nav=max(128,npf/nsm)
+      nav=max(wsize,npf/nsm)
       if (oldwhite.eq.1) then
 
          write(llog,*) 'Calculating spectral mean/rms every',

@@ -32,13 +32,14 @@ c=============================================================================
       logical dump,rspc,acsearch,tanalyse,pmzap,mmzap,pulse,
      &        append,pzero,fftw,recon,prdh,nopowtwo
       integer oldw ! = 0 new mean, = 1 old mean, = 2 median
+      integer wsize
       character*80 sfile
       real accn,adot
       real*8 pmax
       integer llog       
       call seekin(llog,dump,rspc,pmzap,mmzap,sfile,pulse,append,pzero,
      &    pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax,
-     &    nopowtwo)
+     &    nopowtwo,wsize)
       accn=refac
       adot=refad
       call timstart(llog)                    ! fire up the ship's clock
@@ -70,7 +71,7 @@ c=============================================================================
          endif
       endif                                  ! (standard analysis follows)
       call dosearch(llog,dump,rspc,oldw,pmzap,
-     &           mmzap,recon,prdh,sfile,pmax)! search 
+     &           mmzap,recon,prdh,sfile,pmax,wsize)! search 
       endif
       call timfinis(llog)                    ! stop the clock
       end

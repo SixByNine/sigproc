@@ -1,7 +1,7 @@
 c=============================================================================
       subroutine seekin(llog,dump,rspc,pmzap,mmzap,sfile,pulse,app,
      & pzero,pmax,nofft,fftw,recon,oldw,prdh,spthresh,ncandsmax,nsmax,
-     & nopowtwo)
+     & nopowtwo,wsize)
 c=============================================================================
 c
 c   Controls the command-line inputs to seek
@@ -12,6 +12,7 @@ c
       character*80 option,sfile
       logical dump,rspc,pmzap,mmzap,pulse,app,pzero,fftw,recon,prdh
       logical nopowtwo
+      integer wsize
       integer oldw
       real*8 pmax
 
@@ -87,6 +88,7 @@ c
      &   'candidates per DM channel'
          write(*,1)'-w[smax] - number of times to smooth time series' //
      &   ' for single-pulse search'
+         write(*,1)'-W[wsiz] - Window size for whitening (bins)'
          write(*,*)
  1       format(a)
  2       format(a,i2,a)
@@ -98,6 +100,7 @@ c
       spthresh=4
       ncandsmax=100000
       nsmax=10
+      wsize=128
       fbrute=0.0
       zapfile=' '
       maskfile(1)=' '
@@ -220,6 +223,8 @@ c          endif
           read(option(3:),*) spthresh
         else if (index(option,'-w').gt.0) then
           read(option(3:),*) nsmax
+        else if (index(option,'-W').gt.0) then
+          read(option(3:),*) wsize
         else if (index(option,'-n').gt.0) then
           read(option(3:),*) ncandsmax
         else if (index(option,'-s').gt.0) then
