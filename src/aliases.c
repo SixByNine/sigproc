@@ -151,6 +151,9 @@ char *backend_name (int machine_id) /*includefile*/
   case 82:
     strcpy(string,"loft-e");
     break;
+  case 83:
+    strcpy(string,"ROACH");
+    break;
   case 88:
     strcpy(string,"AT-PAF");
     break;
