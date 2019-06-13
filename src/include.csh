@@ -3,6 +3,7 @@
 set v = `awk '{print $1}' version.history | tail -2 | head -1`
 cat << END1   >! sigproc.h
 /* sigproc.h: Automatically generated include file for sigproc-$v */
+#pragma once
 #ifdef __cplusplus
 extern "C" {
 #endif

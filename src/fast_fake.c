@@ -30,6 +30,8 @@ void fastfake_help(){
             "   --mjd,-m            MJD of first sample (def=56000.0)\n"\
             "   --fch1,-F           Frequency of channel 1, MHz (def=1581.804688)\n"\
             "   --foff,-f           Channel bandwidth, MHz (def=-0.390625)\n"\
+            "   --ra,-R             Right ascention of observation (hhmmss.sss)\n"\
+            "   --dec,-D            Declination of observation (ddmmss.sss)\n"\
             "   --nbits,-b          Output number of bits, 1,2,4,8,32 (def=2)\n"\
             "   --nchans,-c         Output number of channels (def=1024)\n"\
             "   --seed,-S           Random seed (def=time())\n"\
@@ -82,6 +84,9 @@ int main (int argc, char *argv[])
     ibeam=1;
     obstime=270.0;
     output=stdout;
+    src_raj=0.0;
+    src_dej=0.0;
+    
 
     help=getB("--help","-h",argc,argv,0);
     obstime=getF("--tobs","-T",argc,argv,obstime);
@@ -91,6 +96,10 @@ int main (int argc, char *argv[])
     tstart=getF("--mjd","-m",argc,argv,tstart);
     fch1=getF("--fch1","-F",argc,argv,fch1);
     foff=getF("--foff","-f",argc,argv,foff);
+
+    src_raj=getF("--ra","-R",argc,argv,src_raj);
+    src_dej=getF("--dec","-D",argc,argv,src_dej);
+
     nbits=getI("--nbits","-b",argc,argv,nbits);
     nchans=getI("--nchans","-c",argc,argv,nchans);
     seed=getI("--seed","-S",argc,argv,seed);
@@ -145,6 +154,8 @@ int main (int argc, char *argv[])
         send_int("ibeam",ibeam);
         send_double("tstart",tstart);
         send_double("tsamp",tsamp);
+        send_double("src_raj",src_raj);
+        send_double("src_dej",src_dej);
         send_int("nifs",nifs);
         if (nbits==8){
             send_char("signed",OSIGN);
