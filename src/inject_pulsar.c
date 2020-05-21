@@ -544,7 +544,7 @@ int main (int argc, char** argv){
                 // need a new temp profile.
 
                 //pragma omp  for 
-#pragma omp parallel for  default(none) shared(subpulse_map, nprof, nsubpulse)
+#pragma omp parallel for  default(none) firstprivate(nprof) shared(subpulse_map, nsubpulse)
                 for(unsigned i=0; i < nprof;i++){
                     subpulse_map[i]=0;
                 }
@@ -565,7 +565,7 @@ int main (int argc, char** argv){
                     {
                         convolve(subpulse_conv_plan);
                     }
-#pragma omp parallel for  default(none) shared(profile,unsmeared_prof,nprof)
+#pragma omp parallel for  default(none) shared(profile,unsmeared_prof) firstprivate(nprof)
                     for(unsigned i=0; i < nprof;i++){
                         unsmeared_prof[i]*=profile[i];
                     }
@@ -593,7 +593,7 @@ int main (int argc, char** argv){
 #endif
             const double const_p0 = p0;
             const double const_p0end = p0end;
-#pragma omp parallel for default(none) shared(nprof,nchan_const,const_p0,const_p0end,poff,ism_idx,sidx,rands,grads,prevbin,dbin,output_prof,block) schedule(static,32)
+#pragma omp parallel for default(none) firstprivate(nprof,nchan_const,const_p0,const_p0end) shared(poff,ism_idx,sidx,rands,grads,prevbin,dbin,output_prof,block) schedule(static,32)
 //            logmsg("phase %lf ->%lf",const_p0,const_p0end);
             for(int ch = 0; ch < nchan_const; ch++){
                 double phase_start = const_p0+poff[ch];
