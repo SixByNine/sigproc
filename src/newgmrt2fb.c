@@ -32,12 +32,17 @@ void newgmrt2fb(FILE *input, FILE *output) /* includefile*/
         for(ich=0; ich < nchans; ich++) packzap[ich]=0xFF;
 
         for(ich=0; ich < nchans; ich++){
-            if(ich%2){
-                // even chans
-                packzap[ich] &= gmrtzap[ich]>>4;
-            } else {
-                packzap[ich] &= (gmrtzap[ich]&0x0F)<<4;
+            if(gmrtzap[ich]==0){
+                // we zap ich
+                if(ich%2==0){
+                    // even chans
+                    packzap[ich] &= 0xF0; // zap LSB
+                } else {
+                    // odd chans
+                    packzap[ich] &= 0x0F; // zap MSB
+                }
             }
+            //fprintf(stderr,"%d %d\n",ich,packzap[ich]);
         }
 
         while (!feof(input)){
@@ -62,7 +67,5 @@ void newgmrt2fb(FILE *input, FILE *output) /* includefile*/
             }
             fwrite(buffer,1,nchans/2,output);
         }
-
     }
-
 }

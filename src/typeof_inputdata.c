@@ -161,6 +161,7 @@ int typeof_inputdata(FILE *fptr, char *filename) /* includefile */
                             if(range==NULL)break;
                             int start,end;
                             sscanf(range,"%d-%d",&start,&end);
+                            fprintf(stderr,"Zap from %d to %d\n",start,end);
                             start--;
                             for(i=start; i < end;i++){
                                 gmrtzap[i] = 0;
