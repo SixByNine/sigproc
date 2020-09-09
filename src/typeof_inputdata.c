@@ -169,8 +169,8 @@ int typeof_inputdata(FILE *fptr, char *filename) /* includefile */
                     }
                     if(strcmp(key,"Num bits/sample")==0){
                         nbits=atoi(val);
-                        if(nbits!=8)fprintf(stderr,"Sorry can only do 8-bit GMRT data at the moment\n");
-                        obits=8;
+                        if(nbits !=8 && nbits!=4)fprintf(stderr,"Sorry can only do 4-bit or 8-bit GMRT data at the moment\n");
+                        obits=nbits;
                     }
                 }
                 fch1+=foff*0.5; // correct to centre of ch 1
