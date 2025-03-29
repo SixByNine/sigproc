@@ -15,7 +15,7 @@ endif
 endif
 endif
 
-
+AM_CFLAGS = -fcommon
 
 BUILT_SOURCES=sigproc.h
 
