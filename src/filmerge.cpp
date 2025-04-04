@@ -16,6 +16,7 @@ void print_usage(){
     printf("================\n");
     printf("\n");
     printf("Take many fil files, sensibly combine them. They must align in time and be consecutive or align in frequency.\n");
+    printf("--out,-o            : output file location (def = out.fil)\n");
     printf("--help,-h           : print this help text\n");
     printf("\n");
 }
