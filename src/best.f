@@ -788,7 +788,7 @@ c                  xmin=parmin(1)
                   call pgpoint(ndm,x,y,17)
                else if (mode.eq.4.or.mode.eq.5) then
                   call pggray(grid,mg,mg,1,ngx,1,ngy,gridmax,gridmin,tr)
-                  call pgpoint(1,xx,yy,27)
+                  call pgpoint(1,[real(xx)],[real(yy)],27)
                   call pgsls(4)
                   call pgmove(xmin,0.0)
                   call pgdraw(xmax,0.0)

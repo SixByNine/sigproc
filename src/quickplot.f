@@ -495,7 +495,7 @@ c  Assumed that viewport and window defined outside routine
             if(k.gt.0)then
               x=i
               y=j
-              call pgpoint(1,x,y,ksym(k))
+              call pgpoint(1,[real(x)],[real(y)],ksym(k))
             endif
           enddo
         enddo
