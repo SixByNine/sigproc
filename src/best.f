@@ -52,6 +52,8 @@ c                 eg. is limited to 5 in one of my scripts.  50 is safe-ish
      &     xval(mg), yval(mg), gridmin, gridmax, deltax, deltay,
      &     xx, yy, fcentre, chbandw,zval(mg)
 
+      real :: x1(1), y1(1)
+      
       integer trid(mc),cidx(mc),i,j,k,l,sidx(mc),nids(mc),ndm
       integer narg,iargc,fld(mc),nsus,nf,mode,ix,iy,gidx,iz,bb
 
@@ -788,7 +790,9 @@ c                  xmin=parmin(1)
                   call pgpoint(ndm,x,y,17)
                else if (mode.eq.4.or.mode.eq.5) then
                   call pggray(grid,mg,mg,1,ngx,1,ngy,gridmax,gridmin,tr)
-                  call pgpoint(1,xx,yy,27)
+                  x1(1) = xx
+                  y1(1) = yy
+                  call pgpoint(1,x1,y1,27)
                   call pgsls(4)
                   call pgmove(xmin,0.0)
                   call pgdraw(xmax,0.0)

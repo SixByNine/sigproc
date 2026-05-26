@@ -461,6 +461,7 @@ c  Assumed that viewport and window defined outside routine
         parameter(nsym=10)
         integer*4 ksym(nsym)
         real*4 dat(nxd,nyd)
+        real x1(1), y1(1)
         data ksym/1,20,21,2,3,14,15,17,16,18/
 
         s=0.
@@ -490,14 +491,14 @@ c  Assumed that viewport and window defined outside routine
            call pgwindow(1.0,real(nx),0.0,real(ny+1))
         endif
         do j=1,ny
-          do i=1,nx
-            k=min(int((dat(i,j)-s)/rms),nsym)
-            if(k.gt.0)then
-              x=i
-              y=j
-              call pgpoint(1,x,y,ksym(k))
-            endif
-          enddo
+           do i=1,nx
+              k = min(int((dat(i,j)-s)/rms), nsym)
+              if (k .gt. 0) then
+                 x1(1) = i
+                 y1(1) = j
+                 call pgpoint(1, x1, y1, ksym(k))
+              endif
+           enddo
         enddo
 
         return
