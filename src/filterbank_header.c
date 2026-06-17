@@ -10,7 +10,7 @@ void filterbank_header(FILE *outptr) /* includefile */
   /* go no further here if not interested in header parameters */
   if (headerless) return;
   /* broadcast the header parameters to the output stream */
-  if (machine_id != 0) {
+  if (machine_id > -1) {
     send_string("HEADER_START");
     send_string("rawdatafile");
     send_string(inpfile);

@@ -29,7 +29,7 @@ void readpsrfits_hd(char *filename,int *machine_id,int *telescope_id,int *data_t
   float ch_freq[MX_NCHAN];
 
   // Defaults that are not being set
-  *machine_id=-1;
+  *machine_id=0;
   *data_type = 0;
   *ibeam = 1;
   status=0;
